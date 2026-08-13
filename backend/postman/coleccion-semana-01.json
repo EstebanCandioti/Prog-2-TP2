@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Backend Semana 1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health - OK",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "Coberturas - OK",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "Registro - OK",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"dni\": \"40111222\",\n  \"email\": \"juan.perez@example.com\",\n  \"telefono\": \"3424000000\",\n  \"password\": \"Secreto123\",\n  \"fecha_nacimiento\": \"1995-05-20\",\n  \"id_cobertura\": 1\n}"
+        },
+        "url": "{{base_url}}/auth/registro"
+      }
+    },
+    {
+      "name": "Registro - DNI o email duplicado",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Juan\",\n  \"apellido\": \"Perez\",\n  \"dni\": \"40111222\",\n  \"email\": \"juan.perez@example.com\",\n  \"telefono\": \"3424000000\",\n  \"password\": \"Secreto123\",\n  \"fecha_nacimiento\": \"1995-05-20\",\n  \"id_cobertura\": 1\n}"
+        },
+        "url": "{{base_url}}/auth/registro"
+      }
+    },
+    {
+      "name": "Login - OK",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.token) {",
+              "  pm.collectionVariables.set('token', json.datos.token);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"40111222\",\n  \"password\": \"Secreto123\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Login - Credenciales invalidas",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"40111222\",\n  \"password\": \"incorrecta\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Perfil - OK",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/perfil"
+      }
+    },
+    {
+      "name": "Perfil - Token ausente",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/auth/perfil"
+      }
+    },
+    {
+      "name": "Perfil admin - Rol no permitido",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/perfil-admin"
+      }
+    }
+  ]
+}
