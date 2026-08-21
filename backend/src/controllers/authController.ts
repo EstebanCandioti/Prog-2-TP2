@@ -1,14 +1,12 @@
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { SignOptions } from 'jsonwebtoken';
 import { ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
-import { env, requireJwtSecret } from '../config/env';
+import { requireJwtSecret } from '../config/env';
 import { AuthRequest, JwtPayload } from '../types/auth';
 import { UsuarioRow } from '../types/usuario';
 import { responder } from '../utils/respuesta';
-import { usuarioPublicoSelect } from '../utils/usuario';
 
 interface RegistroBody {
   nombre: string;
@@ -26,6 +24,19 @@ interface LoginBody {
   password: string;
 }
 
+const usuarioPublicoSelect = `
+  id,
+  nombre,
+  apellido,
+  dni,
+  email,
+  telefono,
+  fecha_nacimiento,
+  id_cobertura,
+  id_sede,
+  rol
+`;
+
 const camposRegistroCompletos = (body: RegistroBody): boolean => {
   return Boolean(
     body.nombre &&
@@ -38,10 +49,11 @@ const camposRegistroCompletos = (body: RegistroBody): boolean => {
   );
 };
 
-export const registro = async (req: Request<object, object, RegistroBody>, res: Response): Promise<void> => {
-  const { nombre, apellido, dni, email, telefono, password, fecha_nacimiento, id_cobertura } = req.body;
+export const registro = async (req: Request, res: Response): Promise<void> => {
+  const body = req.body as RegistroBody;
+  const { nombre, apellido, dni, email, telefono, password, fecha_nacimiento, id_cobertura } = body;
 
-  if (!camposRegistroCompletos(req.body)) {
+  if (!camposRegistroCompletos(body)) {
     responder(res, 400, 'Faltan campos obligatorios');
     return;
   }
@@ -73,8 +85,8 @@ export const registro = async (req: Request<object, object, RegistroBody>, res: 
   responder(res, 201, 'ok', usuarios[0]);
 };
 
-export const login = async (req: Request<object, object, LoginBody>, res: Response): Promise<void> => {
-  const { dni, password } = req.body;
+export const login = async (req: Request, res: Response): Promise<void> => {
+  const { dni, password } = req.body as LoginBody;
 
   if (!dni || !password) {
     responder(res, 400, 'DNI y password son obligatorios');
@@ -109,10 +121,7 @@ export const login = async (req: Request<object, object, LoginBody>, res: Respon
     id_sede: usuario.id_sede ?? null
   };
 
-  const signOptions: SignOptions = {
-    expiresIn: env.jwt.expiresIn as SignOptions['expiresIn']
-  };
-  const token = jwt.sign(payload, requireJwtSecret(), signOptions);
+  const token = jwt.sign(payload, requireJwtSecret(), { expiresIn: '1h' });
 
   responder(res, 200, 'ok', { token, usuario: payload });
 };

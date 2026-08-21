@@ -1,0 +1,498 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Backend Semana 2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "operador_token",
+      "value": ""
+    },
+    {
+      "key": "medico_token",
+      "value": ""
+    },
+    {
+      "key": "paciente_token",
+      "value": ""
+    },
+    {
+      "key": "cobertura_id",
+      "value": "1"
+    },
+    {
+      "key": "sede_id",
+      "value": "1"
+    },
+    {
+      "key": "especialidad_id",
+      "value": "1"
+    },
+    {
+      "key": "agenda_id",
+      "value": "2"
+    },
+    {
+      "key": "id_medico",
+      "value": "3"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.token) {",
+              "  pm.collectionVariables.set('admin_token', json.datos.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Login operador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.token) {",
+              "  pm.collectionVariables.set('operador_token', json.datos.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Login medico",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.token) {",
+              "  pm.collectionVariables.set('medico_token', json.datos.token);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Coberturas - Listar disponibles publico",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/coberturas-disponibles"
+      }
+    },
+    {
+      "name": "Coberturas - Listar admin",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "Coberturas - Crear admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.id) {",
+              "  pm.collectionVariables.set('cobertura_id', json.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"OSDE\"\n}"
+        },
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "Coberturas - Actualizar admin",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"OSDE actualizado\"\n}"
+        },
+        "url": "{{base_url}}/coberturas/{{cobertura_id}}"
+      }
+    },
+    {
+      "name": "Coberturas - Error sin token",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "Coberturas - Error dependencia al eliminar",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/coberturas/1"
+      }
+    },
+    {
+      "name": "Sedes - Listar admin",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/sedes"
+      }
+    },
+    {
+      "name": "Sedes - Crear admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.id) {",
+              "  pm.collectionVariables.set('sede_id', json.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede Sur\",\n  \"direccion\": \"Av. Siempre Viva 123\",\n  \"telefono\": \"3424000003\"\n}"
+        },
+        "url": "{{base_url}}/sedes"
+      }
+    },
+    {
+      "name": "Sedes - Actualizar admin",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede Sur Actualizada\",\n  \"direccion\": \"Av. Siempre Viva 456\",\n  \"telefono\": \"3424000004\"\n}"
+        },
+        "url": "{{base_url}}/sedes/{{sede_id}}"
+      }
+    },
+    {
+      "name": "Sedes - Error dependencia al eliminar",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/sedes/1"
+      }
+    },
+    {
+      "name": "Especialidades - Listar admin",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/especialidades"
+      }
+    },
+    {
+      "name": "Especialidades - Crear admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.id) {",
+              "  pm.collectionVariables.set('especialidad_id', json.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Cardiologia\"\n}"
+        },
+        "url": "{{base_url}}/especialidades"
+      }
+    },
+    {
+      "name": "Especialidades - Actualizar admin",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Cardiologia actualizada\"\n}"
+        },
+        "url": "{{base_url}}/especialidades/{{especialidad_id}}"
+      }
+    },
+    {
+      "name": "Especialidades - Error dependencia al eliminar",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/especialidades/1"
+      }
+    },
+    {
+      "name": "Agendas - Listar operador con filtros",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas?id_medico={{id_medico}}&id_sede=1&fecha=2025-10-20"
+      }
+    },
+    {
+      "name": "Agendas - Crear operador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos && json.datos.id) {",
+              "  pm.collectionVariables.set('agenda_id', json.datos.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"08:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2026-08-20\",\n  \"id_medico\": 3,\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+        },
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "Agendas - Listar medico propia",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "Agendas - Error paciente sin acceso",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "Agendas - Error medico agenda ajena",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"13:00\",\n  \"hora_salida\": \"16:00\",\n  \"fecha\": \"2026-08-20\",\n  \"id_medico\": 999,\n  \"id_especialidad\": 1,\n  \"id_sede\": 1\n}"
+        },
+        "url": "{{base_url}}/agendas"
+      }
+    }
+  ]
+}
