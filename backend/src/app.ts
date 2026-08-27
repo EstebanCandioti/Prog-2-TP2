@@ -5,6 +5,7 @@ import { coberturaRoutes } from './routes/coberturaRoutes';
 import { especialidadRoutes } from './routes/especialidadRoutes';
 import { healthRoutes } from './routes/healthRoutes';
 import { sedeRoutes } from './routes/sedeRoutes';
+import { turnoRoutes } from './routes/turnoRoutes';
 import { usuarioRoutes } from './routes/usuarioRoutes';
 import { errorHandler } from './middlewares/errorHandler';
 import { responder } from './utils/respuesta';
@@ -18,6 +19,7 @@ app.use(agendaRoutes);
 app.use(coberturaRoutes);
 app.use(especialidadRoutes);
 app.use(sedeRoutes);
+app.use(turnoRoutes);
 app.use(usuarioRoutes);
 app.use('/auth', authRoutes);
 
