@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { crearNotificacion } from '../services/notificacionService';
 import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
@@ -159,10 +160,7 @@ export const crearTurno = async (req: AuthRequest, res: Response): Promise<void>
 
   const mensaje = `Tu turno del ${fecha} a las ${hora} fue confirmado.`;
 
-  await pool.query(
-    'INSERT INTO notificacion (id_usuario, tipo, mensaje, leida) VALUES (?, ?, ?, ?)',
-    [idPaciente, 'turno_confirmado', mensaje, 0]
-  );
+  await crearNotificacion(idPaciente, 'turno_confirmado', mensaje);
 
   const [turnos] = await pool.query<RowDataPacket[]>('SELECT * FROM turno WHERE id = ?', [resultado.insertId]);
 
@@ -197,12 +195,7 @@ export const cancelarTurno = async (req: AuthRequest, res: Response): Promise<vo
 
   const mensaje = `Tu turno del ${turno.fecha} a las ${turno.hora} fue cancelado.`;
 
-  await pool.query('INSERT INTO notificacion (id_usuario, tipo, mensaje, leida) VALUES (?, ?, ?, ?)', [
-    turno.id_paciente,
-    'turno_cancelado',
-    mensaje,
-    0
-  ]);
+  await crearNotificacion(turno.id_paciente, 'turno_cancelado', mensaje);
 
   const [turnos] = await pool.query<RowDataPacket[]>('SELECT * FROM turno WHERE id = ?', [id]);
 
@@ -237,12 +230,7 @@ export const atenderTurno = async (req: AuthRequest, res: Response): Promise<voi
 
   const mensaje = `Tu turno del ${turno.fecha} a las ${turno.hora} fue atendido.`;
 
-  await pool.query('INSERT INTO notificacion (id_usuario, tipo, mensaje, leida) VALUES (?, ?, ?, ?)', [
-    turno.id_paciente,
-    'turno_atendido',
-    mensaje,
-    0
-  ]);
+  await crearNotificacion(turno.id_paciente, 'turno_atendido', mensaje);
 
   const [turnos] = await pool.query<RowDataPacket[]>('SELECT * FROM turno WHERE id = ?', [id]);
 
