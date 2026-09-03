@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { registrarAuditoria } from '../services/auditoriaService';
+import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
 interface UsuarioBody {
@@ -71,10 +73,15 @@ export const obtenerUsuarioPorId = async (req: Request, res: Response): Promise<
   responder(res, 200, 'ok', usuarios[0]);
 };
 
-export const actualizarUsuario = async (req: Request, res: Response): Promise<void> => {
+export const actualizarUsuario = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
+    return;
+  }
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
     return;
   }
 
@@ -110,13 +117,20 @@ export const actualizarUsuario = async (req: Request, res: Response): Promise<vo
 
   const [usuarios] = await pool.query<RowDataPacket[]>(`SELECT ${usuarioPublicoSelect} FROM usuario WHERE id = ?`, [id]);
 
+  await registrarAuditoria(req.usuario.id, 'MODIFICACION', 'usuario', id, `Modificacion del usuario ${id}`);
+
   responder(res, 200, 'ok', usuarios[0]);
 };
 
-export const eliminarUsuario = async (req: Request, res: Response): Promise<void> => {
+export const eliminarUsuario = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
+    return;
+  }
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
     return;
   }
 
@@ -126,6 +140,8 @@ export const eliminarUsuario = async (req: Request, res: Response): Promise<void
     responder(res, 404, 'Usuario no encontrado');
     return;
   }
+
+  await registrarAuditoria(req.usuario.id, 'BAJA', 'usuario', id, `Baja del usuario ${id}`);
 
   responder(res, 200, 'ok', null);
 };

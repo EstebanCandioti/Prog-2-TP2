@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ResultSetHeader } from 'mysql2';
 import { pool } from '../config/db';
 import { requireJwtSecret } from '../config/env';
+import { registrarAuditoria } from '../services/auditoriaService';
 import { AuthRequest, JwtPayload } from '../types/auth';
 import { UsuarioRow } from '../types/usuario';
 import { responder } from '../utils/respuesta';
@@ -81,6 +82,8 @@ export const registro = async (req: Request, res: Response): Promise<void> => {
     `SELECT ${usuarioPublicoSelect} FROM usuario WHERE id = ? LIMIT 1`,
     [resultado.insertId]
   );
+
+  await registrarAuditoria(resultado.insertId, 'ALTA', 'usuario', resultado.insertId, `Alta del usuario ${resultado.insertId}`);
 
   responder(res, 201, 'ok', usuarios[0]);
 };

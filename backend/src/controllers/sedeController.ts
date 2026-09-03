@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { registrarAuditoria } from '../services/auditoriaService';
+import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
 interface SedeBody {
@@ -46,9 +48,14 @@ export const obtenerSedePorId = async (req: Request, res: Response): Promise<voi
   responder(res, 200, 'ok', sedes[0]);
 };
 
-export const crearSede = async (req: Request, res: Response): Promise<void> => {
+export const crearSede = async (req: AuthRequest, res: Response): Promise<void> => {
   const body = req.body as SedeBody;
   const { nombre, direccion, telefono } = body;
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
+    return;
+  }
 
   if (!camposSedeCompletos(body)) {
     responder(res, 400, 'Faltan campos obligatorios');
@@ -62,10 +69,12 @@ export const crearSede = async (req: Request, res: Response): Promise<void> => {
 
   const [sedes] = await pool.query<RowDataPacket[]>('SELECT * FROM sede WHERE id = ?', [resultado.insertId]);
 
+  await registrarAuditoria(req.usuario.id, 'ALTA', 'sede', resultado.insertId, `Alta de sede ${nombre}`);
+
   responder(res, 201, 'ok', sedes[0]);
 };
 
-export const actualizarSede = async (req: Request, res: Response): Promise<void> => {
+export const actualizarSede = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
@@ -74,6 +83,11 @@ export const actualizarSede = async (req: Request, res: Response): Promise<void>
 
   const body = req.body as SedeBody;
   const { nombre, direccion, telefono } = body;
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
+    return;
+  }
 
   if (!camposSedeCompletos(body)) {
     responder(res, 400, 'Faltan campos obligatorios');
@@ -92,13 +106,20 @@ export const actualizarSede = async (req: Request, res: Response): Promise<void>
 
   const [sedes] = await pool.query<RowDataPacket[]>('SELECT * FROM sede WHERE id = ?', [id]);
 
+  await registrarAuditoria(req.usuario.id, 'MODIFICACION', 'sede', id, `Modificacion de sede ${id}`);
+
   responder(res, 200, 'ok', sedes[0]);
 };
 
-export const eliminarSede = async (req: Request, res: Response): Promise<void> => {
+export const eliminarSede = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
+    return;
+  }
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
     return;
   }
 
@@ -125,6 +146,8 @@ export const eliminarSede = async (req: Request, res: Response): Promise<void> =
     responder(res, 404, 'Sede no encontrada');
     return;
   }
+
+  await registrarAuditoria(req.usuario.id, 'BAJA', 'sede', id, `Baja de sede ${id}`);
 
   responder(res, 200, 'ok', null);
 };

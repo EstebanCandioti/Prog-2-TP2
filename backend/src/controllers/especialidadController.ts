@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { registrarAuditoria } from '../services/auditoriaService';
+import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
 interface EspecialidadBody {
@@ -40,8 +42,13 @@ export const obtenerEspecialidadPorId = async (req: Request, res: Response): Pro
   responder(res, 200, 'ok', especialidades[0]);
 };
 
-export const crearEspecialidad = async (req: Request, res: Response): Promise<void> => {
+export const crearEspecialidad = async (req: AuthRequest, res: Response): Promise<void> => {
   const { descripcion } = req.body as EspecialidadBody;
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
+    return;
+  }
 
   if (!descripcion) {
     responder(res, 400, 'La descripcion es obligatoria');
@@ -56,10 +63,18 @@ export const crearEspecialidad = async (req: Request, res: Response): Promise<vo
     resultado.insertId
   ]);
 
+  await registrarAuditoria(
+    req.usuario.id,
+    'ALTA',
+    'especialidad',
+    resultado.insertId,
+    `Alta de especialidad ${descripcion}`
+  );
+
   responder(res, 201, 'ok', especialidades[0]);
 };
 
-export const actualizarEspecialidad = async (req: Request, res: Response): Promise<void> => {
+export const actualizarEspecialidad = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
@@ -67,6 +82,11 @@ export const actualizarEspecialidad = async (req: Request, res: Response): Promi
   }
 
   const { descripcion } = req.body as EspecialidadBody;
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
+    return;
+  }
 
   if (!descripcion) {
     responder(res, 400, 'La descripcion es obligatoria');
@@ -85,13 +105,20 @@ export const actualizarEspecialidad = async (req: Request, res: Response): Promi
 
   const [especialidades] = await pool.query<RowDataPacket[]>('SELECT * FROM especialidad WHERE id = ?', [id]);
 
+  await registrarAuditoria(req.usuario.id, 'MODIFICACION', 'especialidad', id, `Modificacion de especialidad ${id}`);
+
   responder(res, 200, 'ok', especialidades[0]);
 };
 
-export const eliminarEspecialidad = async (req: Request, res: Response): Promise<void> => {
+export const eliminarEspecialidad = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 
   if (id === null) {
+    return;
+  }
+
+  if (!req.usuario) {
+    responder(res, 401, 'Token no verificado');
     return;
   }
 
@@ -111,6 +138,8 @@ export const eliminarEspecialidad = async (req: Request, res: Response): Promise
     responder(res, 404, 'Especialidad no encontrada');
     return;
   }
+
+  await registrarAuditoria(req.usuario.id, 'BAJA', 'especialidad', id, `Baja de especialidad ${id}`);
 
   responder(res, 200, 'ok', null);
 };

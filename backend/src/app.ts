@@ -1,6 +1,7 @@
 import express from 'express';
 import { agendaRoutes } from './routes/agendaRoutes';
 import { authRoutes } from './routes/authRoutes';
+import { auditoriaRoutes } from './routes/auditoriaRoutes';
 import { coberturaRoutes } from './routes/coberturaRoutes';
 import { especialidadRoutes } from './routes/especialidadRoutes';
 import { historialClinicoRoutes } from './routes/historialClinicoRoutes';
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use(healthRoutes);
 app.use(agendaRoutes);
+app.use(auditoriaRoutes);
 app.use(coberturaRoutes);
 app.use(especialidadRoutes);
 app.use(historialClinicoRoutes);

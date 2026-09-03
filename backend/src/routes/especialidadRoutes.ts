@@ -12,7 +12,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 export const especialidadRoutes = Router();
 
-especialidadRoutes.use('/especialidades', verificarToken, verificarRol('admin', 'administrador'));
+especialidadRoutes.use('/especialidades', verificarToken, verificarRol('admin'));
 
 especialidadRoutes.get('/especialidades', asyncHandler(listarEspecialidades));
 especialidadRoutes.get('/especialidades/:id', asyncHandler(obtenerEspecialidadPorId));

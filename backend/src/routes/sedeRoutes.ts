@@ -12,7 +12,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 export const sedeRoutes = Router();
 
-sedeRoutes.use('/sedes', verificarToken, verificarRol('admin', 'administrador'));
+sedeRoutes.use('/sedes', verificarToken, verificarRol('admin'));
 
 sedeRoutes.get('/sedes', asyncHandler(listarSedes));
 sedeRoutes.get('/sedes/:id', asyncHandler(obtenerSedePorId));
