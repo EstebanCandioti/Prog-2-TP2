@@ -1,0 +1,476 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Semana 3 Runner Ordenado",
+    "description": "Coleccion para ejecutar la semana 3 con Postman Runner. Crea agenda y turnos temporales para poder cancelar, atender, cargar historial y consultar notificaciones.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const estadosEsperados = {",
+          "  '00 - Preparar variables y health': 200,",
+          "  '01 - Login paciente': 200,",
+          "  '02 - Login operador': 200,",
+          "  '03 - Login medico': 200,",
+          "  '04 - Crear agenda para turnos': 201,",
+          "  '05 - Crear turno para cancelar': 201,",
+          "  '06 - Rechazado por superposicion esperado': 409,",
+          "  '07 - Cancelar turno': 200,",
+          "  '08 - Crear turno para atender': 201,",
+          "  '09 - Mis turnos paciente': 200,",
+          "  '10 - Turnos medico por fecha': 200,",
+          "  '11 - Turnos sede por fecha': 200,",
+          "  '12 - Atender turno': 200,",
+          "  '13 - Crear historial clinico': 201,",
+          "  '14 - Historial duplicado esperado': 409,",
+          "  '15 - Historial como paciente': 200,",
+          "  '16 - Historial como medico': 200,",
+          "  '17 - Listar notificaciones paciente': 200,",
+          "  '18 - Marcar notificacion como leida': 200",
+          "};",
+          "",
+          "const esperado = estadosEsperados[pm.info.requestName];",
+          "",
+          "pm.test(`Status esperado: ${esperado}`, () => {",
+          "  pm.response.to.have.status(esperado);",
+          "});",
+          "",
+          "pm.test('Formato de respuesta del proyecto', () => {",
+          "  const json = pm.response.json();",
+          "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+          "  pm.expect(json).to.have.property('estado');",
+          "  pm.expect(json).to.have.property('datos');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "paciente_token",
+      "value": ""
+    },
+    {
+      "key": "operador_token",
+      "value": ""
+    },
+    {
+      "key": "medico_token",
+      "value": ""
+    },
+    {
+      "key": "id_paciente",
+      "value": "2"
+    },
+    {
+      "key": "id_medico",
+      "value": "3"
+    },
+    {
+      "key": "id_especialidad",
+      "value": "1"
+    },
+    {
+      "key": "id_sede",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Preparar variables y health",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString().slice(-7);",
+              "const fecha = new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);",
+              "pm.collectionVariables.set('run_suffix', suffix);",
+              "pm.collectionVariables.set('run_fecha', fecha);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "01 - Login paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('paciente_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "02 - Login operador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('operador_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "03 - Login medico",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('medico_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "04 - Crear agenda para turnos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:00\",\n  \"fecha\": \"{{run_fecha}}\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+        },
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "05 - Crear turno para cancelar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('turno_cancelar_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Turno para cancelar\"\n}"
+        },
+        "url": "{{base_url}}/turnos"
+      }
+    },
+    {
+      "name": "06 - Rechazado por superposicion esperado",
+      "request": {
+        "description": "Debe responder 409 porque usa el mismo medico, fecha y hora del turno confirmado anterior.",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Turno superpuesto\"\n}"
+        },
+        "url": "{{base_url}}/turnos"
+      }
+    },
+    {
+      "name": "07 - Cancelar turno",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/{{turno_cancelar_id}}/cancelar"
+      }
+    },
+    {
+      "name": "08 - Crear turno para atender",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('turno_atender_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Turno para atender\"\n}"
+        },
+        "url": "{{base_url}}/turnos"
+      }
+    },
+    {
+      "name": "09 - Mis turnos paciente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/mis-turnos"
+      }
+    },
+    {
+      "name": "10 - Turnos medico por fecha",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/medico?fecha={{run_fecha}}"
+      }
+    },
+    {
+      "name": "11 - Turnos sede por fecha",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/sede?fecha={{run_fecha}}"
+      }
+    },
+    {
+      "name": "12 - Atender turno",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+      }
+    },
+    {
+      "name": "13 - Crear historial clinico",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico semana 3 {{run_suffix}}\",\n  \"tratamiento\": \"Reposo y control\",\n  \"observaciones\": \"Generado desde Runner\"\n}"
+        },
+        "url": "{{base_url}}/historial-clinico"
+      }
+    },
+    {
+      "name": "14 - Historial duplicado esperado",
+      "request": {
+        "description": "Debe responder 409 porque ya existe historial para el mismo turno.",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico duplicado\"\n}"
+        },
+        "url": "{{base_url}}/historial-clinico"
+      }
+    },
+    {
+      "name": "15 - Historial como paciente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/historial-clinico/paciente/{{id_paciente}}"
+      }
+    },
+    {
+      "name": "16 - Historial como medico",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/historial-clinico/paciente/{{id_paciente}}"
+      }
+    },
+    {
+      "name": "17 - Listar notificaciones paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (Array.isArray(json.datos) && json.datos[0]?.id) pm.collectionVariables.set('notificacion_id', json.datos[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/notificaciones"
+      }
+    },
+    {
+      "name": "18 - Marcar notificacion como leida",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/notificaciones/{{notificacion_id}}/leida"
+      }
+    }
+  ]
+}

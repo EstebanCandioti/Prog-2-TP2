@@ -1,0 +1,214 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Semana 1 Runner Ordenado",
+    "description": "Coleccion para ejecutar la semana 1 completa con Postman Runner. Usa DNI y email dinamicos para evitar duplicados.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const estadosEsperados = {",
+          "  '00 - Preparar datos y health': 200,",
+          "  '01 - Listar coberturas disponibles': 200,",
+          "  '02 - Registro paciente': 201,",
+          "  '03 - Registro duplicado esperado': 409,",
+          "  '04 - Login paciente creado': 200,",
+          "  '05 - Login credenciales invalidas esperado': 401,",
+          "  '06 - Perfil': 200,",
+          "  '07 - Perfil sin token esperado': 401,",
+          "  '08 - Perfil admin con paciente esperado': 403",
+          "};",
+          "",
+          "const esperado = estadosEsperados[pm.info.requestName];",
+          "",
+          "pm.test(`Status esperado: ${esperado}`, () => {",
+          "  pm.response.to.have.status(esperado);",
+          "});",
+          "",
+          "pm.test('Formato de respuesta del proyecto', () => {",
+          "  const json = pm.response.json();",
+          "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+          "  pm.expect(json).to.have.property('estado');",
+          "  pm.expect(json).to.have.property('datos');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "id_cobertura",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Preparar datos y health",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString().slice(-7);",
+              "pm.collectionVariables.set('run_suffix', suffix);",
+              "pm.collectionVariables.set('run_dni', `8${suffix}`);",
+              "pm.collectionVariables.set('run_email', `sem1.${suffix}@example.com`);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "01 - Listar coberturas disponibles",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/coberturas-disponibles"
+      }
+    },
+    {
+      "name": "02 - Registro paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('paciente_creado_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Semana1\",\n  \"apellido\": \"Runner\",\n  \"dni\": \"{{run_dni}}\",\n  \"email\": \"{{run_email}}\",\n  \"telefono\": \"3424000000\",\n  \"password\": \"Paciente1.\",\n  \"fecha_nacimiento\": \"1995-05-20\",\n  \"id_cobertura\": {{id_cobertura}}\n}"
+        },
+        "url": "{{base_url}}/auth/registro"
+      }
+    },
+    {
+      "name": "03 - Registro duplicado esperado",
+      "request": {
+        "description": "Debe responder 409 porque reutiliza el mismo DNI y email creados en el paso anterior.",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Semana1\",\n  \"apellido\": \"Runner\",\n  \"dni\": \"{{run_dni}}\",\n  \"email\": \"{{run_email}}\",\n  \"telefono\": \"3424000000\",\n  \"password\": \"Paciente1.\",\n  \"fecha_nacimiento\": \"1995-05-20\",\n  \"id_cobertura\": {{id_cobertura}}\n}"
+        },
+        "url": "{{base_url}}/auth/registro"
+      }
+    },
+    {
+      "name": "04 - Login paciente creado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"{{run_dni}}\",\n  \"password\": \"Paciente1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "05 - Login credenciales invalidas esperado",
+      "request": {
+        "description": "Debe responder 401.",
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"{{run_dni}}\",\n  \"password\": \"incorrecta\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "06 - Perfil",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/perfil"
+      }
+    },
+    {
+      "name": "07 - Perfil sin token esperado",
+      "request": {
+        "description": "Debe responder 401.",
+        "method": "GET",
+        "url": "{{base_url}}/auth/perfil"
+      }
+    },
+    {
+      "name": "08 - Perfil admin con paciente esperado",
+      "request": {
+        "description": "Debe responder 403 porque el token es de paciente.",
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/perfil-admin"
+      }
+    }
+  ]
+}

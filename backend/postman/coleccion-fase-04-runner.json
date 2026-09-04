@@ -1,0 +1,1050 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Semana 4 Runner Ordenado",
+    "description": "Coleccion pensada para ejecutarse completa con Collection Runner. Crea datos temporales, guarda ids en variables y prueba los endpoints principales en orden.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const estadosEsperados = {",
+          "  '00 - Preparar variables y health': 200,",
+          "  '01 - Login admin': 200,",
+          "  '02 - Login paciente': 200,",
+          "  '03 - Login operador': 200,",
+          "  '04 - Login medico': 200,",
+          "  '05 - Coberturas disponibles': 200,",
+          "  '06 - Perfil paciente': 200,",
+          "  '07 - Crear cobertura temporal': 201,",
+          "  '08 - Listar coberturas': 200,",
+          "  '09 - Obtener cobertura temporal': 200,",
+          "  '10 - Actualizar cobertura temporal': 200,",
+          "  '11 - Eliminar cobertura temporal': 200,",
+          "  '12 - Crear sede temporal': 201,",
+          "  '13 - Listar sedes': 200,",
+          "  '14 - Obtener sede temporal': 200,",
+          "  '15 - Actualizar sede temporal': 200,",
+          "  '16 - Eliminar sede temporal': 200,",
+          "  '17 - Crear especialidad temporal': 201,",
+          "  '18 - Listar especialidades': 200,",
+          "  '19 - Obtener especialidad temporal': 200,",
+          "  '20 - Actualizar especialidad temporal': 200,",
+          "  '21 - Eliminar especialidad temporal': 200,",
+          "  '22 - Registrar paciente temporal': 201,",
+          "  '23 - Listar usuarios': 200,",
+          "  '24 - Obtener usuario temporal': 200,",
+          "  '25 - Actualizar usuario temporal': 200,",
+          "  '26 - Crear agenda temporal para CRUD': 201,",
+          "  '27 - Listar agendas': 200,",
+          "  '28 - Obtener agenda temporal': 200,",
+          "  '29 - Actualizar agenda temporal': 200,",
+          "  '30 - Eliminar agenda temporal': 200,",
+          "  '31 - Crear agenda para turnos': 201,",
+          "  '32 - Crear turno para cancelar': 201,",
+          "  '33 - Cancelar turno': 200,",
+          "  '34 - Crear turno para atender': 201,",
+          "  '35 - Mis turnos paciente': 200,",
+          "  '36 - Turnos medico por fecha': 200,",
+          "  '37 - Turnos sede por fecha': 200,",
+          "  '38 - Atender turno': 200,",
+          "  '39 - Crear historial clinico': 201,",
+          "  '40 - Historial como paciente': 200,",
+          "  '41 - Historial como medico': 200,",
+          "  '42 - Listar notificaciones': 200,",
+          "  '43 - Marcar notificacion como leida': 200,",
+          "  '44 - Auditoria general': 200,",
+          "  '45 - Auditoria filtrada': 200,",
+          "  '46 - Reporte turnos por especialidad': 200,",
+          "  '47 - Reporte turnos por sede': 200,",
+          "  '48 - Reporte ranking medicos': 200,",
+          "  '49 - Reporte tasa cancelacion': 200",
+          "};",
+          "",
+          "const esperado = estadosEsperados[pm.info.requestName];",
+          "",
+          "pm.test(`Status esperado: ${esperado}`, () => {",
+          "  pm.response.to.have.status(esperado);",
+          "});",
+          "",
+          "pm.test('Formato de respuesta del proyecto', () => {",
+          "  const json = pm.response.json();",
+          "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+          "  pm.expect(json).to.have.property('estado');",
+          "  pm.expect(json).to.have.property('datos');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "paciente_token",
+      "value": ""
+    },
+    {
+      "key": "operador_token",
+      "value": ""
+    },
+    {
+      "key": "medico_token",
+      "value": ""
+    },
+    {
+      "key": "id_paciente",
+      "value": "2"
+    },
+    {
+      "key": "id_medico",
+      "value": "3"
+    },
+    {
+      "key": "id_cobertura",
+      "value": "1"
+    },
+    {
+      "key": "id_sede",
+      "value": "1"
+    },
+    {
+      "key": "id_especialidad",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Preparar variables y health",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const suffix = Date.now().toString().slice(-7);",
+              "const fecha = new Date(Date.now() + 35 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);",
+              "pm.collectionVariables.set('run_suffix', suffix);",
+              "pm.collectionVariables.set('run_fecha', fecha);",
+              "pm.collectionVariables.set('run_dni', `9${suffix}`);",
+              "pm.collectionVariables.set('run_email', `runner.${suffix}@example.com`);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "description": "Publico. Inicializa variables dinamicas para que el runner pueda repetirse.",
+        "method": "GET",
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "01 - Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('admin_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"Admin1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "02 - Login paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('paciente_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "03 - Login operador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('operador_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "04 - Login medico",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.token) pm.collectionVariables.set('medico_token', json.datos.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "05 - Coberturas disponibles",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/coberturas-disponibles"
+      }
+    },
+    {
+      "name": "06 - Perfil paciente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/auth/perfil"
+      }
+    },
+    {
+      "name": "07 - Crear cobertura temporal",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('temp_cobertura_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cobertura {{run_suffix}}\"\n}"
+        },
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "08 - Listar coberturas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/coberturas"
+      }
+    },
+    {
+      "name": "09 - Obtener cobertura temporal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/coberturas/{{temp_cobertura_id}}"
+      }
+    },
+    {
+      "name": "10 - Actualizar cobertura temporal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Cobertura actualizada {{run_suffix}}\"\n}"
+        },
+        "url": "{{base_url}}/coberturas/{{temp_cobertura_id}}"
+      }
+    },
+    {
+      "name": "11 - Eliminar cobertura temporal",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/coberturas/{{temp_cobertura_id}}"
+      }
+    },
+    {
+      "name": "12 - Crear sede temporal",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('temp_sede_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede {{run_suffix}}\",\n  \"direccion\": \"Calle {{run_suffix}}\",\n  \"telefono\": \"3424999999\"\n}"
+        },
+        "url": "{{base_url}}/sedes"
+      }
+    },
+    {
+      "name": "13 - Listar sedes",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/sedes"
+      }
+    },
+    {
+      "name": "14 - Obtener sede temporal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/sedes/{{temp_sede_id}}"
+      }
+    },
+    {
+      "name": "15 - Actualizar sede temporal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Sede actualizada {{run_suffix}}\",\n  \"direccion\": \"Calle actualizada {{run_suffix}}\",\n  \"telefono\": \"3424888888\"\n}"
+        },
+        "url": "{{base_url}}/sedes/{{temp_sede_id}}"
+      }
+    },
+    {
+      "name": "16 - Eliminar sede temporal",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/sedes/{{temp_sede_id}}"
+      }
+    },
+    {
+      "name": "17 - Crear especialidad temporal",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('temp_especialidad_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Especialidad {{run_suffix}}\"\n}"
+        },
+        "url": "{{base_url}}/especialidades"
+      }
+    },
+    {
+      "name": "18 - Listar especialidades",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/especialidades"
+      }
+    },
+    {
+      "name": "19 - Obtener especialidad temporal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/especialidades/{{temp_especialidad_id}}"
+      }
+    },
+    {
+      "name": "20 - Actualizar especialidad temporal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"descripcion\": \"Especialidad actualizada {{run_suffix}}\"\n}"
+        },
+        "url": "{{base_url}}/especialidades/{{temp_especialidad_id}}"
+      }
+    },
+    {
+      "name": "21 - Eliminar especialidad temporal",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/especialidades/{{temp_especialidad_id}}"
+      }
+    },
+    {
+      "name": "22 - Registrar paciente temporal",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('temp_usuario_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Runner\",\n  \"apellido\": \"Postman\",\n  \"dni\": \"{{run_dni}}\",\n  \"email\": \"{{run_email}}\",\n  \"telefono\": \"3424000000\",\n  \"password\": \"Paciente1.\",\n  \"fecha_nacimiento\": \"2000-01-15\",\n  \"id_cobertura\": {{id_cobertura}}\n}"
+        },
+        "url": "{{base_url}}/auth/registro"
+      }
+    },
+    {
+      "name": "23 - Listar usuarios",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/usuarios"
+      }
+    },
+    {
+      "name": "24 - Obtener usuario temporal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/usuarios/{{temp_usuario_id}}"
+      }
+    },
+    {
+      "name": "25 - Actualizar usuario temporal",
+      "request": {
+        "description": "No se elimina este usuario en el runner porque queda referenciado por auditoria.",
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Runner Actualizado\",\n  \"apellido\": \"Postman\",\n  \"fecha_nacimiento\": \"2000-01-15\",\n  \"rol\": \"paciente\",\n  \"email\": \"{{run_email}}\",\n  \"telefono\": \"3424111111\",\n  \"id_sede\": null,\n  \"id_cobertura\": {{id_cobertura}}\n}"
+        },
+        "url": "{{base_url}}/usuarios/{{temp_usuario_id}}"
+      }
+    },
+    {
+      "name": "26 - Crear agenda temporal para CRUD",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('temp_agenda_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"08:00\",\n  \"hora_salida\": \"09:00\",\n  \"fecha\": \"{{run_fecha}}\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+        },
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "27 - Listar agendas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas?id_sede={{id_sede}}&fecha={{run_fecha}}"
+      }
+    },
+    {
+      "name": "28 - Obtener agenda temporal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas/{{temp_agenda_id}}"
+      }
+    },
+    {
+      "name": "29 - Actualizar agenda temporal",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"08:00\",\n  \"hora_salida\": \"09:30\",\n  \"fecha\": \"{{run_fecha}}\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+        },
+        "url": "{{base_url}}/agendas/{{temp_agenda_id}}"
+      }
+    },
+    {
+      "name": "30 - Eliminar agenda temporal",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          }
+        ],
+        "url": "{{base_url}}/agendas/{{temp_agenda_id}}"
+      }
+    },
+    {
+      "name": "31 - Crear agenda para turnos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:00\",\n  \"fecha\": \"{{run_fecha}}\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+        },
+        "url": "{{base_url}}/agendas"
+      }
+    },
+    {
+      "name": "32 - Crear turno para cancelar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('turno_cancelar_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Turno para cancelar\"\n}"
+        },
+        "url": "{{base_url}}/turnos"
+      }
+    },
+    {
+      "name": "33 - Cancelar turno",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/{{turno_cancelar_id}}/cancelar"
+      }
+    },
+    {
+      "name": "34 - Crear turno para atender",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.datos?.id) pm.collectionVariables.set('turno_atender_id', json.datos.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Turno para atender\"\n}"
+        },
+        "url": "{{base_url}}/turnos"
+      }
+    },
+    {
+      "name": "35 - Mis turnos paciente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/mis-turnos"
+      }
+    },
+    {
+      "name": "36 - Turnos medico por fecha",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/medico?fecha={{run_fecha}}"
+      }
+    },
+    {
+      "name": "37 - Turnos sede por fecha",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{operador_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/sede?fecha={{run_fecha}}"
+      }
+    },
+    {
+      "name": "38 - Atender turno",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+      }
+    },
+    {
+      "name": "39 - Crear historial clinico",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico runner {{run_suffix}}\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Generado desde Postman Runner\"\n}"
+        },
+        "url": "{{base_url}}/historial-clinico"
+      }
+    },
+    {
+      "name": "40 - Historial como paciente",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/historial-clinico/paciente/{{id_paciente}}"
+      }
+    },
+    {
+      "name": "41 - Historial como medico",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{medico_token}}"
+          }
+        ],
+        "url": "{{base_url}}/historial-clinico/paciente/{{id_paciente}}"
+      }
+    },
+    {
+      "name": "42 - Listar notificaciones",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (Array.isArray(json.datos) && json.datos[0]?.id) pm.collectionVariables.set('notificacion_id', json.datos[0].id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/notificaciones"
+      }
+    },
+    {
+      "name": "43 - Marcar notificacion como leida",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{paciente_token}}"
+          }
+        ],
+        "url": "{{base_url}}/notificaciones/{{notificacion_id}}/leida"
+      }
+    },
+    {
+      "name": "44 - Auditoria general",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/auditoria"
+      }
+    },
+    {
+      "name": "45 - Auditoria filtrada",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/auditoria?entidad=usuario&accion=ALTA"
+      }
+    },
+    {
+      "name": "46 - Reporte turnos por especialidad",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/reportes/turnos-por-especialidad?fecha_desde={{run_fecha}}&fecha_hasta={{run_fecha}}"
+      }
+    },
+    {
+      "name": "47 - Reporte turnos por sede",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/reportes/turnos-por-sede?fecha_desde={{run_fecha}}&fecha_hasta={{run_fecha}}"
+      }
+    },
+    {
+      "name": "48 - Reporte ranking medicos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/reportes/ranking-medicos?fecha_desde={{run_fecha}}&fecha_hasta={{run_fecha}}"
+      }
+    },
+    {
+      "name": "49 - Reporte tasa cancelacion",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": "{{base_url}}/reportes/tasa-cancelacion?fecha_desde={{run_fecha}}&fecha_hasta={{run_fecha}}"
+      }
+    }
+  ]
+}

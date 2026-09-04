@@ -1,0 +1,1033 @@
+{
+  "info": {
+    "name": "TP2 Prog 2 - Backend Semana 4 Completa",
+    "description": "Coleccion completa del backend. Todas las respuestas usan el formato del proyecto: { codigo, estado, datos }.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    },
+    {
+      "key": "paciente_token",
+      "value": ""
+    },
+    {
+      "key": "operador_token",
+      "value": ""
+    },
+    {
+      "key": "medico_token",
+      "value": ""
+    },
+    {
+      "key": "id_usuario",
+      "value": "2"
+    },
+    {
+      "key": "id_paciente",
+      "value": "2"
+    },
+    {
+      "key": "id_medico",
+      "value": "3"
+    },
+    {
+      "key": "id_cobertura",
+      "value": "1"
+    },
+    {
+      "key": "id_sede",
+      "value": "1"
+    },
+    {
+      "key": "id_especialidad",
+      "value": "1"
+    },
+    {
+      "key": "id_agenda",
+      "value": "1"
+    },
+    {
+      "key": "turno_id",
+      "value": ""
+    },
+    {
+      "key": "turno_atender_id",
+      "value": ""
+    },
+    {
+      "key": "notificacion_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registro paciente",
+          "request": {
+            "description": "Rol: publico. Body: nombre, apellido, dni, email, telefono opcional, password, fecha_nacimiento, id_cobertura. Exito: 201. Errores: 400 faltan campos, 409 DNI o email repetido.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Postman\",\n  \"dni\": \"45000111\",\n  \"email\": \"prueba.postman@example.com\",\n  \"telefono\": \"3424001111\",\n  \"password\": \"Paciente1.\",\n  \"fecha_nacimiento\": \"2000-01-15\",\n  \"id_cobertura\": {{id_cobertura}}\n}"
+            },
+            "url": "{{base_url}}/auth/registro"
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.token) {",
+                  "  pm.collectionVariables.set('admin_token', json.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: publico. Body: dni, password. Exito: 200 con token. Errores: 400 faltan datos, 401 credenciales invalidas.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"Admin1.\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Login paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.token) {",
+                  "  pm.collectionVariables.set('paciente_token', json.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: publico. Exito: 200 con token de paciente.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Login operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.token) {",
+                  "  pm.collectionVariables.set('operador_token', json.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: publico. Exito: 200 con token de operador.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Login medico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.token) {",
+                  "  pm.collectionVariables.set('medico_token', json.datos.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: publico. Exito: 200 con token de medico.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Perfil logueado",
+          "request": {
+            "description": "Rol: cualquier usuario autenticado. Exito: 200 con datos publicos del usuario. Errores: 401 token invalido, 404 usuario no encontrado.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/perfil"
+          }
+        },
+        {
+          "name": "Perfil paciente",
+          "request": {
+            "description": "Rol: paciente. Exito: 200. Error esperado con otro rol: 403.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/perfil-paciente"
+          }
+        },
+        {
+          "name": "Perfil admin",
+          "request": {
+            "description": "Rol: admin. Exito: 200. Error esperado con otro rol: 403.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auth/perfil-admin"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coberturas",
+      "item": [
+        {
+          "name": "Listar disponibles",
+          "request": {
+            "description": "Rol: publico. Exito: 200. Se usa para registro de pacientes.",
+            "method": "GET",
+            "url": "{{base_url}}/coberturas-disponibles"
+          }
+        },
+        {
+          "name": "Listar",
+          "request": {
+            "description": "Rol: admin. Exito: 200. Error esperado con otro rol: 403.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/coberturas"
+          }
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "description": "Rol: admin. Parametro: id en URL. Exito: 200. Errores: 400 id no numerico, 404 no encontrada.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/coberturas/{{id_cobertura}}"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "description": "Rol: admin. Body: nombre. Exito: 201. Errores: 400 nombre obligatorio. Registra auditoria ALTA.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cobertura Postman\"\n}"
+            },
+            "url": "{{base_url}}/coberturas"
+          }
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Body: nombre. Exito: 200. Errores: 400, 404. Registra auditoria MODIFICACION.",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cobertura Actualizada\"\n}"
+            },
+            "url": "{{base_url}}/coberturas/{{id_cobertura}}"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Exito: 200 con datos null. Errores: 404, 409 si tiene usuarios asociados. Registra auditoria BAJA.",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/coberturas/{{id_cobertura}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sedes",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "description": "Rol: admin. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/sedes"
+          }
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Exito: 200. Errores: 400, 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/sedes/{{id_sede}}"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "description": "Rol: admin. Body: nombre, direccion, telefono. Exito: 201. Error: 400. Registra auditoria ALTA.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sede Postman\",\n  \"direccion\": \"Calle 123\",\n  \"telefono\": \"3424999999\"\n}"
+            },
+            "url": "{{base_url}}/sedes"
+          }
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "description": "Rol: admin. Body: nombre, direccion, telefono. Exito: 200. Errores: 400, 404. Registra auditoria MODIFICACION.",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sede Actualizada\",\n  \"direccion\": \"Calle 456\",\n  \"telefono\": \"3424888888\"\n}"
+            },
+            "url": "{{base_url}}/sedes/{{id_sede}}"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "description": "Rol: admin. Exito: 200 con datos null. Errores: 404, 409 si tiene medicos, operadores o agendas asociadas. Registra auditoria BAJA.",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/sedes/{{id_sede}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Especialidades",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "description": "Rol: admin. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/especialidades"
+          }
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Exito: 200. Errores: 400, 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/especialidades/{{id_especialidad}}"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "description": "Rol: admin. Body: descripcion. Exito: 201. Error: 400. Registra auditoria ALTA.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Especialidad Postman\"\n}"
+            },
+            "url": "{{base_url}}/especialidades"
+          }
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "description": "Rol: admin. Body: descripcion. Exito: 200. Errores: 400, 404. Registra auditoria MODIFICACION.",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Especialidad Actualizada\"\n}"
+            },
+            "url": "{{base_url}}/especialidades/{{id_especialidad}}"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "description": "Rol: admin. Exito: 200 con datos null. Errores: 404, 409 si tiene medicos asociados. Registra auditoria BAJA.",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/especialidades/{{id_especialidad}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "description": "Rol: admin. Exito: 200. No devuelve password.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/usuarios"
+          }
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Exito: 200. Errores: 400, 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "description": "Rol: admin. Body: nombre, apellido, fecha_nacimiento, rol, email, telefono, id_sede, id_cobertura. No modifica dni ni password. Exito: 200. Errores: 400, 404, 409 email repetido. Registra auditoria MODIFICACION.",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Franco\",\n  \"apellido\": \"Friggeri\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"rol\": \"paciente\",\n  \"email\": \"asdas@gaasds.com\",\n  \"telefono\": \"342545555\",\n  \"id_sede\": null,\n  \"id_cobertura\": {{id_cobertura}}\n}"
+            },
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "description": "Rol: admin. Parametro: id. Exito: 200 con datos null. Errores: 400, 404. Registra auditoria BAJA.",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{id_usuario}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agendas",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "description": "Roles: medico, operador. Query opcional: id_medico, id_sede, fecha. Si el rol es medico, solo ve su propia agenda. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/agendas?id_sede={{id_sede}}&fecha=2025-10-20"
+          }
+        },
+        {
+          "name": "Obtener por id",
+          "request": {
+            "description": "Roles: medico, operador. Parametro: id. El medico solo puede obtener agenda propia. Exito: 200. Errores: 400, 403, 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/agendas/{{id_agenda}}"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "description": "Roles: medico, operador. Body: hora_entrada, hora_salida, fecha, id_medico, id_especialidad, id_sede. El medico solo gestiona su propia agenda. Exito: 201. Errores: 400, 403.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:00\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
+            "url": "{{base_url}}/agendas"
+          }
+        },
+        {
+          "name": "Actualizar",
+          "request": {
+            "description": "Roles: medico, operador. Body completo igual al alta. Exito: 200. Errores: 400, 403, 404.",
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:30\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
+            "url": "{{base_url}}/agendas/{{id_agenda}}"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "description": "Roles: medico, operador. El medico solo elimina agenda propia. Exito: 200 con datos null. Errores: 400, 403, 404.",
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/agendas/{{id_agenda}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Turnos",
+      "item": [
+        {
+          "name": "Crear como paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.id) {",
+                  "  pm.collectionVariables.set('turno_id', json.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Roles: paciente, operador. Como paciente toma el id del token. Body: id_medico, id_especialidad, id_sede, fecha, hora, nota. Exito: 201. Errores: 400, 403, 409.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Consulta de prueba\"\n}"
+            },
+            "url": "{{base_url}}/turnos"
+          }
+        },
+        {
+          "name": "Crear como operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.id) {",
+                  "  pm.collectionVariables.set('turno_atender_id', json.datos.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: operador. Body igual al paciente, pero agrega id_paciente. El operador solo puede crear turnos de su sede. Exito: 201. Errores: 400, 403, 409. Guarda el id en turno_atender_id para probar la atencion del turno.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Turno creado por operador\"\n}"
+            },
+            "url": "{{base_url}}/turnos"
+          }
+        },
+        {
+          "name": "Cancelar",
+          "request": {
+            "description": "Roles: paciente, operador, medico. Solo si el turno esta confirmado y pertenece al usuario o su sede. Exito: 200. Errores: 400, 403, 404, 409. Genera notificacion.",
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{turno_id}}/cancelar"
+          }
+        },
+        {
+          "name": "Atender",
+          "request": {
+            "description": "Rol: medico. Solo puede atender turnos propios de su sede y confirmados. Exito: 200. Errores: 400, 403, 404, 409. Genera notificacion.",
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+          }
+        },
+        {
+          "name": "Mis turnos paciente",
+          "request": {
+            "description": "Rol: paciente. Exito: 200 con sus turnos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos"
+          }
+        },
+        {
+          "name": "Turnos medico por fecha",
+          "request": {
+            "description": "Rol: medico. Query obligatoria: fecha. Exito: 200. Error: 400 si falta fecha.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/medico?fecha=2025-10-20"
+          }
+        },
+        {
+          "name": "Turnos sede por fecha",
+          "request": {
+            "description": "Rol: operador. Query obligatoria: fecha. Exito: 200. Error: 400 si falta fecha.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/sede?fecha=2025-10-20"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Historial clinico",
+      "item": [
+        {
+          "name": "Crear",
+          "request": {
+            "description": "Rol: medico. Body: id_turno, diagnostico, tratamiento opcional, observaciones opcional. El turno debe estar atendido, ser del medico y no tener historial cargado. Exito: 201. Errores: 400, 403, 404, 409.",
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico de prueba\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Control en 15 dias\"\n}"
+            },
+            "url": "{{base_url}}/historial-clinico"
+          }
+        },
+        {
+          "name": "Consultar paciente",
+          "request": {
+            "description": "Roles: paciente, medico. El paciente solo puede ver su propio historial completo. El medico solo ve el historial de turnos atendidos por el para ese paciente. Exito: 200. Error: 403 si intenta consultar otro paciente.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/historial-clinico/paciente/{{id_paciente}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Listar propias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.datos && json.datos.length > 0) {",
+                  "  pm.collectionVariables.set('notificacion_id', json.datos[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "description": "Rol: cualquier usuario autenticado. Devuelve solo las notificaciones del usuario logueado. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/notificaciones"
+          }
+        },
+        {
+          "name": "Marcar como leida",
+          "request": {
+            "description": "Rol: cualquier usuario autenticado. Parametro: id. Solo puede marcar notificaciones propias. Exito: 200. Errores: 400, 404.",
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/notificaciones/{{notificacion_id}}/leida"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auditoria",
+      "item": [
+        {
+          "name": "Listar logs",
+          "request": {
+            "description": "Rol: admin. Query opcional: id_usuario, entidad, accion, fecha_desde, fecha_hasta. Acciones validas: ALTA, BAJA, MODIFICACION. Exito: 200. Errores: 400 accion invalida, 403 otro rol.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/auditoria?entidad=usuario&accion=ALTA&fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Turnos por especialidad",
+          "request": {
+            "description": "Rol: admin. Query opcional: fecha_desde, fecha_hasta, estado, id_sede, id_especialidad, id_medico. Exito: 200. Error esperado con otro rol: 403.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/reportes/turnos-por-especialidad?fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+          }
+        },
+        {
+          "name": "Turnos por sede",
+          "request": {
+            "description": "Rol: admin. Query opcional: fecha_desde, fecha_hasta, estado, id_sede, id_especialidad, id_medico. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/reportes/turnos-por-sede?fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+          }
+        },
+        {
+          "name": "Ranking medicos",
+          "request": {
+            "description": "Rol: admin. Query opcional: fecha_desde, fecha_hasta, id_sede, id_especialidad, id_medico. Cuenta solo turnos atendidos. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/reportes/ranking-medicos?fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+          }
+        },
+        {
+          "name": "Tasa cancelacion",
+          "request": {
+            "description": "Rol: admin. Query opcional: fecha_desde, fecha_hasta, id_sede, id_especialidad, id_medico. Calcula turnos cancelados sobre total de turnos del filtro; no usa filtro estado para no alterar la tasa. Exito: 200.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/reportes/tasa-cancelacion?fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Estado del backend",
+          "request": {
+            "description": "Rol: publico. Exito: 200. Sirve para verificar que el servidor esta levantado.",
+            "method": "GET",
+            "url": "{{base_url}}/health"
+          }
+        }
+      ]
+    }
+  ]
+}
