@@ -1,0 +1,110 @@
+<section class="registration-page">
+  <header class="page-heading">
+    <p class="eyebrow">CLÍNICA VIRTUAL</p>
+    <h1>Creá tu cuenta de paciente</h1>
+    <p>Completá tus datos para acceder a tus gestiones de salud.</p>
+  </header>
+
+  <mat-card class="registration-card">
+    <mat-card-content>
+      @if (errorCoberturas()) {
+        <div class="coverage-warning" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>{{ errorCoberturas() }}</span>
+          @if (!cargandoCoberturas() && !coberturas().length) {
+            <button mat-button type="button" (click)="cargarCoberturas()">Reintentar</button>
+          }
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" autocomplete="given-name" maxlength="30">
+            @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
+              <mat-error>Ingresá tu nombre.</mat-error>
+            } @else if (form.controls.nombre.hasError('maxlength')) {
+              <mat-error>El nombre no puede superar 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Apellido</mat-label>
+            <input matInput formControlName="apellido" autocomplete="family-name" maxlength="30">
+            @if (form.controls.apellido.hasError('required') && form.controls.apellido.touched) {
+              <mat-error>Ingresá tu apellido.</mat-error>
+            } @else if (form.controls.apellido.hasError('maxlength')) {
+              <mat-error>El apellido no puede superar 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>DNI</mat-label>
+            <input matInput formControlName="dni" inputmode="numeric" autocomplete="off" maxlength="8">
+            @if (form.controls.dni.hasError('required') && form.controls.dni.touched) {
+              <mat-error>Ingresá tu DNI.</mat-error>
+            } @else if (form.controls.dni.hasError('pattern') && form.controls.dni.touched) {
+              <mat-error>El DNI debe tener entre 7 y 8 números.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput formControlName="email" type="email" autocomplete="email" maxlength="30">
+            @if (form.controls.email.hasError('required') && form.controls.email.touched) {
+              <mat-error>Ingresá tu correo electrónico.</mat-error>
+            } @else if (form.controls.email.hasError('email') && form.controls.email.touched) {
+              <mat-error>Ingresá un correo válido.</mat-error>
+            } @else if (form.controls.email.hasError('maxlength')) {
+              <mat-error>El correo no puede superar 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de nacimiento</mat-label>
+            <input matInput formControlName="fecha_nacimiento" type="date" [max]="fechaMaxima" autocomplete="bday">
+            @if (form.controls.fecha_nacimiento.hasError('required') && form.controls.fecha_nacimiento.touched) {
+              <mat-error>Elegí tu fecha de nacimiento.</mat-error>
+            } @else if (form.controls.fecha_nacimiento.hasError('fechaFutura') && form.controls.fecha_nacimiento.touched) {
+              <mat-error>La fecha no puede ser futura.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cobertura</mat-label>
+            <mat-select formControlName="id_cobertura">
+              @for (cobertura of coberturas(); track cobertura.id) {
+                <mat-option [value]="cobertura.id">{{ cobertura.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (form.controls.id_cobertura.hasError('min') && form.controls.id_cobertura.touched) {
+              <mat-error>Seleccioná una cobertura.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="password-field">
+            <mat-label>Contraseña</mat-label>
+            <input matInput formControlName="password" [type]="verPassword() ? 'text' : 'password'" autocomplete="new-password">
+            <button mat-icon-button matSuffix type="button" (click)="verPassword.set(!verPassword())" aria-label="Mostrar u ocultar contraseña">
+              <mat-icon>{{ verPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+              <mat-error>Ingresá una contraseña.</mat-error>
+            } @else if (form.controls.password.hasError('minlength') && form.controls.password.touched) {
+              <mat-error>Usá al menos 8 caracteres.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <a mat-button routerLink="/login">Ya tengo cuenta</a>
+          <button mat-flat-button color="primary" type="submit" [disabled]="enviando() || !coberturas().length">
+            <mat-icon>person_add</mat-icon>
+            {{ enviando() ? 'Creando cuenta...' : 'Crear cuenta' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</section>

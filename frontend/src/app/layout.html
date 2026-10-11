@@ -1,0 +1,82 @@
+<div class="app-shell">
+  <mat-toolbar class="topbar">
+    <a class="brand" mat-button routerLink="/" aria-label="Clínica Virtual, inicio">
+      <mat-icon>medical_services</mat-icon>
+      <span>Clínica Virtual</span>
+    </a>
+    @if (!session.tieneSesion()) {
+      <span class="guest-welcome">Bienvenido a la clínica virtual</span>
+    }
+
+    @if (session.tieneSesion()) {
+      <nav class="primary-nav" aria-label="Navegación principal">
+        @for (item of navItems(); track item.path) {
+          <a mat-button [routerLink]="item.path" routerLinkActive="nav-active">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            {{ item.label }}
+          </a>
+        }
+      </nav>
+    }
+
+    <span class="toolbar-spacer"></span>
+
+    @if (session.tieneSesion()) {
+      <div class="account-actions">
+        <span class="account-name">{{ displayName() }}</span>
+        <button
+          mat-icon-button
+          [matMenuTriggerFor]="roleInfoMenu"
+          [attr.aria-label]="'Información del usuario: ' + displayRole()"
+        >
+          <mat-icon>info</mat-icon>
+        </button>
+        <mat-menu #roleInfoMenu="matMenu">
+          <button mat-menu-item disabled>
+            <mat-icon>person</mat-icon>
+            <span>Tipo de usuario: {{ displayRole() }}</span>
+          </button>
+        </mat-menu>
+        <button mat-icon-button matTooltip="Notificaciones" aria-label="Notificaciones" routerLink="/en-construccion">
+          <mat-icon>notifications</mat-icon>
+        </button>
+        <a mat-icon-button routerLink="/perfil" matTooltip="Mi perfil" aria-label="Mi perfil">
+          <mat-icon>account_circle</mat-icon>
+        </a>
+        <button mat-button class="logout-button" (click)="cerrarSesion()" aria-label="Cerrar sesión">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
+    } @else {
+      <div class="guest-actions">
+        <a mat-button routerLink="/login">Ingresar</a>
+        <a mat-flat-button color="primary" routerLink="/registro">Registrarme</a>
+      </div>
+    }
+  </mat-toolbar>
+
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <strong>Clínica Virtual</strong>
+        <p>Atención y gestión de salud en un solo lugar.</p>
+      </div>
+      <div>
+        <strong>Sedes</strong>
+        <p>Centro: San Martín 123 · 342 400-0001</p>
+        <p>Norte: Av. Rivadavia 456 · 342 400-0002</p>
+      </div>
+      <div>
+        <strong>Contacto</strong>
+        <p>Instagram: <a class="footer-link" href="https://www.instagram.com/iessantafe/" target="_blank" rel="noopener noreferrer">@clinica.virtual.sf</a></p>
+        <p>WhatsApp: <a class="footer-link" href="https://www.whatsapp.com/" target="_blank" rel="noopener noreferrer">+54 9 000 000-0000</a></p>
+        <p>Correo: <a class="footer-link" href="https://mail.google.com/" target="_blank" rel="noopener noreferrer">contacto.clinicavirtual@gmail.com</a></p>
+      </div>
+    </div>
+  </footer>
+</div>

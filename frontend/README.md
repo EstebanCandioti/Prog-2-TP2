@@ -1,59 +1,46 @@
-# Frontend
+# Frontend - Clínica Virtual
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.1.
+Aplicación web de la clínica desarrollada con Angular 21 y Angular Material 21. No utiliza SSR.
 
-## Development server
+## Versiones
 
-To start a local development server, run:
+- Node.js: 24.19.0 (versión usada para verificar el proyecto; Angular 21 también admite Node 22.12 o superior).
+- Angular CLI: 21.2.26.
+- Angular: 21.2.25.
+- Angular Material y CDK: 21.2.14.
+- TypeScript: 5.9.3.
+- npm: 11.16.0.
 
-```bash
-ng serve
+## Requisitos
+
+Instalar Node.js 24 LTS o Node.js 22.12 LTS o superior. El backend debe estar levantado con MySQL y CORS habilitado para `http://localhost:4200`.
+
+La URL del backend se configura en un único lugar: `src/environments/environment.ts` (por defecto, `http://localhost:3000`).
+
+## Instalar y ejecutar
+
+Desde esta carpeta (`frontend`), ejecutar en PowerShell:
+
+```powershell
+npx -y npm@11.16.0 ci
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Abrir `http://localhost:4200`. Para que funcionen login, registro, perfil y coberturas, iniciar también el backend según las instrucciones de `../backend/README.md` y configurar `../backend/.env`.
 
-## Code scaffolding
+## Funcionalidad de esta etapa
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+- Portada pública y layout con navegación por rol, notificaciones visuales, cierre de sesión y footer.
+- Registro de pacientes con validaciones y coberturas cargadas desde `GET /coberturas-disponibles`.
+- Inicio de sesión con `POST /auth/login`, sesión persistida en el navegador y token enviado en las peticiones protegidas.
+- Perfil obtenido desde `GET /auth/perfil`.
+- Rutas protegidas para administrador, médico, operador y paciente; páginas para acceso denegado, ruta inexistente y secciones aún en construcción.
 
-```bash
-ng generate component component-name
+## Verificación
+
+```powershell
+npm run build
+npm test -- --watch=false
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+El footer enlaza al Instagram institucional `iessantafe`, al sitio oficial de WhatsApp y a Gmail.

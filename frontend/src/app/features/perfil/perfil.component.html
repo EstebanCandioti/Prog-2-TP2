@@ -1,0 +1,37 @@
+<section class="profile-page">
+  <header class="page-heading">
+    <p class="eyebrow">TU CUENTA</p>
+    <h1>Mi perfil</h1>
+    <p>Estos son los datos asociados a tu cuenta.</p>
+  </header>
+
+  @if (cargando()) {
+    <div class="loading-state" role="status" aria-label="Cargando perfil">
+      <mat-spinner diameter="42" />
+    </div>
+  } @else if (error()) {
+    <mat-card class="profile-card error-card">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ error() }}</p>
+      <button mat-stroked-button type="button" (click)="cargarPerfil()">Reintentar</button>
+    </mat-card>
+  } @else if (perfil(); as usuario) {
+    <mat-card class="profile-card">
+      <div class="profile-title">
+        <span class="avatar"><mat-icon>person</mat-icon></span>
+        <div>
+          <h2>{{ usuario.nombre }} {{ usuario.apellido }}</h2>
+          <p>{{ usuario.rol }}</p>
+        </div>
+      </div>
+      <dl class="profile-details">
+        <div><dt>DNI</dt><dd>{{ usuario.dni }}</dd></div>
+        <div><dt>Correo electrónico</dt><dd>{{ usuario.email }}</dd></div>
+        <div><dt>Fecha de nacimiento</dt><dd>{{ usuario.fecha_nacimiento | date:'dd/MM/yyyy' }}</dd></div>
+        <div><dt>Teléfono</dt><dd>{{ usuario.telefono || 'No informado' }}</dd></div>
+        <div><dt>Cobertura</dt><dd>{{ usuario.id_cobertura ?? 'No informada' }}</dd></div>
+        <div><dt>Sede</dt><dd>{{ usuario.id_sede ?? 'No asignada' }}</dd></div>
+      </dl>
+    </mat-card>
+  }
+</section>

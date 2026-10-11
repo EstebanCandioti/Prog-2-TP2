@@ -1,1 +1,37 @@
-/* You can add global styles to this file, and also import other style files */
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+	color-scheme: light;
+	--green-100: #e5f2eb;
+	--green-700: #237253;
+	--green-800: #185940;
+	--ink: #18322f;
+	--ink-soft: #526762;
+	--surface: #fff;
+	--canvas: #f3f7f4;
+	--line: #dbe5df;
+	--accent: #c36543;
+	--font-ui: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+	min-height: 100%;
+	margin: 0;
+}
+
+body {
+	background: var(--canvas);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	-webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select { font: inherit; }
+
+a { color: inherit; }

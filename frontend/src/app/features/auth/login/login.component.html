@@ -1,0 +1,48 @@
+<section class="auth-page">
+  <div class="auth-intro">
+    <p class="eyebrow">CLÍNICA VIRTUAL</p>
+    <h1>Tu salud, más cerca.</h1>
+    <p>Ingresá para consultar tu espacio y continuar con tus gestiones.</p>
+  </div>
+
+  <mat-card class="auth-card">
+    <mat-card-header>
+      <mat-card-title>Iniciar sesión</mat-card-title>
+      <mat-card-subtitle>Usá tu DNI y contraseña</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>DNI</mat-label>
+          <input matInput formControlName="dni" inputmode="numeric" autocomplete="username" maxlength="8">
+          <mat-icon matSuffix>badge</mat-icon>
+          @if (form.controls.dni.hasError('required') && form.controls.dni.touched) {
+            <mat-error>Ingresá tu DNI.</mat-error>
+          } @else if (form.controls.dni.hasError('pattern') && form.controls.dni.touched) {
+            <mat-error>El DNI debe contener solo números.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input matInput formControlName="password" [type]="verPassword() ? 'text' : 'password'" autocomplete="current-password">
+          <button mat-icon-button matSuffix type="button" (click)="verPassword.set(!verPassword())" aria-label="Mostrar u ocultar contraseña">
+            <mat-icon>{{ verPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+            <mat-error>Ingresá tu contraseña.</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" class="submit-button" type="submit" [disabled]="enviando()">
+          <mat-icon>login</mat-icon>
+          {{ enviando() ? 'Ingresando...' : 'Ingresar' }}
+        </button>
+      </form>
+    </mat-card-content>
+    <mat-card-actions>
+      <span>¿Todavía no tenés cuenta?</span>
+      <a mat-button color="primary" routerLink="/registro">Registrarme</a>
+    </mat-card-actions>
+  </mat-card>
+</section>

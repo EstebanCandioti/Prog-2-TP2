@@ -13,6 +13,9 @@ SET time_zone = "+00:00";
 -- Estructura de tabla para la tabla `sede`
 -- --------------------------------------------------------
 
+Create database clinica;
+use clinica;
+
 CREATE TABLE `sede` (
   `id` tinyint(4) NOT NULL,
   `nombre` varchar(50) NOT NULL,
