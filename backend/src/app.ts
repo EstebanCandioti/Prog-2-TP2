@@ -1,3 +1,4 @@
+import cors from 'cors';
 import express from 'express';
 import { agendaRoutes } from './routes/agendaRoutes';
 import { authRoutes } from './routes/authRoutes';
@@ -16,6 +17,7 @@ import { responder } from './utils/respuesta';
 
 export const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 app.use(healthRoutes);
