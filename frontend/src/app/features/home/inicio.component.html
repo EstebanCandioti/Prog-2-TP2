@@ -1,0 +1,59 @@
+@if (sessionActive()) {
+  <section class="home-page signed-in">
+    <div class="home-heading">
+      <p class="eyebrow">TU ESPACIO DE SALUD</p>
+      <h1>Elegí una función del menú</h1>
+      <p>Desde acá podés acceder a las herramientas disponibles para tu cuenta.</p>
+    </div>
+    <div class="option-grid">
+      @for (option of opciones(); track option.path) {
+        <mat-card class="option-card">
+          <mat-icon>{{ option.icon }}</mat-icon>
+          <h2>{{ option.label }}</h2>
+          <a mat-button color="primary" [routerLink]="option.path">Abrir sección <mat-icon>arrow_forward</mat-icon></a>
+        </mat-card>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="home-page guest-home">
+    <div class="welcome-band">
+      <div class="welcome-copy">
+        <p class="eyebrow">CUIDADO CERCA, GESTIONES SIMPLES</p>
+        <div class="welcome-heading">
+          <h1>Bienvenido a la clínica virtual</h1>
+          <div class="welcome-mark" aria-hidden="true"><mat-icon>health_and_safety</mat-icon></div>
+        </div>
+        <p>Accedé a tus gestiones de salud de forma clara y segura, desde donde estés.</p>
+        <div class="welcome-actions">
+          <a mat-flat-button color="primary" routerLink="/login"><mat-icon>login</mat-icon>Iniciar sesión</a>
+          <a mat-stroked-button routerLink="/registro"><mat-icon>person_add</mat-icon>Registrarme como paciente</a>
+        </div>
+      </div>
+    </div>
+
+    <section class="benefits" aria-labelledby="benefits-title">
+      <div class="section-heading">
+        <p class="eyebrow">PACIENTES REGISTRADOS</p>
+        <h2 id="benefits-title">Tu clínica, más a mano</h2>
+      </div>
+      <div class="benefit-grid">
+        <mat-card class="benefit-card">
+          <mat-icon>event_available</mat-icon>
+          <h3>Gestioná tus turnos</h3>
+          <p>Consultá y organizá tus próximas consultas desde tu cuenta.</p>
+        </mat-card>
+        <mat-card class="benefit-card">
+          <mat-icon>person</mat-icon>
+          <h3>Tené tu perfil al día</h3>
+          <p>Accedé a tus datos personales y cobertura en un mismo lugar.</p>
+        </mat-card>
+        <mat-card class="benefit-card">
+          <mat-icon>notifications_active</mat-icon>
+          <h3>Recibí novedades</h3>
+          <p>Mantenete al tanto de la actividad relacionada con tu atención.</p>
+        </mat-card>
+      </div>
+    </section>
+  </section>
+}

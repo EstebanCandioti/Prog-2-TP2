@@ -1,0 +1,87 @@
+@use '@angular/material' as mat;
+
+html {
+	@include mat.theme((
+		color: (
+			primary: mat.$azure-palette,
+			tertiary: mat.$blue-palette,
+			theme-type: light
+		),
+		typography: (
+			plain-family: ('DM Sans', sans-serif),
+			brand-family: ('DM Sans', sans-serif),
+			regular-weight: 400,
+			medium-weight: 500,
+			bold-weight: 700
+		),
+		density: 0
+	));
+
+	@include mat.card-overrides((
+		elevated-container-color: #ffffff,
+		elevated-container-elevation: 0 4px 18px rgba(23, 60, 55, 0.1)
+	));
+}
+
+:root {
+	color-scheme: light;
+	--green-100: #e5f2eb;
+	--green-700: #237253;
+	--green-800: #185940;
+	--ink: #18322f;
+	--ink-soft: #526762;
+	--surface: #fff;
+	--canvas: #e9f0ec;
+	--line: #dbe5df;
+	--accent: #c36543;
+	--font-ui: 'DM Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+	min-height: 100%;
+	margin: 0;
+}
+
+body {
+	background: var(--canvas);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	-webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select { font: inherit; }
+
+a { color: inherit; }
+
+.app-snackbar {
+	max-width: calc(100vw - 32px);
+	overflow-wrap: anywhere;
+}
+
+.app-snackbar-error {
+	@include mat.snack-bar-overrides((
+		container-color: #8c1d18,
+		supporting-text-color: #fff,
+		button-color: #fff
+	));
+}
+
+.app-snackbar-success {
+	@include mat.snack-bar-overrides((
+		container-color: #185940,
+		supporting-text-color: #fff,
+		button-color: #fff
+	));
+}
+
+@media (max-width: 599px) {
+	.app-snackbar {
+		max-width: calc(100vw - 24px);
+	}
+}
