@@ -19,7 +19,7 @@
 
       <form [formGroup]="form" (ngSubmit)="registrar()" novalidate>
         <div class="form-grid">
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Nombre</mat-label>
             <input matInput formControlName="nombre" autocomplete="given-name" maxlength="30">
             @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
@@ -29,7 +29,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Apellido</mat-label>
             <input matInput formControlName="apellido" autocomplete="family-name" maxlength="30">
             @if (form.controls.apellido.hasError('required') && form.controls.apellido.touched) {
@@ -39,7 +39,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>DNI</mat-label>
             <input matInput formControlName="dni" inputmode="numeric" autocomplete="off" maxlength="8">
             @if (form.controls.dni.hasError('required') && form.controls.dni.touched) {
@@ -49,7 +49,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Correo electrónico</mat-label>
             <input matInput formControlName="email" type="email" autocomplete="email" maxlength="30">
             @if (form.controls.email.hasError('required') && form.controls.email.touched) {
@@ -61,7 +61,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Fecha de nacimiento</mat-label>
             <input matInput formControlName="fecha_nacimiento" type="date" [max]="fechaMaxima" autocomplete="bday">
             @if (form.controls.fecha_nacimiento.hasError('required') && form.controls.fecha_nacimiento.touched) {
@@ -71,7 +71,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Cobertura</mat-label>
             <mat-select formControlName="id_cobertura">
               @for (cobertura of coberturas(); track cobertura.id) {
@@ -83,7 +83,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="password-field">
+          <mat-form-field appearance="outline" subscriptSizing="fixed" class="password-field">
             <mat-label>Contraseña</mat-label>
             <input matInput formControlName="password" [type]="verPassword() ? 'text' : 'password'" autocomplete="new-password">
             <button mat-icon-button matSuffix type="button" (click)="verPassword.set(!verPassword())" aria-label="Mostrar u ocultar contraseña">

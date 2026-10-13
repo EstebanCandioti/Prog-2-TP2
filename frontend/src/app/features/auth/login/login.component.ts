@@ -61,7 +61,10 @@ export class LoginComponent {
     this.auth.login(this.form.getRawValue()).pipe(finalize(() => this.enviando.set(false))).subscribe({
       next: (response) => {
         if (!response.datos?.token) {
-          this.snackBar.open('El servidor no devolvió una sesión válida.', 'Cerrar', { duration: 5000 });
+          this.snackBar.open('El servidor no devolvió una sesión válida.', 'Cerrar', {
+            duration: 5000,
+            panelClass: ['app-snackbar', 'app-snackbar-error']
+          });
           return;
         }
         this.session.guardarSesion(response.datos);
@@ -70,7 +73,8 @@ export class LoginComponent {
       },
       error: (error: unknown) => {
         this.snackBar.open(mensajeErrorApi(error, 'No se pudo iniciar sesión. Revisá el DNI y la contraseña.'), 'Cerrar', {
-          duration: 6000
+          duration: 6000,
+          panelClass: ['app-snackbar', 'app-snackbar-error']
         });
       }
     });

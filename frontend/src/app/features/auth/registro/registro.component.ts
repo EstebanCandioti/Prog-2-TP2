@@ -90,15 +90,22 @@ export class RegistroComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (!response.datos) {
-            this.snackBar.open('No se pudo completar el registro.', 'Cerrar', { duration: 5000 });
+            this.snackBar.open('No se pudo completar el registro.', 'Cerrar', {
+              duration: 5000,
+              panelClass: ['app-snackbar', 'app-snackbar-error']
+            });
             return;
           }
-          this.snackBar.open('Registro exitoso. Ya podés iniciar sesión.', 'Cerrar', { duration: 5000 });
+          this.snackBar.open('Registro exitoso. Ya podés iniciar sesión.', 'Cerrar', {
+            duration: 5000,
+            panelClass: ['app-snackbar', 'app-snackbar-success']
+          });
           void this.router.navigateByUrl('/login');
         },
         error: (error: unknown) => {
           this.snackBar.open(mensajeErrorApi(error, 'No se pudo completar el registro. Revisá los datos.'), 'Cerrar', {
-            duration: 7000
+            duration: 7000,
+            panelClass: ['app-snackbar', 'app-snackbar-error']
           });
         }
       });
