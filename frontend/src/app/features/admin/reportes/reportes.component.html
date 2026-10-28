@@ -62,49 +62,48 @@
     </mat-card-content>
   </mat-card>
 
-  @if (cargando()) {
-    <div class="loading-state" role="status" aria-label="Cargando reportes">
-      <mat-spinner diameter="48" />
-      <p>Cargando indicadores del período…</p>
-    </div>
-  } @else if (error()) {
-    <mat-card class="error-state" role="alert">
-      <mat-icon>error_outline</mat-icon>
-      <div>
-        <h2>No se pudieron mostrar los reportes</h2>
-        <p>{{ error() }}</p>
-      </div>
-    </mat-card>
-  } @else if (dashboard(); as reporte) {
-    <section class="summary-section" aria-label="Resumen de turnos">
+  @if (errorTasa()) {
+    <p class="source-error" role="alert">No se pudo cargar el resumen de turnos: {{ errorTasa() }}</p>
+  }
+  @if (errorConsistencia()) {
+    <p class="source-error" role="alert">{{ errorConsistencia() }}</p>
+  }
+
+  <section class="summary-section" aria-label="Resumen de turnos">
       <div class="summary-grid">
         <mat-card class="metric-card">
           <mat-icon>event_note</mat-icon>
           <span>Total</span>
-          <strong>{{ reporte.total | number:'1.0-0' }}</strong>
+          <strong>@if (tasa(); as datos) { {{ datos.total | number:'1.0-0' }} } @else { — }</strong>
         </mat-card>
         <mat-card class="metric-card">
           <mat-icon>event_available</mat-icon>
           <span>Confirmados</span>
-          <strong>{{ reporte.confirmados | number:'1.0-0' }}</strong>
+          <strong>@if (resumen(); as datos) { {{ datos.confirmados | number:'1.0-0' }} } @else { — }</strong>
         </mat-card>
         <mat-card class="metric-card metric-success">
           <mat-icon>task_alt</mat-icon>
           <span>Atendidos</span>
-          <strong>{{ reporte.atendidos | number:'1.0-0' }}</strong>
+          <strong>
+            @if (ranking(); as medicos) {
+              {{ totalAtendidos(medicos) | number:'1.0-0' }}
+            } @else {
+              —
+            }
+          </strong>
         </mat-card>
         <mat-card class="metric-card metric-error">
           <mat-icon>event_busy</mat-icon>
           <span>Cancelados</span>
-          <strong>{{ reporte.cancelados | number:'1.0-0' }}</strong>
+          <strong>@if (tasa(); as datos) { {{ datos.cancelados | number:'1.0-0' }} } @else { — }</strong>
         </mat-card>
         <mat-card class="metric-card rate-card">
           <mat-icon>percent</mat-icon>
           <span>Tasa de cancelación sobre el total</span>
-          <strong>{{ reporte.tasaCancelacion | number:'1.0-2' }} %</strong>
+          <strong>@if (tasa(); as datos) { {{ datos.tasaCancelacion | number:'1.0-2' }} % } @else { — }</strong>
         </mat-card>
       </div>
-    </section>
+  </section>
 
     <div class="reports-layout">
       <mat-card class="report-card outcome-card">
@@ -113,7 +112,8 @@
           <mat-card-subtitle>Solo incluye turnos atendidos y cancelados</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          @if (reporte.finalizados > 0) {
+          @if (resumen(); as reporte) {
+            @if (reporte.finalizados > 0) {
             <div class="doughnut-layout">
               <div class="chart-frame doughnut-frame">
                 <canvas #donaCanvas role="img" aria-label="Distribución de turnos atendidos y cancelados"></canvas>
@@ -135,11 +135,16 @@
               Porcentajes calculados sobre {{ reporte.finalizados | number:'1.0-0' }} turnos finalizados.
               La tasa del resumen se calcula sobre el total de turnos.
             </p>
-          } @else {
+            } @else {
             <div class="empty-state compact-empty">
               <mat-icon>donut_large</mat-icon>
               <p>No hay turnos atendidos ni cancelados en este período.</p>
             </div>
+            }
+          } @else if (cargandoTasa() || cargandoRanking()) {
+            <p class="section-status" role="status">Cargando resultado de los turnos…</p>
+          } @else {
+            <p class="section-error" role="alert">No se puede calcular el resultado sin el resumen de turnos y el ranking médico.</p>
           }
         </mat-card-content>
       </mat-card>
@@ -151,9 +156,10 @@
           <mat-card-subtitle>Turnos atendidos por profesional</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          @if (reporte.ranking.length) {
+          @if (ranking(); as medicos) {
+            @if (medicos.length) {
             <ol class="ranking-podium">
-              @for (medico of rankingDestacado(reporte.ranking); track medico.id; let posicion = $index) {
+              @for (medico of rankingDestacado(medicos); track medico.id; let posicion = $index) {
                 <li>
                   <span class="position">{{ posicion + 1 }}</span>
                   <span class="doctor-name">{{ medico.nombreCompleto }}</span>
@@ -171,11 +177,16 @@
               <mat-icon>bar_chart</mat-icon>
               Ver ranking completo
             </button>
-          } @else {
+            } @else {
             <div class="empty-state compact-empty">
               <mat-icon>medical_services</mat-icon>
               <p>No hay turnos atendidos para armar el ranking.</p>
             </div>
+            }
+          } @else if (cargandoRanking()) {
+            <p class="section-status" role="status">Cargando ranking médico…</p>
+          } @else {
+            <p class="section-error" role="alert">{{ errorRanking() }}</p>
           }
         </mat-card-content>
       </mat-card>
@@ -187,17 +198,23 @@
           <mat-card-subtitle>Todos los estados, de mayor a menor</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          @if (reporte.especialidades.length) {
+          @if (especialidades(); as items) {
+            @if (items.length) {
             <ul class="quantity-list">
-              @for (especialidad of reporte.especialidades; track especialidad.id) {
+              @for (especialidad of items; track especialidad.id) {
                 <li><span>{{ especialidad.nombre }}</span><strong>{{ especialidad.cantidad | number:'1.0-0' }}</strong></li>
               }
             </ul>
-          } @else {
+            } @else {
             <div class="empty-state compact-empty">
               <mat-icon>clinical_notes</mat-icon>
               <p>No hay turnos por especialidad en este período.</p>
             </div>
+            }
+          } @else if (cargandoEspecialidades()) {
+            <p class="section-status" role="status">Cargando especialidades…</p>
+          } @else {
+            <p class="section-error" role="alert">{{ errorEspecialidades() }}</p>
           }
         </mat-card-content>
       </mat-card>
@@ -208,17 +225,23 @@
           <mat-card-subtitle>Todos los estados, de mayor a menor</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          @if (reporte.sedes.length) {
+          @if (sedes(); as items) {
+            @if (items.length) {
             <ul class="quantity-list">
-              @for (sede of reporte.sedes; track sede.id) {
+              @for (sede of items; track sede.id) {
                 <li><span>{{ sede.nombre }}</span><strong>{{ sede.cantidad | number:'1.0-0' }}</strong></li>
               }
             </ul>
-          } @else {
+            } @else {
             <div class="empty-state compact-empty">
               <mat-icon>location_on</mat-icon>
               <p>No hay turnos por sede en este período.</p>
             </div>
+            }
+          } @else if (cargandoSedes()) {
+            <p class="section-status" role="status">Cargando sedes…</p>
+          } @else {
+            <p class="section-error" role="alert">{{ errorSedes() }}</p>
           }
         </mat-card-content>
       </mat-card>
@@ -226,11 +249,10 @@
       </div>
     </div>
 
-    @if (reporte.total === 0) {
+    @if (tasa()?.total === 0) {
       <div class="empty-period-note" role="status">
         <mat-icon>event_busy</mat-icon>
         <span>El período seleccionado no contiene turnos.</span>
       </div>
     }
-  }
 </section>

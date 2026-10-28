@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { forkJoin, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -8,7 +8,6 @@ import {
   RankingMedicoApi,
   ReporteEspecialidadApi,
   ReporteSedeApi,
-  RespuestasReportes,
   TasaCancelacionApi
 } from '../models/reporte.model';
 import { ApiResponse } from '../models/api-response.model';
@@ -18,20 +17,32 @@ export class ReporteService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/reportes`;
 
-  cargarReportes(filtro: FiltroReportes): Observable<RespuestasReportes> {
-    const params = this.crearParametros(filtro);
+  turnosPorEspecialidad(filtro: FiltroReportes): Observable<ApiResponse<ReporteEspecialidadApi[]>> {
+    return this.http.get<ApiResponse<ReporteEspecialidadApi[]>>(
+      `${this.baseUrl}/turnos-por-especialidad`,
+      { params: this.crearParametros(filtro) }
+    );
+  }
 
-    return forkJoin({
-      especialidades: this.http.get<ApiResponse<ReporteEspecialidadApi[]>>(
-        `${this.baseUrl}/turnos-por-especialidad`,
-        { params }
-      ),
-      sedes: this.http.get<ApiResponse<ReporteSedeApi[]>>(`${this.baseUrl}/turnos-por-sede`, { params }),
-      ranking: this.http.get<ApiResponse<RankingMedicoApi[]>>(`${this.baseUrl}/ranking-medicos`, { params }),
-      tasaCancelacion: this.http.get<ApiResponse<TasaCancelacionApi>>(`${this.baseUrl}/tasa-cancelacion`, {
-        params
-      })
-    });
+  turnosPorSede(filtro: FiltroReportes): Observable<ApiResponse<ReporteSedeApi[]>> {
+    return this.http.get<ApiResponse<ReporteSedeApi[]>>(
+      `${this.baseUrl}/turnos-por-sede`,
+      { params: this.crearParametros(filtro) }
+    );
+  }
+
+  rankingMedicos(filtro: FiltroReportes): Observable<ApiResponse<RankingMedicoApi[]>> {
+    return this.http.get<ApiResponse<RankingMedicoApi[]>>(
+      `${this.baseUrl}/ranking-medicos`,
+      { params: this.crearParametros(filtro) }
+    );
+  }
+
+  tasaCancelacion(filtro: FiltroReportes): Observable<ApiResponse<TasaCancelacionApi>> {
+    return this.http.get<ApiResponse<TasaCancelacionApi>>(
+      `${this.baseUrl}/tasa-cancelacion`,
+      { params: this.crearParametros(filtro) }
+    );
   }
 
   private crearParametros(filtro: FiltroReportes): HttpParams {

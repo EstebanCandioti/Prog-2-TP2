@@ -1,5 +1,5 @@
 import { DecimalPipe, DOCUMENT } from '@angular/common';
-import { ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, computed, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,16 +13,17 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import Chart from 'chart.js/auto';
 import { Subscription } from 'rxjs';
 
 import {
   CantidadPorNombre,
-  DashboardReportes,
   NumeroApi,
   RankingMedico,
-  RespuestasReportes
+  RankingMedicoApi,
+  ReporteEspecialidadApi,
+  ReporteSedeApi,
+  TasaCancelacionApi
 } from '../../../core/models/reporte.model';
 import { ReporteService } from '../../../core/services/reporte.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
@@ -47,6 +48,12 @@ interface OpcionPeriodo {
   etiqueta: string;
 }
 
+interface ResumenTurnos {
+  total: number;
+  cancelados: number;
+  tasaCancelacion: number;
+}
+
 const FORMATOS_FECHA: MatDateFormats = {
   parse: { dateInput: null },
   display: {
@@ -69,7 +76,6 @@ const FORMATOS_FECHA: MatDateFormats = {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     ReactiveFormsModule
   ],
   providers: [
@@ -107,11 +113,36 @@ export class ReportesComponent implements OnInit, OnDestroy {
   });
   readonly atajoActivo = signal<AtajoPeriodo>('todos');
   readonly periodoAplicado = signal('Todos los períodos');
-  readonly dashboard = signal<DashboardReportes | null>(null);
-  readonly cargando = signal(true);
-  readonly error = signal('');
+  readonly especialidades = signal<CantidadPorNombre[] | null>(null);
+  readonly sedes = signal<CantidadPorNombre[] | null>(null);
+  readonly ranking = signal<RankingMedico[] | null>(null);
+  readonly tasa = signal<ResumenTurnos | null>(null);
+  readonly cargandoEspecialidades = signal(true);
+  readonly cargandoSedes = signal(true);
+  readonly cargandoRanking = signal(true);
+  readonly cargandoTasa = signal(true);
+  readonly errorEspecialidades = signal('');
+  readonly errorSedes = signal('');
+  readonly errorRanking = signal('');
+  readonly errorTasa = signal('');
   readonly errorRango = signal('');
   readonly fechaMaxima = signal(this.hoyLocal());
+  readonly resumen = computed(() => {
+    const tasa = this.tasa();
+    const ranking = this.ranking();
+    if (!tasa || ranking === null) return null;
+
+    const atendidos = this.totalAtendidos(ranking);
+    const confirmados = tasa.total - tasa.cancelados - atendidos;
+    if (confirmados < 0) return null;
+
+    return { ...tasa, atendidos, confirmados, finalizados: atendidos + tasa.cancelados };
+  });
+  readonly errorConsistencia = computed(() =>
+    this.tasa() && this.ranking() !== null && !this.resumen()
+      ? 'Los reportes recibidos contienen cantidades inconsistentes.'
+      : ''
+  );
 
   ngOnInit(): void {
     this.document.addEventListener('visibilitychange', this.alVolverAPestania);
@@ -166,7 +197,7 @@ export class ReportesComponent implements OnInit, OnDestroy {
   }
 
   abrirRankingCompleto(): void {
-    const ranking = this.dashboard()?.ranking;
+    const ranking = this.ranking();
     if (!ranking?.length) return;
 
     this.dialog.open(RankingMedicoDialogComponent, {
@@ -182,6 +213,10 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return ranking.slice(0, 3);
   }
 
+  totalAtendidos(ranking: RankingMedico[]): number {
+    return ranking.reduce((total, medico) => total + medico.turnosAtendidos, 0);
+  }
+
   porcentajeFinalizados(cantidad: number, finalizados: number): number {
     return finalizados > 0 ? (cantidad * 100) / finalizados : 0;
   }
@@ -189,38 +224,88 @@ export class ReportesComponent implements OnInit, OnDestroy {
   private cargarReportes(rango: RangoFechas): void {
     this.consultaActual?.unsubscribe();
     this.destruirGraficos();
-    this.dashboard.set(null);
-    this.error.set('');
-    this.cargando.set(true);
+    this.especialidades.set(null);
+    this.sedes.set(null);
+    this.ranking.set(null);
+    this.tasa.set(null);
+    this.cargandoEspecialidades.set(true);
+    this.cargandoSedes.set(true);
+    this.cargandoRanking.set(true);
+    this.cargandoTasa.set(true);
+    this.errorEspecialidades.set('');
+    this.errorSedes.set('');
+    this.errorRanking.set('');
+    this.errorTasa.set('');
 
     const fechaDesde = rango.desde ? this.formatearFechaApi(rango.desde) : null;
     const fechaHasta = rango.hasta ? this.formatearFechaApi(rango.hasta) : null;
-    const etiquetaPeriodo = this.etiquetaRango(rango);
+    const filtro = { fechaDesde, fechaHasta };
+    this.periodoAplicado.set(this.etiquetaRango(rango));
+    this.consultaActual = new Subscription();
 
-    this.consultaActual = this.reportes.cargarReportes({ fechaDesde, fechaHasta }).subscribe({
-      next: (respuestas) => {
+    this.consultaActual.add(this.reportes.turnosPorEspecialidad(filtro).subscribe({
+      next: (respuesta) => {
         try {
-          this.dashboard.set(this.normalizarDashboard(respuestas));
-          this.periodoAplicado.set(etiquetaPeriodo);
-          this.cargando.set(false);
-          this.changeDetector.detectChanges();
-          this.crearGraficos();
+          this.especialidades.set(this.normalizarEspecialidades(
+            this.validarListado(respuesta.datos, 'especialidades')
+          ));
         } catch (error: unknown) {
-          this.dashboard.set(null);
-          this.cargando.set(false);
-          this.error.set(
-            error instanceof Error
-              ? error.message
-              : 'Los reportes recibidos contienen datos inconsistentes.'
-          );
+          this.errorEspecialidades.set(this.mensajeDatosInvalidos(error));
         }
+        this.cargandoEspecialidades.set(false);
       },
       error: (error: unknown) => {
-        this.dashboard.set(null);
-        this.cargando.set(false);
-        this.error.set(mensajeErrorApi(error, 'No se pudieron cargar los reportes para el período seleccionado.'));
+        this.errorEspecialidades.set(mensajeErrorApi(error, 'No se pudieron cargar las especialidades.'));
+        this.cargandoEspecialidades.set(false);
       }
-    });
+    }));
+
+    this.consultaActual.add(this.reportes.turnosPorSede(filtro).subscribe({
+      next: (respuesta) => {
+        try {
+          this.sedes.set(this.normalizarSedes(this.validarListado(respuesta.datos, 'sedes')));
+        } catch (error: unknown) {
+          this.errorSedes.set(this.mensajeDatosInvalidos(error));
+        }
+        this.cargandoSedes.set(false);
+      },
+      error: (error: unknown) => {
+        this.errorSedes.set(mensajeErrorApi(error, 'No se pudieron cargar las sedes.'));
+        this.cargandoSedes.set(false);
+      }
+    }));
+
+    this.consultaActual.add(this.reportes.rankingMedicos(filtro).subscribe({
+      next: (respuesta) => {
+        try {
+          this.ranking.set(this.normalizarRanking(this.validarListado(respuesta.datos, 'ranking médico')));
+        } catch (error: unknown) {
+          this.errorRanking.set(this.mensajeDatosInvalidos(error));
+        }
+        this.cargandoRanking.set(false);
+        this.actualizarGraficoDona();
+      },
+      error: (error: unknown) => {
+        this.errorRanking.set(mensajeErrorApi(error, 'No se pudo cargar el ranking médico.'));
+        this.cargandoRanking.set(false);
+      }
+    }));
+
+    this.consultaActual.add(this.reportes.tasaCancelacion(filtro).subscribe({
+      next: (respuesta) => {
+        try {
+          this.tasa.set(this.normalizarTasa(respuesta.datos));
+        } catch (error: unknown) {
+          this.errorTasa.set(this.mensajeDatosInvalidos(error));
+        }
+        this.cargandoTasa.set(false);
+        this.actualizarGraficoDona();
+      },
+      error: (error: unknown) => {
+        this.errorTasa.set(mensajeErrorApi(error, 'No se pudo cargar la tasa de cancelación.'));
+        this.cargandoTasa.set(false);
+      }
+    }));
   }
 
   private calcularRango(atajo: Exclude<AtajoPeriodo, 'personalizado'>): RangoFechas {
@@ -255,11 +340,8 @@ export class ReportesComponent implements OnInit, OnDestroy {
     }
   }
 
-  private normalizarDashboard(respuestas: RespuestasReportes): DashboardReportes {
-    const tasa = respuestas.tasaCancelacion.datos;
-    if (!tasa) throw new Error('El reporte de cancelaciones no devolvió datos.');
-
-    const especialidades = (respuestas.especialidades.datos ?? [])
+  private normalizarEspecialidades(datos: ReporteEspecialidadApi[]): CantidadPorNombre[] {
+    return datos
       .map((item) => ({
         id: this.normalizarEntero(item.id, 'id de especialidad'),
         nombre: item.descripcion,
@@ -267,7 +349,17 @@ export class ReportesComponent implements OnInit, OnDestroy {
       }))
       .sort(this.ordenarCantidades);
 
-    const sedes = (respuestas.sedes.datos ?? [])
+  }
+
+  private validarListado<T>(datos: T[] | null, seccion: string): T[] {
+    if (!Array.isArray(datos)) {
+      throw new Error(`El reporte de ${seccion} no devolvió una lista válida.`);
+    }
+    return datos;
+  }
+
+  private normalizarSedes(datos: ReporteSedeApi[]): CantidadPorNombre[] {
+    return datos
       .map((item) => ({
         id: this.normalizarEntero(item.id, 'id de sede'),
         nombre: item.nombre,
@@ -275,7 +367,10 @@ export class ReportesComponent implements OnInit, OnDestroy {
       }))
       .sort(this.ordenarCantidades);
 
-    const ranking = (respuestas.ranking.datos ?? [])
+  }
+
+  private normalizarRanking(datos: RankingMedicoApi[]): RankingMedico[] {
+    return datos
       .map((item) => ({
         id: this.normalizarEntero(item.id, 'id de médico'),
         nombreCompleto: `${item.nombre} ${item.apellido}`.trim(),
@@ -283,27 +378,21 @@ export class ReportesComponent implements OnInit, OnDestroy {
       }))
       .sort((a, b) => b.turnosAtendidos - a.turnosAtendidos || a.nombreCompleto.localeCompare(b.nombreCompleto));
 
+  }
+
+  private normalizarTasa(tasa: TasaCancelacionApi | null): ResumenTurnos {
+    if (!tasa) throw new Error('El reporte de cancelaciones no devolvió datos.');
     const total = this.normalizarEntero(tasa.total_turnos, 'total de turnos');
     const cancelados = this.normalizarEntero(tasa.turnos_cancelados, 'turnos cancelados');
     const tasaCancelacion = this.normalizarNumero(tasa.tasa_cancelacion, 'tasa de cancelación');
-    const atendidos = ranking.reduce((totalAtendidos, medico) => totalAtendidos + medico.turnosAtendidos, 0);
-    const confirmados = total - cancelados - atendidos;
-
-    if (confirmados < 0 || tasaCancelacion < 0 || tasaCancelacion > 100) {
+    if (cancelados > total || tasaCancelacion < 0 || tasaCancelacion > 100) {
       throw new Error('Los reportes recibidos contienen cantidades inconsistentes.');
     }
+    return { total, cancelados, tasaCancelacion };
+  }
 
-    return {
-      total,
-      confirmados,
-      atendidos,
-      cancelados,
-      finalizados: atendidos + cancelados,
-      tasaCancelacion,
-      especialidades,
-      sedes,
-      ranking
-    };
+  private mensajeDatosInvalidos(error: unknown): string {
+    return error instanceof Error ? error.message : 'El reporte recibido contiene datos inconsistentes.';
   }
 
   private readonly ordenarCantidades = (a: CantidadPorNombre, b: CantidadPorNombre): number =>
@@ -323,12 +412,14 @@ export class ReportesComponent implements OnInit, OnDestroy {
     return numero;
   }
 
-  private crearGraficos(): void {
+  private actualizarGraficoDona(): void {
+    if (!this.resumen()) return;
+    this.changeDetector.detectChanges();
     this.crearGraficoDona();
   }
 
   private crearGraficoDona(): void {
-    const reporte = this.dashboard();
+    const reporte = this.resumen();
     if (!reporte || reporte.finalizados === 0 || !this.donaCanvas) return;
 
     this.graficoDona?.destroy();
