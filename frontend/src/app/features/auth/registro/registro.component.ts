@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { FormBuilder, FormGroupDirective, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -15,6 +16,7 @@ import { Cobertura } from '../../../core/models/cobertura.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CoberturaService } from '../../../core/services/cobertura.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { PacienteRegistradoDialogComponent } from './paciente-registrado-dialog.component';
 
 const fechaNoFutura: ValidatorFn = (control) => {
   const value = control.value as string;
@@ -27,6 +29,7 @@ const fechaNoFutura: ValidatorFn = (control) => {
   imports: [
     MatButtonModule,
     MatCardModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -40,11 +43,17 @@ const fechaNoFutura: ValidatorFn = (control) => {
   styleUrl: './registro.component.css'
 })
 export class RegistroComponent implements OnInit {
+  @ViewChild(FormGroupDirective) private formDirective?: FormGroupDirective;
+
   private readonly formBuilder = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly coberturaService = inject(CoberturaService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  readonly modoOperador = this.route.snapshot.data['modo'] === 'operador';
+  private readonly modoPublico = this.route.snapshot.data['modo'] === 'publico';
   readonly coberturas = signal<Cobertura[]>([]);
   readonly cargandoCoberturas = signal(true);
   readonly errorCoberturas = signal('');
@@ -78,7 +87,8 @@ export class RegistroComponent implements OnInit {
   }
 
   registrar(): void {
-    if (this.form.invalid || this.enviando()) {
+    if (this.enviando()) return;
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -93,6 +103,26 @@ export class RegistroComponent implements OnInit {
             this.snackBar.open('No se pudo completar el registro.', 'Cerrar', {
               duration: 5000,
               panelClass: ['app-snackbar', 'app-snackbar-error']
+            });
+            return;
+          }
+          // La navegación al login pertenece exclusivamente a la ruta pública.
+          if (!this.modoPublico) {
+            const paciente = response.datos;
+            const idCobertura = paciente.id_cobertura ?? Number(values.id_cobertura);
+            const coberturaNombre = this.coberturas().find((cobertura) => cobertura.id === idCobertura)?.nombre
+              ?? 'Cobertura no disponible';
+
+            this.formDirective?.resetForm();
+            this.verPassword.set(false);
+            this.dialog.open(PacienteRegistradoDialogComponent, {
+              data: { paciente, coberturaNombre },
+              width: '600px',
+              maxWidth: 'calc(100vw - 24px)',
+              maxHeight: 'calc(100dvh - 24px)',
+              restoreFocus: true
+            }).afterClosed().subscribe((accion: 'inicio' | undefined) => {
+              if (accion === 'inicio') void this.router.navigateByUrl('/operador');
             });
             return;
           }

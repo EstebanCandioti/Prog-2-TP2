@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>Paciente registrado</h2>
+
+<mat-dialog-content>
+  <p class="confirmation-text">El paciente se registró correctamente.</p>
+  <dl class="patient-details">
+    <div><dt>ID</dt><dd>{{ data.paciente.id }}</dd></div>
+    <div><dt>Nombre</dt><dd>{{ data.paciente.nombre }}</dd></div>
+    <div><dt>Apellido</dt><dd>{{ data.paciente.apellido }}</dd></div>
+    <div><dt>DNI</dt><dd>{{ data.paciente.dni }}</dd></div>
+    <div><dt>Correo electrónico</dt><dd>{{ data.paciente.email }}</dd></div>
+    <div><dt>Fecha de nacimiento</dt><dd>{{ data.paciente.fecha_nacimiento | date:'dd/MM/yyyy':'UTC' }}</dd></div>
+    <div><dt>Cobertura</dt><dd>{{ data.coberturaNombre }}</dd></div>
+  </dl>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="'inicio'">Volver al inicio del operador</button>
+  <button mat-flat-button type="button" mat-dialog-close>
+    <mat-icon>person_add</mat-icon>
+    Registrar otro paciente
+  </button>
+</mat-dialog-actions>

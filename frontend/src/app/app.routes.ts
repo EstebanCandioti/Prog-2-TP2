@@ -17,6 +17,7 @@ export const routes: Routes = [
 	{
 		path: 'registro',
 		loadComponent: () => import('./features/auth/registro/registro.component').then((module) => module.RegistroComponent),
+		data: { modo: 'publico' },
 		title: 'Registro | Clínica Virtual'
 	},
 	{

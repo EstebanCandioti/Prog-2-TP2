@@ -19,6 +19,7 @@ export const navigationByRole: Record<RolUsuario, NavigationItem[]> = {
     { label: 'Historial clínico', path: '/medico/historial', icon: 'description' }
   ],
   operador: [
+    { label: 'Registrar paciente', path: '/operador/registro', icon: 'person_add' },
     { label: 'Agenda', path: '/operador/agenda', icon: 'calendar_month' },
     { label: 'Turnos', path: '/operador/turnos', icon: 'event' }
   ],

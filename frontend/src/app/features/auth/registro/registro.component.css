@@ -13,6 +13,7 @@
 .coverage-warning mat-icon { flex: 0 0 auto; }
 .coverage-warning span { flex: 1; }
 .form-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 8px; }
+.form-actions.operator-actions { justify-content: flex-end; }
 .form-actions button { min-height: 46px; }
 
 @media (max-width: 760px) {
