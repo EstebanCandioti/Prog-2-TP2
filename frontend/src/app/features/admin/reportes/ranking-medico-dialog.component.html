@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Ranking médico completo</h2>
+
+<mat-dialog-content>
+  <p class="ranking-subtitle">Todos los profesionales con turnos atendidos</p>
+  <div class="ranking-chart-wrap">
+    <div class="ranking-chart" [style.height.px]="alturaGrafico">
+      <canvas #rankingCanvas role="img" aria-label="Ranking completo de médicos por turnos atendidos"></canvas>
+    </div>
+  </div>
+  <div class="ranking-table-wrap">
+    <table class="ranking-table">
+      <thead>
+        <tr><th scope="col">Posición</th><th scope="col">Médico</th><th scope="col">Atendidos</th></tr>
+      </thead>
+      <tbody>
+        @for (medico of ranking; track medico.id; let posicion = $index) {
+          <tr>
+            <td>{{ posicion + 1 }}</td>
+            <td>{{ medico.nombreCompleto }}</td>
+            <td>{{ medico.turnosAtendidos | number:'1.0-0' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>
+    <mat-icon>close</mat-icon>
+    Cerrar
+  </button>
+</mat-dialog-actions>

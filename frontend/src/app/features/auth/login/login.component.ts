@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,12 +22,20 @@ const inicioPorRol: Record<RolUsuario, string> = {
   paciente: '/paciente'
 };
 
+const gruposDemo = [
+  { titulo: 'Administradores', cuenta: 'Admin', primerNumero: 1 },
+  { titulo: 'Médicos', cuenta: 'Médico', primerNumero: 4 },
+  { titulo: 'Operadores', cuenta: 'Operador', primerNumero: 7 },
+  { titulo: 'Pacientes', cuenta: 'Paciente', primerNumero: 10 }
+];
+
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
     MatButtonModule,
     MatCardModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -46,10 +55,23 @@ export class LoginComponent {
   private readonly snackBar = inject(MatSnackBar);
   readonly enviando = signal(false);
   readonly verPassword = signal(false);
+  readonly demoPassword = 'Demo2026!';
+  readonly demoGroups = gruposDemo.map((grupo) => ({
+    titulo: grupo.titulo,
+    cuentas: Array.from({ length: 3 }, (_, index) => ({
+      etiqueta: `${grupo.cuenta} ${index + 1}`,
+      dni: String(90000000 + grupo.primerNumero + index)
+    }))
+  }));
   readonly form = this.formBuilder.nonNullable.group({
     dni: ['', [Validators.required, Validators.pattern(/^\d+$/)]],
     password: ['', Validators.required]
   });
+
+  usarCuentaDemo(dni: string): void {
+    this.form.setValue({ dni, password: this.demoPassword });
+    this.form.markAsUntouched();
+  }
 
   ingresar(): void {
     if (this.form.invalid || this.enviando()) {

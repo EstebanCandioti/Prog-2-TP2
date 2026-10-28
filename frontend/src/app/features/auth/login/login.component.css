@@ -12,7 +12,17 @@
 .auth-intro { max-width: 430px; }
 .eyebrow { margin: 0 0 14px; color: var(--green-700); font-size: 12px; font-weight: 700; }
 .auth-intro h1 { margin: 0; color: var(--ink); font-size: clamp(36px, 5vw, 56px); line-height: 1.05; }
-.auth-intro > p:last-child { max-width: 360px; margin: 18px 0 0; color: var(--ink-soft); font-size: 17px; line-height: 1.6; }
+.auth-intro > p:not(.eyebrow) { max-width: 360px; margin: 18px 0 0; color: var(--ink-soft); font-size: 17px; line-height: 1.6; }
+.demo-panel { margin-top: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: none; }
+.demo-panel mat-panel-title { color: var(--ink); font-weight: 700; }
+.demo-note { margin: 0 0 8px; color: var(--ink-soft); font-size: 13px; }
+.demo-password { margin: 0 0 16px; color: var(--ink); font-size: 13px; }
+.demo-password code, .demo-account code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; }
+.demo-content { max-height: 320px; overflow-y: auto; }
+.demo-group + .demo-group { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.demo-group > strong { display: block; margin-bottom: 4px; color: var(--ink); font-size: 13px; }
+.demo-account { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 36px; color: var(--ink-soft); font-size: 13px; }
+.demo-account button { min-width: 52px; padding: 0 8px; }
 .auth-card { padding: 28px; border-radius: 8px; box-shadow: 0 12px 36px #173c3712; }
 .auth-card mat-card-title { color: var(--ink); font-size: 24px; }
 .auth-card mat-card-content { padding-top: 22px; }

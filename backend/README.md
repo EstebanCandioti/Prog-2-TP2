@@ -29,6 +29,21 @@ npm run dev
 - `npm run dev`: levanta Express con recarga automatica.
 - `npm run build`: compila TypeScript a `dist/`.
 - `npm start`: ejecuta el build compilado.
+- `npm run seed:demo`: compila el backend y crea o actualiza 12 cuentas de prueba en la base local.
+
+## Cuentas de prueba
+
+Con la base local configurada en `.env`, ejecutar `npm run seed:demo` desde `backend/`.
+El comando crea tres cuentas por rol y se puede repetir sin duplicarlas. La contraseña común es `Demo2026!`.
+
+| Rol | DNI |
+| --- | --- |
+| Administrador | 90000001, 90000002, 90000003 |
+| Médico | 90000004, 90000005, 90000006 |
+| Operador | 90000007, 90000008, 90000009 |
+| Paciente | 90000010, 90000011, 90000012 |
+
+La pantalla de ingreso muestra estas cuentas y permite completar el formulario con cada una.
 
 ## Endpoints
 

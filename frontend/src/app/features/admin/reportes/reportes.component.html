@@ -1,0 +1,236 @@
+<section class="reports-page">
+  <header class="page-heading">
+    <div>
+      <h1>Reportes y estadísticas</h1>
+      <p class="applied-period">Período aplicado: <strong>{{ periodoAplicado() }}</strong></p>
+    </div>
+    <mat-icon aria-hidden="true">analytics</mat-icon>
+  </header>
+
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <div class="filter-bar">
+        <h2>Período</h2>
+        <div class="shortcut-list" role="group" aria-label="Elegir período del reporte">
+          @for (opcion of opcionesPeriodo; track opcion.id) {
+            <button
+              mat-stroked-button
+              type="button"
+              [class.shortcut-active]="atajoActivo() === opcion.id"
+              [attr.aria-pressed]="atajoActivo() === opcion.id"
+              (click)="aplicarAtajo(opcion.id)"
+            >
+              {{ opcion.etiqueta }}
+            </button>
+          }
+          <button
+            mat-stroked-button
+            type="button"
+            [class.shortcut-active]="atajoActivo() === 'personalizado'"
+            [attr.aria-pressed]="atajoActivo() === 'personalizado'"
+            [attr.aria-expanded]="atajoActivo() === 'personalizado'"
+            [attr.aria-controls]="atajoActivo() === 'personalizado' ? 'rango-personalizado' : null"
+            (click)="marcarPersonalizado()"
+          >
+            Personalizado
+          </button>
+        </div>
+      </div>
+
+      @if (atajoActivo() === 'personalizado') {
+        <div id="rango-personalizado" class="custom-range-area">
+          <form class="custom-range" [formGroup]="rangoForm" (ngSubmit)="aplicarPersonalizado()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Rango personalizado</mat-label>
+              <mat-date-range-input [rangePicker]="rangePicker" [max]="fechaMaxima()">
+                <input matStartDate formControlName="desde" placeholder="Desde" (dateChange)="marcarPersonalizado()">
+                <input matEndDate formControlName="hasta" placeholder="Hasta" (dateChange)="marcarPersonalizado()">
+              </mat-date-range-input>
+              <mat-datepicker-toggle matIconSuffix [for]="rangePicker" />
+              <mat-date-range-picker #rangePicker />
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="submit">
+              <mat-icon>filter_alt</mat-icon>
+              Aplicar rango
+            </button>
+          </form>
+          @if (errorRango()) {
+            <p class="range-error" role="alert"><mat-icon>error_outline</mat-icon>{{ errorRango() }}</p>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (cargando()) {
+    <div class="loading-state" role="status" aria-label="Cargando reportes">
+      <mat-spinner diameter="48" />
+      <p>Cargando indicadores del período…</p>
+    </div>
+  } @else if (error()) {
+    <mat-card class="error-state" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <div>
+        <h2>No se pudieron mostrar los reportes</h2>
+        <p>{{ error() }}</p>
+      </div>
+    </mat-card>
+  } @else if (dashboard(); as reporte) {
+    <section class="summary-section" aria-label="Resumen de turnos">
+      <div class="summary-grid">
+        <mat-card class="metric-card">
+          <mat-icon>event_note</mat-icon>
+          <span>Total</span>
+          <strong>{{ reporte.total | number:'1.0-0' }}</strong>
+        </mat-card>
+        <mat-card class="metric-card">
+          <mat-icon>event_available</mat-icon>
+          <span>Confirmados</span>
+          <strong>{{ reporte.confirmados | number:'1.0-0' }}</strong>
+        </mat-card>
+        <mat-card class="metric-card metric-success">
+          <mat-icon>task_alt</mat-icon>
+          <span>Atendidos</span>
+          <strong>{{ reporte.atendidos | number:'1.0-0' }}</strong>
+        </mat-card>
+        <mat-card class="metric-card metric-error">
+          <mat-icon>event_busy</mat-icon>
+          <span>Cancelados</span>
+          <strong>{{ reporte.cancelados | number:'1.0-0' }}</strong>
+        </mat-card>
+        <mat-card class="metric-card rate-card">
+          <mat-icon>percent</mat-icon>
+          <span>Tasa de cancelación sobre el total</span>
+          <strong>{{ reporte.tasaCancelacion | number:'1.0-2' }} %</strong>
+        </mat-card>
+      </div>
+    </section>
+
+    <div class="reports-layout">
+      <mat-card class="report-card outcome-card">
+        <mat-card-header>
+          <mat-card-title>Resultado de los turnos finalizados</mat-card-title>
+          <mat-card-subtitle>Solo incluye turnos atendidos y cancelados</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (reporte.finalizados > 0) {
+            <div class="doughnut-layout">
+              <div class="chart-frame doughnut-frame">
+                <canvas #donaCanvas role="img" aria-label="Distribución de turnos atendidos y cancelados"></canvas>
+              </div>
+              <div class="outcome-values">
+                <div>
+                  <span class="status-dot attended-dot"></span>
+                  <p><strong>{{ reporte.atendidos | number:'1.0-0' }}</strong> atendidos</p>
+                  <small>{{ porcentajeFinalizados(reporte.atendidos, reporte.finalizados) | number:'1.0-1' }} % de finalizados</small>
+                </div>
+                <div>
+                  <span class="status-dot cancelled-dot"></span>
+                  <p><strong>{{ reporte.cancelados | number:'1.0-0' }}</strong> cancelados</p>
+                  <small>{{ porcentajeFinalizados(reporte.cancelados, reporte.finalizados) | number:'1.0-1' }} % de finalizados</small>
+                </div>
+              </div>
+            </div>
+            <p class="denominator-note">
+              Porcentajes calculados sobre {{ reporte.finalizados | number:'1.0-0' }} turnos finalizados.
+              La tasa del resumen se calcula sobre el total de turnos.
+            </p>
+          } @else {
+            <div class="empty-state compact-empty">
+              <mat-icon>donut_large</mat-icon>
+              <p>No hay turnos atendidos ni cancelados en este período.</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <div class="reports-side">
+      <mat-card class="report-card ranking-card">
+        <mat-card-header>
+          <mat-card-title>Ranking médico</mat-card-title>
+          <mat-card-subtitle>Turnos atendidos por profesional</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (reporte.ranking.length) {
+            <ol class="ranking-podium">
+              @for (medico of rankingDestacado(reporte.ranking); track medico.id; let posicion = $index) {
+                <li>
+                  <span class="position">{{ posicion + 1 }}</span>
+                  <span class="doctor-name">{{ medico.nombreCompleto }}</span>
+                  <strong>{{ medico.turnosAtendidos | number:'1.0-0' }}</strong>
+                </li>
+              }
+            </ol>
+
+            <button
+              mat-stroked-button
+              type="button"
+              class="ranking-toggle"
+              (click)="abrirRankingCompleto()"
+            >
+              <mat-icon>bar_chart</mat-icon>
+              Ver ranking completo
+            </button>
+          } @else {
+            <div class="empty-state compact-empty">
+              <mat-icon>medical_services</mat-icon>
+              <p>No hay turnos atendidos para armar el ranking.</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <div class="breakdowns-grid">
+      <mat-card class="report-card">
+        <mat-card-header>
+          <mat-card-title>Turnos por especialidad</mat-card-title>
+          <mat-card-subtitle>Todos los estados, de mayor a menor</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (reporte.especialidades.length) {
+            <ul class="quantity-list">
+              @for (especialidad of reporte.especialidades; track especialidad.id) {
+                <li><span>{{ especialidad.nombre }}</span><strong>{{ especialidad.cantidad | number:'1.0-0' }}</strong></li>
+              }
+            </ul>
+          } @else {
+            <div class="empty-state compact-empty">
+              <mat-icon>clinical_notes</mat-icon>
+              <p>No hay turnos por especialidad en este período.</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="report-card">
+        <mat-card-header>
+          <mat-card-title>Turnos por sede</mat-card-title>
+          <mat-card-subtitle>Todos los estados, de mayor a menor</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (reporte.sedes.length) {
+            <ul class="quantity-list">
+              @for (sede of reporte.sedes; track sede.id) {
+                <li><span>{{ sede.nombre }}</span><strong>{{ sede.cantidad | number:'1.0-0' }}</strong></li>
+              }
+            </ul>
+          } @else {
+            <div class="empty-state compact-empty">
+              <mat-icon>location_on</mat-icon>
+              <p>No hay turnos por sede en este período.</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+      </div>
+      </div>
+    </div>
+
+    @if (reporte.total === 0) {
+      <div class="empty-period-note" role="status">
+        <mat-icon>event_busy</mat-icon>
+        <span>El período seleccionado no contiene turnos.</span>
+      </div>
+    }
+  }
+</section>

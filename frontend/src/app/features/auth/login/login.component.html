@@ -3,6 +3,28 @@
     <p class="eyebrow">CLÍNICA VIRTUAL</p>
     <h1>Tu salud, más cerca.</h1>
     <p>Ingresá para consultar tu espacio y continuar con tus gestiones.</p>
+
+    <mat-expansion-panel class="demo-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title>Cuentas de prueba</mat-panel-title>
+      </mat-expansion-panel-header>
+      <p class="demo-note">Solo para la base local de demostración.</p>
+      <p class="demo-password">Contraseña de todas las cuentas: <code>{{ demoPassword }}</code></p>
+      <div class="demo-content">
+        @for (grupo of demoGroups; track grupo.titulo) {
+          <div class="demo-group">
+            <strong>{{ grupo.titulo }}</strong>
+            @for (cuenta of grupo.cuentas; track cuenta.dni) {
+              <div class="demo-account">
+                <span>{{ cuenta.etiqueta }}</span>
+                <code>{{ cuenta.dni }}</code>
+                <button mat-button type="button" (click)="usarCuentaDemo(cuenta.dni)" [attr.aria-label]="'Usar la cuenta ' + cuenta.etiqueta">Usar</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-expansion-panel>
   </div>
 
   <mat-card class="auth-card">
