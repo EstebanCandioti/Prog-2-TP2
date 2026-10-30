@@ -13,7 +13,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 export const coberturaRoutes = Router();
 
 coberturaRoutes.get('/coberturas-disponibles', asyncHandler(listarCoberturas));
-coberturaRoutes.get('/coberturas', verificarToken, verificarRol('admin'), asyncHandler(listarCoberturas));
+coberturaRoutes.get('/coberturas', verificarToken, asyncHandler(listarCoberturas));
 coberturaRoutes.get(
   '/coberturas/:id',
   verificarToken,

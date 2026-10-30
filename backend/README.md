@@ -55,6 +55,17 @@ La pantalla de ingreso muestra estas cuentas y permite completar el formulario c
 - `GET /auth/perfil-paciente` para probar `verificarRol('paciente')`
 - `GET /auth/perfil-admin` para probar error `403` con token de paciente
 
+### Permisos de catálogos
+
+| Rutas | Acceso |
+| --- | --- |
+| `GET /coberturas-disponibles` | Público; se usa durante el registro |
+| `GET /sedes`, `GET /especialidades`, `GET /coberturas` | Cualquier usuario autenticado |
+| `GET /sedes/:id`, `GET /especialidades/:id`, `GET /coberturas/:id` | Solo administrador |
+| `POST`, `PUT` y `DELETE` de sedes, especialidades y coberturas | Solo administrador |
+
+Las rutas autenticadas requieren token. Las consultas por ID y las operaciones de escritura también verifican el rol administrador.
+
 Todas las respuestas usan el formato:
 
 ```json

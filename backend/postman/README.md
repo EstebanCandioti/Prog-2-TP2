@@ -14,6 +14,17 @@ Esta carpeta tiene dos tipos de colecciones:
 
 Los runners ya tienen variables y scripts internos para guardar tokens e ids generados durante la ejecucion. Por eso no hace falta copiar manualmente el token del login ni los ids de los registros creados.
 
+## Permisos de catálogos
+
+| Rutas | Token requerido | Rol permitido |
+| --- | --- | --- |
+| `GET /coberturas-disponibles` | No | Público |
+| `GET /sedes`, `GET /especialidades`, `GET /coberturas` | Sí | Cualquier rol autenticado |
+| `GET /sedes/:id`, `GET /especialidades/:id`, `GET /coberturas/:id` | Sí | Administrador |
+| `POST`, `PUT`, `DELETE` de esos tres catálogos | Sí | Administrador |
+
+Las colecciones documentales muestran ejemplos de listados con token de operador y de operaciones restringidas con token de administrador.
+
 ## Verificacion de pruebas
 
 Cada runner incluye codigo de verificacion en la seccion **Tests** de Postman.

@@ -18,7 +18,7 @@
           "  '04 - Login paciente': 200,",
           "  '05 - Coberturas disponibles publico': 200,",
           "  '06 - Crear cobertura temporal': 201,",
-          "  '07 - Listar coberturas admin': 200,",
+          "  '07 - Listar coberturas operador': 200,",
           "  '08 - Obtener cobertura temporal': 200,",
           "  '09 - Actualizar cobertura temporal': 200,",
           "  '10 - Eliminar cobertura temporal': 200,",
@@ -279,13 +279,14 @@
       }
     },
     {
-      "name": "07 - Listar coberturas admin",
+      "name": "07 - Listar coberturas operador",
       "request": {
+        "description": "GET /coberturas: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/coberturas"
@@ -374,11 +375,12 @@
     {
       "name": "12 - Listar sedes",
       "request": {
+        "description": "GET /sedes: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/sedes"
@@ -467,11 +469,12 @@
     {
       "name": "17 - Listar especialidades",
       "request": {
+        "description": "GET /especialidades: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/especialidades"

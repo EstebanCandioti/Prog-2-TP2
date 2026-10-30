@@ -12,10 +12,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 
 export const sedeRoutes = Router();
 
-sedeRoutes.use('/sedes', verificarToken, verificarRol('admin'));
-
-sedeRoutes.get('/sedes', asyncHandler(listarSedes));
-sedeRoutes.get('/sedes/:id', asyncHandler(obtenerSedePorId));
-sedeRoutes.post('/sedes', asyncHandler(crearSede));
-sedeRoutes.put('/sedes/:id', asyncHandler(actualizarSede));
-sedeRoutes.delete('/sedes/:id', asyncHandler(eliminarSede));
+sedeRoutes.get('/sedes', verificarToken, asyncHandler(listarSedes));
+sedeRoutes.get('/sedes/:id', verificarToken, verificarRol('admin'), asyncHandler(obtenerSedePorId));
+sedeRoutes.post('/sedes', verificarToken, verificarRol('admin'), asyncHandler(crearSede));
+sedeRoutes.put('/sedes/:id', verificarToken, verificarRol('admin'), asyncHandler(actualizarSede));
+sedeRoutes.delete('/sedes/:id', verificarToken, verificarRol('admin'), asyncHandler(eliminarSede));

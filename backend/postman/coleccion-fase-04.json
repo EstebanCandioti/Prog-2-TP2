@@ -274,12 +274,12 @@
         {
           "name": "Listar",
           "request": {
-            "description": "Rol: admin. Exito: 200. Error esperado con otro rol: 403.",
+            "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
+                "value": "Bearer {{operador_token}}"
               }
             ],
             "url": "{{base_url}}/coberturas"
@@ -365,12 +365,12 @@
         {
           "name": "Listar",
           "request": {
-            "description": "Rol: admin. Exito: 200.",
+            "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
+                "value": "Bearer {{operador_token}}"
               }
             ],
             "url": "{{base_url}}/sedes"
@@ -456,12 +456,12 @@
         {
           "name": "Listar",
           "request": {
-            "description": "Rol: admin. Exito: 200.",
+            "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
             "method": "GET",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_token}}"
+                "value": "Bearer {{operador_token}}"
               }
             ],
             "url": "{{base_url}}/especialidades"

@@ -318,11 +318,12 @@
     {
       "name": "08 - Listar coberturas",
       "request": {
+        "description": "GET /coberturas: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/coberturas"
@@ -411,11 +412,12 @@
     {
       "name": "13 - Listar sedes",
       "request": {
+        "description": "GET /sedes: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/sedes"
@@ -504,11 +506,12 @@
     {
       "name": "18 - Listar especialidades",
       "request": {
+        "description": "GET /especialidades: cualquier rol autenticado. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/especialidades"

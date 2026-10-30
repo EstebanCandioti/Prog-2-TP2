@@ -147,13 +147,14 @@
       }
     },
     {
-      "name": "Coberturas - Listar admin",
+      "name": "Coberturas - Listar autenticado",
       "request": {
+        "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/coberturas"
@@ -236,13 +237,14 @@
       }
     },
     {
-      "name": "Sedes - Listar admin",
+      "name": "Sedes - Listar autenticado",
       "request": {
+        "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/sedes"
@@ -318,13 +320,14 @@
       }
     },
     {
-      "name": "Especialidades - Listar admin",
+      "name": "Especialidades - Listar autenticado",
       "request": {
+        "description": "Rol: cualquier usuario autenticado. Exito: 200. Sin token: 401.",
         "method": "GET",
         "header": [
           {
             "key": "Authorization",
-            "value": "Bearer {{admin_token}}"
+            "value": "Bearer {{operador_token}}"
           }
         ],
         "url": "{{base_url}}/especialidades"

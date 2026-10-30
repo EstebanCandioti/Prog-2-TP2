@@ -22,10 +22,11 @@
       }
     },
     {
-      "name": "Coberturas - OK",
+      "name": "Coberturas disponibles - Publico",
       "request": {
+        "description": "Acceso publico para el registro. GET /coberturas requiere un token de cualquier rol autenticado.",
         "method": "GET",
-        "url": "{{base_url}}/coberturas"
+        "url": "{{base_url}}/coberturas-disponibles"
       }
     },
     {
