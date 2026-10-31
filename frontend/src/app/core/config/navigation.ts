@@ -9,6 +9,8 @@ export interface NavigationItem {
 export const navigationByRole: Record<RolUsuario, NavigationItem[]> = {
   admin: [
     { label: 'Usuarios', path: '/admin/usuarios', icon: 'group' },
+    { label: 'Sedes', path: '/admin/sedes', icon: 'location_city' },
+    { label: 'Especialidades', path: '/admin/especialidades', icon: 'medical_services' },
     { label: 'Coberturas', path: '/admin/coberturas', icon: 'health_and_safety' },
     { label: 'Reportes', path: '/admin/reportes', icon: 'analytics' },
     { label: 'Auditoría', path: '/admin/auditoria', icon: 'fact_check' }

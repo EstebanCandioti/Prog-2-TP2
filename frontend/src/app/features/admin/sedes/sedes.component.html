@@ -1,0 +1,126 @@
+<main class="sedes-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Sedes</h1>
+      <p class="subtitle">Administrá las sedes de la clínica.</p>
+    </div>
+    <button mat-flat-button color="primary" type="button" (click)="nuevaSede()" [disabled]="formularioVisible()">
+      <mat-icon>add</mat-icon>
+      Nueva sede
+    </button>
+  </header>
+
+  @if (formularioVisible()) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ sedeEnEdicion() ? 'Editar sede' : 'Nueva sede' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="formulario" (ngSubmit)="guardarSede()" class="sede-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" maxlength="50" autocomplete="organization" />
+            @if ((formulario.controls.nombre.hasError('required') || formulario.controls.nombre.hasError('pattern')) && formulario.controls.nombre.touched) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            }
+            @if (formulario.controls.nombre.hasError('maxlength')) {
+              <mat-error>El nombre no puede superar los 50 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="direccion" maxlength="100" autocomplete="street-address" />
+            @if ((formulario.controls.direccion.hasError('required') || formulario.controls.direccion.hasError('pattern')) && formulario.controls.direccion.touched) {
+              <mat-error>La dirección es obligatoria.</mat-error>
+            }
+            @if (formulario.controls.direccion.hasError('maxlength')) {
+              <mat-error>La dirección no puede superar los 100 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="telefono" maxlength="15" type="tel" autocomplete="tel" />
+            @if ((formulario.controls.telefono.hasError('required') || formulario.controls.telefono.hasError('pattern')) && formulario.controls.telefono.touched) {
+              <mat-error>El teléfono es obligatorio.</mat-error>
+            }
+            @if (formulario.controls.telefono.hasError('maxlength')) {
+              <mat-error>El teléfono no puede superar los 15 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarEdicion()" [disabled]="guardando()">Cancelar</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="list-card">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar sede</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (input)="buscar($event)" />
+      </mat-form-field>
+
+      @if (cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando sedes…</span>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarSedes()">Reintentar</button>
+        </div>
+      } @else if (sedesFiltradas().length === 0) {
+        <div class="state-message">
+          <mat-icon>location_city</mat-icon>
+          <span>{{ termino() ? 'No hay sedes que coincidan con la búsqueda.' : 'Todavía no hay sedes cargadas.' }}</span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th class="actions-heading">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sede of sedesFiltradas(); track sede.id) {
+                <tr>
+                  <td data-label="Nombre">{{ sede.nombre }}</td>
+                  <td data-label="Dirección">{{ sede.direccion }}</td>
+                  <td data-label="Teléfono">{{ sede.telefono }}</td>
+                  <td class="row-actions" data-label="Acciones">
+                    <button mat-icon-button type="button" aria-label="Editar sede" (click)="editarSede(sede)" [disabled]="formularioVisible() || eliminandoId() !== null">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button type="button" aria-label="Eliminar sede" (click)="eliminarSede(sede)" [disabled]="formularioVisible() || eliminandoId() !== null">
+                      @if (eliminandoId() === sede.id) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                      } @else {
+                        <mat-icon>delete</mat-icon>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

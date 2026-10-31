@@ -1,0 +1,132 @@
+<main class="especialidades-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Especialidades</h1>
+      <p class="subtitle">Administrá las especialidades de la clínica.</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="nuevaEspecialidad()"
+      [disabled]="formularioVisible()"
+    >
+      <mat-icon>add</mat-icon>
+      Nueva especialidad
+    </button>
+  </header>
+
+  @if (formularioVisible()) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>
+          {{ especialidadEnEdicion() ? 'Editar especialidad' : 'Nueva especialidad' }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="formulario" (ngSubmit)="guardarEspecialidad()" class="especialidad-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Descripción</mat-label>
+            <input matInput formControlName="descripcion" maxlength="30" />
+            @if (
+              (formulario.controls.descripcion.hasError('required') ||
+                formulario.controls.descripcion.hasError('pattern')) &&
+              formulario.controls.descripcion.touched
+            ) {
+              <mat-error>La descripción es obligatoria.</mat-error>
+            }
+            @if (formulario.controls.descripcion.hasError('maxlength')) {
+              <mat-error>La descripción no puede superar los 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarEdicion()" [disabled]="guardando()">
+              Cancelar
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="list-card">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar especialidad</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (input)="buscar($event)" />
+      </mat-form-field>
+
+      @if (cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando especialidades…</span>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarEspecialidades()">Reintentar</button>
+        </div>
+      } @else if (especialidadesFiltradas().length === 0) {
+        <div class="state-message">
+          <mat-icon>medical_services</mat-icon>
+          <span>
+            {{
+              termino()
+                ? 'No hay especialidades que coincidan con la búsqueda.'
+                : 'Todavía no hay especialidades cargadas.'
+            }}
+          </span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Descripción</th>
+                <th class="actions-heading">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (especialidad of especialidadesFiltradas(); track especialidad.id) {
+                <tr>
+                  <td data-label="Descripción">{{ especialidad.descripcion }}</td>
+                  <td class="row-actions" data-label="Acciones">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar especialidad"
+                      (click)="editarEspecialidad(especialidad)"
+                      [disabled]="formularioVisible() || eliminandoId() !== null"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Eliminar especialidad"
+                      (click)="eliminarEspecialidad(especialidad)"
+                      [disabled]="formularioVisible() || eliminandoId() !== null"
+                    >
+                      @if (eliminandoId() === especialidad.id) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                      } @else {
+                        <mat-icon>delete</mat-icon>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>
