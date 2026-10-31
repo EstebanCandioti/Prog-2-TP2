@@ -1,0 +1,130 @@
+<main class="coberturas-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Coberturas</h1>
+      <p class="subtitle">Administrá las coberturas aceptadas por la clínica.</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="nuevaCobertura()"
+      [disabled]="formularioVisible()"
+    >
+      <mat-icon>add</mat-icon>
+      Nueva cobertura
+    </button>
+  </header>
+
+  @if (formularioVisible()) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ coberturaEnEdicion() ? 'Editar cobertura' : 'Nueva cobertura' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="formulario" (ngSubmit)="guardarCobertura()" class="cobertura-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" maxlength="30" />
+            @if (
+              (formulario.controls.nombre.hasError('required') ||
+                formulario.controls.nombre.hasError('pattern')) &&
+              formulario.controls.nombre.touched
+            ) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            }
+            @if (formulario.controls.nombre.hasError('maxlength')) {
+              <mat-error>El nombre no puede superar los 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarEdicion()" [disabled]="guardando()">
+              Cancelar
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando()">
+              {{ guardando() ? 'Guardando…' : 'Guardar' }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="list-card">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar cobertura</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (input)="buscar($event)" />
+      </mat-form-field>
+
+      @if (cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando coberturas…</span>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarCoberturas()">Reintentar</button>
+        </div>
+      } @else if (coberturasFiltradas().length === 0) {
+        <div class="state-message">
+          <mat-icon>health_and_safety</mat-icon>
+          <span>
+            {{
+              termino()
+                ? 'No hay coberturas que coincidan con la búsqueda.'
+                : 'Todavía no hay coberturas cargadas.'
+            }}
+          </span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th class="actions-heading">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (cobertura of coberturasFiltradas(); track cobertura.id) {
+                <tr>
+                  <td data-label="Nombre">{{ cobertura.nombre }}</td>
+                  <td class="row-actions" data-label="Acciones">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar cobertura"
+                      (click)="editarCobertura(cobertura)"
+                      [disabled]="formularioVisible() || eliminandoId() !== null"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Eliminar cobertura"
+                      (click)="eliminarCobertura(cobertura)"
+                      [disabled]="formularioVisible() || eliminandoId() !== null"
+                    >
+                      @if (eliminandoId() === cobertura.id) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                      } @else {
+                        <mat-icon>delete</mat-icon>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>
