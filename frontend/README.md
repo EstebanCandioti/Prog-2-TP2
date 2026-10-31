@@ -28,6 +28,10 @@ npm start
 
 Abrir `http://localhost:4200`. Para que funcionen login, registro, perfil y coberturas, iniciar también el backend según las instrucciones de `../backend/README.md` y configurar `../backend/.env`.
 
+Para preparar otra PC y cargar agendas, turnos, historiales y notificaciones demo, seguir primero el [README general](../README.md). El SQL de datos es `../backend/src/database/seed-b10.sql` y requiere ejecutar antes `npm run seed:demo` desde `backend`. No es necesario reinstalar Angular Material ni Chart.js por separado.
+
+También se verificó la build en Windows con Node `22.19.0`. Si npm global devuelve `Cannot read properties of null (reading 'edgesOut')`, usar `npx -y npm@11.16.0 ci`, como en el comando de instalación anterior.
+
 ## Funcionalidad de esta etapa
 
 - Portada pública y layout con navegación por rol, notificaciones visuales, cierre de sesión y footer.

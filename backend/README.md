@@ -1,22 +1,22 @@
-# TP2 Prog 2 - Backend Semana 1
+# Clínica Virtual - Backend
 
-Backend inicial para el Sistema de Gestion de Turnos Medicos con Node.js, Express, TypeScript, MySQL/MariaDB, bcrypt y JWT.
+Backend del Sistema de Gestión de Turnos Médicos con Node.js, Express, TypeScript, MySQL/MariaDB, bcrypt y JWT.
 
 ## Setup
 
 1. Instalar dependencias:
 
-```bash
-npm install
+```powershell
+npx -y npm@11.16.0 ci
 ```
 
 2. Copiar `.env.example` a `.env` y ajustar credenciales si tu MySQL usa otra clave o usuario:
 
-```bash
-cp .env.example .env
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-3. Importar el script SQL provisto por la catedra. En este proyecto quedo pegado en `src/database/README.md`; si lo queres importar desde phpMyAdmin, podes copiar ese contenido a un `.sql`.
+3. Levantar MySQL y configurar host, puerto, usuario, contraseña, nombre de base y `JWT_SECRET` en `.env`. Si todavía no existe la base, importar `src/database/clinica.sql`, que crea `clinica`. Si la base ya existe, conservarla y no reimportar el esquema para cargar datos de prueba.
 
 4. Levantar en desarrollo:
 
@@ -44,6 +44,39 @@ El comando crea tres cuentas por rol y se puede repetir sin duplicarlas. La cont
 | Paciente | 90000010, 90000011, 90000012 |
 
 La pantalla de ingreso muestra estas cuentas y permite completar el formulario con cada una.
+
+## Datos de demostración B10
+
+Los datos cargados en la PC de un desarrollador no viajan con Git. Para reproducirlos en otra PC:
+
+1. Preparar la base y `.env` según Setup; MySQL debe estar encendido.
+2. Instalar las dependencias con `npx -y npm@11.16.0 ci` desde `backend` si todavía no están instaladas.
+3. Ejecutar `npm run seed:demo`. Crea o actualiza las 12 cuentas demo y restablece su contraseña común; no modifica otras cuentas. Es necesario porque el SQL no genera hashes bcrypt.
+4. Seleccionar esa misma base en phpMyAdmin o en el cliente SQL e importar **`src/database/seed-b10.sql` completo, en una sola conexión**. Detener la ejecución ante el primer error; no usar una opción que ignore errores. Como alternativa, desde `backend` en PowerShell, si el cliente `mysql` está disponible:
+
+```powershell
+cmd /c 'mysql --default-character-set=utf8mb4 -u root -p clinica < "src\database\seed-b10.sql"'
+```
+
+Ajustar usuario, base y puerto a la configuración propia. Si el cliente no está en el PATH, importar el archivo desde la herramienta gráfica.
+
+El SQL busca usuarios por sus DNI demo y obtiene sus IDs, especialidades, sedes y coberturas de la base: no depende de los IDs de la PC de origen. Requiere los tres médicos con especialidades diferentes y dos sedes, preparados por el comando anterior.
+
+Al comienzo define `@b10_fecha_base = CURDATE()`, usando el día de MySQL. Se puede reemplazar `CURDATE()` por una fecha fija, por ejemplo `'2026-10-31'`, para compartir exactamente las mismas fechas. La carga completa agrega:
+
+| Datos | Cantidad y escenario |
+| --- | --- |
+| Agendas | 16: cuatro rangos por día, para fecha base -2, fecha base, +2 y +4 días |
+| Médicos | Los tres demo; `90000004` atiende de 09:00 a 12:00 en su sede y de 14:00 a 17:00 en la del segundo médico |
+| Turnos | 12 confirmados, 4 cancelados y 4 atendidos; quedan bloques libres de 20 minutos |
+| Historiales | 4, asociados a los turnos atendidos; textos ficticios |
+| Notificaciones | 28 para los pacientes demo, con casos leídos y no leídos |
+
+Los registros se identifican por notas que comienzan con `B10 ` y mensajes `[B10 T...]`. Repetir el SQL **con la misma fecha base** no duplica datos. No actualiza ni elimina registros existentes, no crea tablas permanentes y no cambia índices ni claves foráneas. Solo usa tablas temporales de la conexión para preparar la carga.
+
+Si falta algún requisito, hay agendas o turnos incompatibles, o alguien modificó un turno demo existente, una comprobación detiene el SQL con un error de clave duplicada en `b10_guard`. No se debe ignorar ese error: revisar el requisito indicado, ejecutar `ROLLBACK` si la conexión sigue abierta y cerrarla antes de reintentar. Los datos nuevos se confirman juntos al llegar al `COMMIT` final; no se restauran registros que otro desarrollador haya editado. Cambiar la fecha base puede encontrar conflictos con una carga anterior.
+
+El comando `seed:demo` sigue preparando cuentas; la carga B10 es el paso SQL separado. No hace falta aplicar la restricción única propuesta para `historial_clinico.id_turno` a una base existente para ejecutar esta carga.
 
 ## Endpoints
 
