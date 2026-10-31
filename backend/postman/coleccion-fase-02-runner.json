@@ -558,6 +558,18 @@
     },
     {
       "name": "22 - Listar usuarios",
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "const datos = pm.response.json().datos;",
+          "pm.test('Listado de usuarios paginado', () => {",
+          "  pm.expect(datos.items).to.be.an('array');",
+          "  pm.expect(datos.total).to.be.a('number');",
+          "  pm.expect(datos.pagina).to.eql(1);",
+          "  pm.expect(datos.limite).to.eql(20);",
+          "});"
+        ] }
+      }],
       "request": {
         "method": "GET",
         "header": [

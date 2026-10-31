@@ -595,6 +595,18 @@
     },
     {
       "name": "23 - Listar usuarios",
+      "event": [{
+        "listen": "test",
+        "script": { "type": "text/javascript", "exec": [
+          "const datos = pm.response.json().datos;",
+          "pm.test('Listado de usuarios paginado', () => {",
+          "  pm.expect(datos.items).to.be.an('array');",
+          "  pm.expect(datos.total).to.be.a('number');",
+          "  pm.expect(datos.pagina).to.eql(1);",
+          "  pm.expect(datos.limite).to.eql(20);",
+          "});"
+        ] }
+      }],
       "request": {
         "method": "GET",
         "header": [
@@ -829,7 +841,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Turno para atender\"\n}"
+          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:20\",\n  \"nota\": \"Turno para atender\"\n}"
         },
         "url": "{{base_url}}/turnos"
       }

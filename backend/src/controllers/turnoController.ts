@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 import { crearNotificacion } from '../services/notificacionService';
+import { horaValidaAgenda, validarFechaAgenda } from '../services/agendaService';
+import { obtenerBloquesTurno } from '../services/disponibilidadService';
 import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
@@ -15,16 +17,21 @@ interface TurnoBody {
   nota: string;
 }
 
-const obtenerIdParam = (req: AuthRequest, res: Response): number | null => {
-  const id = Number(req.params.id);
+const mensajeSedeOperador = 'Solo podés realizar esta operación en tu sede asignada. Si tu asignación cambió recientemente, cerrá sesión y volvé a ingresar para actualizarla.';
 
-  if (Number.isNaN(id)) {
-    responder(res, 400, 'El id debe ser numerico');
+const obtenerIdParam = (req: AuthRequest, res: Response): number | null => {
+  const valor = req.params.id;
+  const id = Number(valor);
+
+  if (typeof valor !== 'string' || !/^\d+$/.test(valor) || !Number.isSafeInteger(id) || id <= 0) {
+    responder(res, 400, 'El id debe ser un entero positivo');
     return null;
   }
 
   return id;
 };
+
+const idValido = (valor: unknown): valor is number => typeof valor === 'number' && Number.isSafeInteger(valor) && valor > 0;
 
 const camposCrearTurnoCompletos = (body: TurnoBody): boolean => {
   return Boolean(body.id_medico && body.id_especialidad && body.id_sede && body.fecha && body.hora && body.nota);
@@ -78,18 +85,41 @@ const puedeGestionarTurno = (req: AuthRequest, turno: RowDataPacket): boolean =>
   }
 
   if (req.usuario?.rol === 'operador') {
-    return req.usuario.id_sede === turno.id_sede;
+    return idValido(req.usuario.id_sede) && req.usuario.id_sede === Number(turno.id_sede);
   }
 
   return false;
 };
 
 export const crearTurno = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (req.usuario?.rol === 'operador' && !idValido(req.usuario.id_sede)) {
+    responder(res, 403, 'El operador no tiene una sede valida asignada');
+    return;
+  }
+  if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+    responder(res, 400, 'El cuerpo debe ser un objeto');
+    return;
+  }
   const body = req.body as TurnoBody;
   const { id_medico, id_especialidad, id_sede, fecha, hora, nota } = body;
 
   if (!camposCrearTurnoCompletos(body)) {
     responder(res, 400, 'Faltan campos obligatorios');
+    return;
+  }
+
+  if (!idValido(id_medico) || !idValido(id_especialidad) || !idValido(id_sede)) {
+    responder(res, 400, 'Los IDs de medico, especialidad y sede deben ser enteros positivos');
+    return;
+  }
+
+  const errorFecha = validarFechaAgenda(fecha);
+  if (errorFecha) {
+    responder(res, 400, errorFecha);
+    return;
+  }
+  if (!horaValidaAgenda(hora)) {
+    responder(res, 400, 'La hora debe tener formato HH:mm y ser válida');
     return;
   }
 
@@ -100,8 +130,13 @@ export const crearTurno = async (req: AuthRequest, res: Response): Promise<void>
     return;
   }
 
+  if (!idValido(idPaciente)) {
+    responder(res, 400, 'El id_paciente debe ser un entero positivo');
+    return;
+  }
+
   if (req.usuario?.rol === 'operador' && req.usuario.id_sede !== id_sede) {
-    responder(res, 403, 'El operador solo puede crear turnos de su propia sede');
+    responder(res, 403, mensajeSedeOperador);
     return;
   }
 
@@ -121,33 +156,13 @@ export const crearTurno = async (req: AuthRequest, res: Response): Promise<void>
     return;
   }
 
-  const [agendas] = await pool.query<RowDataPacket[]>(
-    `SELECT id FROM agenda
-     WHERE id_medico = ?
-       AND id_especialidad = ?
-       AND id_sede = ?
-       AND fecha = ?
-       AND hora_entrada <= ?
-       AND hora_salida > ?`,
-    [id_medico, id_especialidad, id_sede, fecha, hora, hora]
-  );
-  const agenda = agendas[0];
-
-  if (!agenda) {
+  const { bloques, disponibles } = await obtenerBloquesTurno(id_medico, id_especialidad, id_sede, fecha);
+  if (!bloques.some((bloque) => bloque.hora === hora)) {
     responder(res, 400, 'El horario solicitado no esta disponible en la agenda del medico');
     return;
   }
-
-  const [turnosConfirmados] = await pool.query<RowDataPacket[]>(
-    `SELECT id FROM turno
-     WHERE id_agenda = ?
-       AND fecha = ?
-       AND hora = ?
-       AND estado = ?`,
-    [agenda.id, fecha, hora, 'confirmado']
-  );
-
-  if (turnosConfirmados.length > 0) {
+  const bloqueLibre = disponibles.find((bloque) => bloque.hora === hora);
+  if (!bloqueLibre) {
     responder(res, 409, 'El horario solicitado ya tiene un turno confirmado');
     return;
   }
@@ -155,7 +170,7 @@ export const crearTurno = async (req: AuthRequest, res: Response): Promise<void>
   const [resultado] = await pool.query<ResultSetHeader>(
     `INSERT INTO turno (nota, id_agenda, fecha, hora, id_paciente, id_cobertura, estado)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [nota, agenda.id, fecha, hora, idPaciente, paciente.id_cobertura, 'confirmado']
+    [nota, bloqueLibre.id_agenda, fecha, hora, idPaciente, paciente.id_cobertura, 'confirmado']
   );
 
   const mensaje = `Tu turno del ${fecha} a las ${hora} fue confirmado.`;
@@ -182,7 +197,11 @@ export const cancelarTurno = async (req: AuthRequest, res: Response): Promise<vo
   }
 
   if (!puedeGestionarTurno(req, turno)) {
-    responder(res, 403, 'No tiene permisos para cancelar este turno');
+    if (req.usuario?.rol === 'operador') {
+      responder(res, 403, idValido(req.usuario.id_sede) ? mensajeSedeOperador : 'El operador no tiene una sede valida asignada');
+    } else {
+      responder(res, 403, 'No tiene permisos para cancelar este turno');
+    }
     return;
   }
 
@@ -270,6 +289,10 @@ export const listarTurnosMedico = async (req: AuthRequest, res: Response): Promi
 };
 
 export const listarTurnosSede = async (req: AuthRequest, res: Response): Promise<void> => {
+  if (!idValido(req.usuario?.id_sede)) {
+    responder(res, 403, 'El operador no tiene una sede valida asignada');
+    return;
+  }
   const fecha = req.query.fecha;
 
   if (!fecha) {

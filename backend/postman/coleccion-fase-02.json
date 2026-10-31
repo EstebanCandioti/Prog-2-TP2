@@ -403,6 +403,54 @@
       }
     },
     {
+      "name": "Usuarios - Crear admin",
+      "request": {
+        "description": "POST /usuarios. Solo admin autenticado. Admin sin sede ni especialidades. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400 datos invalidos, 401 sin token, 403 otro rol, 409 DNI o email duplicado. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Admin\",\n  \"dni\": \"90100001\",\n  \"email\": \"ana.admin@ejemplo.com\",\n  \"telefono\": \"3424000001\",\n  \"fecha_nacimiento\": \"1985-03-10\",\n  \"password\": \"Demo2026!\",\n  \"rol\": \"admin\",\n  \"id_cobertura\": null\n}"
+        },
+        "url": "{{base_url}}/usuarios"
+      }
+    },
+    {
+      "name": "Usuarios - Crear operador",
+      "request": {
+        "description": "POST /usuarios. Solo admin autenticado. Operador requiere sede existente y no admite especialidades. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400, 401, 403, 409. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Olga\",\n  \"apellido\": \"Operadora\",\n  \"dni\": \"90100002\",\n  \"email\": \"olga.operador@ejemplo.com\",\n  \"telefono\": \"3424000002\",\n  \"fecha_nacimiento\": \"1990-05-20\",\n  \"password\": \"Demo2026!\",\n  \"rol\": \"operador\",\n  \"id_sede\": {{sede_id}},\n  \"ids_especialidades\": []\n}"
+        },
+        "url": "{{base_url}}/usuarios"
+      }
+    },
+    {
+      "name": "Usuarios - Crear medico",
+      "request": {
+        "description": "POST /usuarios. Solo admin autenticado. Medico requiere sede y una o mas especialidades existentes, sin duplicados. Exito: 201 con usuario y especialidades [{id, descripcion}]; sin password ni token. Errores: 400, 401, 403, 409. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Mario\",\n  \"apellido\": \"Medico\",\n  \"dni\": \"90100003\",\n  \"email\": \"mario.medico@ejemplo.com\",\n  \"telefono\": \"3424000003\",\n  \"fecha_nacimiento\": \"1988-07-15\",\n  \"password\": \"Demo2026!\",\n  \"rol\": \"medico\",\n  \"id_sede\": {{sede_id}},\n  \"ids_especialidades\": [{{especialidad_id}}]\n}"
+        },
+        "url": "{{base_url}}/usuarios"
+      }
+    },
+    {
       "name": "Agendas - Listar operador con filtros",
       "request": {
         "method": "GET",
