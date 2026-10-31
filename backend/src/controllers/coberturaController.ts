@@ -116,7 +116,23 @@ export const eliminarCobertura = async (req: AuthRequest, res: Response): Promis
     return;
   }
 
-  const [resultado] = await pool.query<ResultSetHeader>('DELETE FROM cobertura WHERE id = ?', [id]);
+  const [turnos] = await pool.query<RowDataPacket[]>('SELECT id FROM turno WHERE id_cobertura = ? LIMIT 1', [id]);
+
+  if (turnos.length > 0) {
+    responder(res, 409, 'No se puede eliminar la cobertura porque tiene turnos asociados');
+    return;
+  }
+
+  let resultado: ResultSetHeader;
+  try {
+    [resultado] = await pool.query<ResultSetHeader>('DELETE FROM cobertura WHERE id = ?', [id]);
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ER_ROW_IS_REFERENCED_2') {
+      responder(res, 409, 'No se puede eliminar la cobertura porque tiene datos asociados');
+      return;
+    }
+    throw error;
+  }
 
   if (resultado.affectedRows === 0) {
     responder(res, 404, 'Cobertura no encontrada');

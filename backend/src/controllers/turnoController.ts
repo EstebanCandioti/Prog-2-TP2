@@ -4,6 +4,7 @@ import { pool } from '../config/db';
 import { crearNotificacion } from '../services/notificacionService';
 import { horaValidaAgenda, validarFechaAgenda } from '../services/agendaService';
 import { obtenerBloquesTurno } from '../services/disponibilidadService';
+import { validarDatosClinicos } from '../services/historialClinicoService';
 import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
 
@@ -32,6 +33,24 @@ const obtenerIdParam = (req: AuthRequest, res: Response): number | null => {
 };
 
 const idValido = (valor: unknown): valor is number => typeof valor === 'number' && Number.isSafeInteger(valor) && valor > 0;
+
+const idQueryValido = (valor: unknown): valor is string =>
+  typeof valor === 'string' && /^\d+$/.test(valor) && Number.isSafeInteger(Number(valor)) && Number(valor) > 0;
+
+const querySimple = (req: AuthRequest): boolean => Object.values(req.query).every((valor) => typeof valor === 'string');
+
+const fechaListado = (req: AuthRequest, res: Response): string | null => {
+  if (req.query.fecha === undefined) {
+    responder(res, 400, 'La fecha es obligatoria');
+    return null;
+  }
+  const errorFecha = validarFechaAgenda(req.query.fecha);
+  if (errorFecha) {
+    responder(res, 400, errorFecha);
+    return null;
+  }
+  return req.query.fecha as string;
+};
 
 const camposCrearTurnoCompletos = (body: TurnoBody): boolean => {
   return Boolean(body.id_medico && body.id_especialidad && body.id_sede && body.fecha && body.hora && body.nota);
@@ -75,13 +94,21 @@ const turnoListadoFrom = `
   INNER JOIN especialidad ON especialidad.id = agenda.id_especialidad
 `;
 
+const turnoListadoConPacienteSelect = `${turnoListadoSelect},
+  paciente.nombre AS paciente_nombre,
+  paciente.apellido AS paciente_apellido,
+  DATE_FORMAT(paciente.fecha_nacimiento, '%Y-%m-%d') AS paciente_fecha_nacimiento`;
+
+const turnoListadoConPacienteFrom = `${turnoListadoFrom}
+  INNER JOIN usuario paciente ON paciente.id = turno.id_paciente`;
+
 const puedeGestionarTurno = (req: AuthRequest, turno: RowDataPacket): boolean => {
   if (req.usuario?.rol === 'paciente') {
     return req.usuario.id === turno.id_paciente;
   }
 
   if (req.usuario?.rol === 'medico') {
-    return req.usuario.id === turno.id_medico && req.usuario.id_sede === turno.id_sede;
+    return req.usuario.id === Number(turno.id_medico);
   }
 
   if (req.usuario?.rol === 'operador') {
@@ -228,32 +255,86 @@ export const atenderTurno = async (req: AuthRequest, res: Response): Promise<voi
     return;
   }
 
-  const turno = await obtenerTurnoConAgenda(id);
-
-  if (!turno) {
-    responder(res, 404, 'Turno no encontrado');
+  const validacion = validarDatosClinicos(req.body);
+  if (validacion.error !== null) {
+    responder(res, 400, validacion.error);
     return;
   }
 
-  if (!puedeGestionarTurno(req, turno)) {
-    responder(res, 403, 'No tiene permisos para atender este turno');
-    return;
-  }
+  const { diagnostico, tratamiento, observaciones } = validacion.datos;
+  const connection = await pool.getConnection();
+  let turno: RowDataPacket;
+  let turnoActualizado: RowDataPacket;
 
-  if (turno.estado !== 'confirmado') {
-    responder(res, 409, 'Solo se pueden atender turnos confirmados');
-    return;
-  }
+  try {
+    await connection.beginTransaction();
 
-  await pool.query('UPDATE turno SET estado = ? WHERE id = ?', ['atendido', id]);
+    const [turnos] = await connection.query<RowDataPacket[]>(
+      `SELECT turno.*, agenda.id_medico, agenda.id_sede
+       FROM turno
+       INNER JOIN agenda ON agenda.id = turno.id_agenda
+       WHERE turno.id = ?
+       FOR UPDATE`,
+      [id]
+    );
+    turno = turnos[0];
+
+    if (!turno) {
+      await connection.rollback();
+      responder(res, 404, 'Turno no encontrado');
+      return;
+    }
+
+    if (!puedeGestionarTurno(req, turno)) {
+      await connection.rollback();
+      responder(res, 403, 'No tiene permisos para atender este turno');
+      return;
+    }
+
+    if (turno.estado !== 'confirmado') {
+      await connection.rollback();
+      responder(res, 409, 'Solo se pueden atender turnos confirmados');
+      return;
+    }
+
+    const [historiales] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM historial_clinico WHERE id_turno = ?',
+      [id]
+    );
+    if (historiales.length > 0) {
+      await connection.rollback();
+      responder(res, 409, 'El turno ya tiene historial clinico cargado');
+      return;
+    }
+
+    await connection.query(
+      `INSERT INTO historial_clinico
+        (id_turno, id_medico, id_paciente, diagnostico, tratamiento, observaciones)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, req.usuario!.id, turno.id_paciente, diagnostico, tratamiento ?? null, observaciones ?? null]
+    );
+    await connection.query('UPDATE turno SET estado = ? WHERE id = ?', ['atendido', id]);
+
+    const [turnosActualizados] = await connection.query<RowDataPacket[]>('SELECT * FROM turno WHERE id = ?', [id]);
+    turnoActualizado = turnosActualizados[0];
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {
+      responder(res, 409, 'El turno ya tiene historial clinico cargado');
+      return;
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
 
   const mensaje = `Tu turno del ${turno.fecha} a las ${turno.hora} fue atendido.`;
 
   await crearNotificacion(turno.id_paciente, 'turno_atendido', mensaje);
 
-  const [turnos] = await pool.query<RowDataPacket[]>('SELECT * FROM turno WHERE id = ?', [id]);
-
-  responder(res, 200, 'ok', turnos[0]);
+  responder(res, 200, 'ok', turnoActualizado);
 };
 
 export const listarMisTurnos = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -269,20 +350,39 @@ export const listarMisTurnos = async (req: AuthRequest, res: Response): Promise<
 };
 
 export const listarTurnosMedico = async (req: AuthRequest, res: Response): Promise<void> => {
-  const fecha = req.query.fecha;
+  if (!querySimple(req)) {
+    responder(res, 400, 'Los parámetros deben ser valores simples');
+    return;
+  }
+  const fecha = fechaListado(req, res);
+  if (fecha === null) return;
 
-  if (!fecha) {
-    responder(res, 400, 'La fecha es obligatoria');
+  const idSede = req.query.id_sede;
+  if (idSede !== undefined && !idQueryValido(idSede)) {
+    responder(res, 400, 'El id_sede debe ser un entero positivo');
     return;
   }
 
+  // Un id_medico enviado por el cliente no reemplaza al médico autenticado.
+  if (req.query.id_medico !== undefined && !idQueryValido(req.query.id_medico)) {
+    responder(res, 400, 'El id_medico debe ser un entero positivo');
+    return;
+  }
+
+  const parametros: Array<number | string> = [req.usuario!.id, fecha];
+  let filtroSede = '';
+  if (idSede !== undefined) {
+    filtroSede = ' AND agenda.id_sede = ?';
+    parametros.push(Number(idSede));
+  }
+
   const [turnos] = await pool.query<RowDataPacket[]>(
-    `SELECT ${turnoListadoSelect}
-     ${turnoListadoFrom}
+    `SELECT ${turnoListadoConPacienteSelect}
+     ${turnoListadoConPacienteFrom}
      WHERE agenda.id_medico = ?
-       AND turno.fecha = ?
-     ORDER BY turno.hora ASC`,
-    [req.usuario?.id, fecha]
+       AND turno.fecha = ?${filtroSede}
+     ORDER BY turno.hora ASC, turno.id ASC`,
+    parametros
   );
 
   responder(res, 200, 'ok', turnos);
@@ -293,20 +393,48 @@ export const listarTurnosSede = async (req: AuthRequest, res: Response): Promise
     responder(res, 403, 'El operador no tiene una sede valida asignada');
     return;
   }
-  const fecha = req.query.fecha;
+  if (!querySimple(req)) {
+    responder(res, 400, 'Los parámetros deben ser valores simples');
+    return;
+  }
+  const fecha = fechaListado(req, res);
+  if (fecha === null) return;
 
-  if (!fecha) {
-    responder(res, 400, 'La fecha es obligatoria');
+  const idMedico = req.query.id_medico;
+  if (idMedico !== undefined && !idQueryValido(idMedico)) {
+    responder(res, 400, 'El id_medico debe ser un entero positivo');
+    return;
+  }
+  const estado = req.query.estado;
+  if (estado !== undefined && !['confirmado', 'cancelado', 'atendido'].includes(estado as string)) {
+    responder(res, 400, 'El estado debe ser confirmado, cancelado o atendido');
     return;
   }
 
+  // id_sede no selecciona otra sede: la consulta siempre usa la del token actualizado.
+  if (req.query.id_sede !== undefined && !idQueryValido(req.query.id_sede)) {
+    responder(res, 400, 'El id_sede debe ser un entero positivo');
+    return;
+  }
+
+  const parametros: Array<number | string> = [req.usuario!.id_sede!, fecha];
+  let filtros = '';
+  if (idMedico !== undefined) {
+    filtros += ' AND agenda.id_medico = ?';
+    parametros.push(Number(idMedico));
+  }
+  if (estado !== undefined) {
+    filtros += ' AND turno.estado = ?';
+    parametros.push(estado as string);
+  }
+
   const [turnos] = await pool.query<RowDataPacket[]>(
-    `SELECT ${turnoListadoSelect}
-     ${turnoListadoFrom}
+    `SELECT ${turnoListadoConPacienteSelect}
+     ${turnoListadoConPacienteFrom}
      WHERE agenda.id_sede = ?
-       AND turno.fecha = ?
-     ORDER BY turno.hora ASC`,
-    [req.usuario?.id_sede, fecha]
+       AND turno.fecha = ?${filtros}
+     ORDER BY turno.hora ASC, turno.id ASC`,
+    parametros
   );
 
   responder(res, 200, 'ok', turnos);

@@ -207,7 +207,7 @@ ALTER TABLE `turno`
 
 ALTER TABLE `historial_clinico`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `id_turno` (`id_turno`),
+  ADD UNIQUE KEY `id_turno` (`id_turno`),
   ADD KEY `id_medico` (`id_medico`),
   ADD KEY `id_paciente` (`id_paciente`);
 

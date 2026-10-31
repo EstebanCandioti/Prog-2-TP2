@@ -42,6 +42,10 @@
       "value": "1"
     },
     {
+      "key": "id_cobertura_con_turnos_sin_usuarios",
+      "value": ""
+    },
+    {
       "key": "id_sede",
       "value": "1"
     },
@@ -52,6 +56,10 @@
     {
       "key": "id_especialidad",
       "value": "1"
+    },
+    {
+      "key": "id_especialidad_con_agenda",
+      "value": ""
     },
     {
       "key": "id_agenda",
@@ -74,11 +82,27 @@
       "value": ""
     },
     {
+      "key": "id_turno_propio_otra_sede",
+      "value": ""
+    },
+    {
+      "key": "id_turno_propio_otra_sede_para_atender",
+      "value": ""
+    },
+    {
+      "key": "id_turno_otro_medico",
+      "value": ""
+    },
+    {
       "key": "turno_id",
       "value": ""
     },
     {
       "key": "turno_atender_id",
+      "value": ""
+    },
+    {
+      "key": "id_turno_atendido_sin_historial",
       "value": ""
     },
     {
@@ -366,7 +390,7 @@
         {
           "name": "Eliminar",
           "request": {
-            "description": "Rol: admin. Parametro: id. Exito: 200 con datos null. Errores: 404, 409 si tiene usuarios asociados. Registra auditoria BAJA.",
+            "description": "Rol: admin. Parametro: id. Exito: 200 con datos null y auditoria BAJA. Errores: 404; 409 si tiene usuarios o turnos asociados. Los rechazos no eliminan ni registran auditoria.",
             "method": "DELETE",
             "header": [
               {
@@ -375,6 +399,15 @@
               }
             ],
             "url": "{{base_url}}/coberturas/{{id_cobertura}}"
+          }
+        },
+        {
+          "name": "Eliminar cobertura usada solo en turnos (409)",
+          "request": {
+            "description": "Configurar id_cobertura_con_turnos_sin_usuarios con una cobertura que ningun usuario conserve pero que figure en al menos un turno, de cualquier estado. Responde 409: No se puede eliminar la cobertura porque tiene turnos asociados. No elimina ni registra auditoria.",
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/coberturas/{{id_cobertura_con_turnos_sin_usuarios}}"
           }
         }
       ]
@@ -548,7 +581,7 @@
         {
           "name": "Eliminar",
           "request": {
-            "description": "Rol: admin. Exito: 200 con datos null. Errores: 404, 409 si tiene medicos asociados. Registra auditoria BAJA.",
+            "description": "Rol: admin. Exito: 200 con datos null y auditoria BAJA. Errores: 404; 409 si tiene medicos o agendas asociadas. Los rechazos no eliminan ni registran auditoria.",
             "method": "DELETE",
             "header": [
               {
@@ -557,6 +590,15 @@
               }
             ],
             "url": "{{base_url}}/especialidades/{{id_especialidad}}"
+          }
+        },
+        {
+          "name": "Eliminar especialidad usada en agendas (409)",
+          "request": {
+            "description": "Configurar id_especialidad_con_agenda con una especialidad sin medicos asociados que figure en al menos una agenda. Responde 409: No se puede eliminar la especialidad porque tiene agendas asociadas. No elimina ni registra auditoria.",
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "url": "{{base_url}}/especialidades/{{id_especialidad_con_agenda}}"
           }
         }
       ]
@@ -1414,7 +1456,7 @@
         {
           "name": "Cancelar",
           "request": {
-            "description": "Roles: paciente, operador, medico. El operador solo cancela turnos cuya agenda pertenece a su sede actual; otra sede: 403 sin cambio ni notificacion. Solo se cancelan confirmados. Exito: 200; errores: 400, 403, 404, 409.",
+            "description": "Roles: paciente, operador, medico. El paciente solo cancela los propios; el operador solo los de su sede. El medico puede cancelar cualquier turno asignado a el, aun fuera de su sede principal; otro medico: 403. Solo se cancelan confirmados. Exito: 200; errores: 400, 403, 404, 409.",
             "method": "PATCH",
             "header": [
               {
@@ -1428,14 +1470,42 @@
         {
           "name": "Atender",
           "request": {
-            "description": "Rol: medico. Solo puede atender turnos propios de su sede y confirmados. Exito: 200. Errores: 400, 403, 404, 409. Genera notificacion.",
+            "description": "Rol: medico. Body clinico obligatorio: diagnostico texto no vacio (maximo 255); tratamiento y observaciones opcionales, texto de hasta 255. Crea historial y cambia el turno a atendido en una transaccion. Puede atender turnos propios en cualquiera de sus sedes. Turno de otro medico: 403. Solo confirmados y sin historial: 200; estado incompatible o historial existente: 409. Notifica unicamente despues del commit.",
             "method": "PATCH",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diagnostico\": \"Diagnostico de prueba\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Control en 15 dias\"\n}"
+            },
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+          }
+        },
+        {
+          "name": "Atender sin diagnostico (400)",
+          "request": {
+            "description": "Responde 400 y no cambia estado, no crea historial ni notifica. Tambien se rechazan diagnostico vacio/no textual y campos clinicos no textuales o mayores a 255 caracteres.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"tratamiento\": \"Falta diagnostico\"\n}" },
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+          }
+        },
+        {
+          "name": "Atender nuevamente (409)",
+          "request": {
+            "description": "Ejecutar despues de una atencion exitosa. Responde 409 sin crear otro historial ni otra notificacion.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Intento duplicado\"\n}" },
             "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
           }
         },
@@ -1456,7 +1526,7 @@
         {
           "name": "Turnos medico por fecha",
           "request": {
-            "description": "Rol: medico. Query obligatoria: fecha. Exito: 200. Error: 400 si falta fecha.",
+            "description": "Rol: medico. Fecha real YYYY-MM-DD obligatoria. Sin id_sede lista sus turnos en todas las sedes, siempre usando req.usuario.id; id_medico del cliente no cambia el alcance. Datos como arreglo, con paciente_nombre, paciente_apellido y paciente_fecha_nacimiento YYYY-MM-DD, ademas de nota y campos existentes. Orden hora, id. Sin resultados: 200 datos []. Filtros invalidos/repetidos: 400; sin token: 401; otro rol: 403.",
             "method": "GET",
             "header": [
               {
@@ -1470,7 +1540,7 @@
         {
           "name": "Turnos sede por fecha",
           "request": {
-            "description": "Rol: operador. Query obligatoria: fecha. La sede se obtiene del token verificado contra la base; el cliente no puede elegir otra sede por query. Sin sede valida: 403. Exito: 200; falta fecha: 400.",
+            "description": "Rol: operador. Fecha real YYYY-MM-DD obligatoria. Sin filtros opcionales lista todos los medicos y los tres estados en su sede actual. Devuelve paciente_nombre, paciente_apellido y paciente_fecha_nacimiento YYYY-MM-DD, nota y campos existentes. Orden hora, id; vacio: 200 datos []. Sede siempre del token actual; sin sede: 403. Filtros invalidos: 400; sin token: 401; otro rol: 403.",
             "method": "GET",
             "header": [
               {
@@ -1478,6 +1548,60 @@
                 "value": "Bearer {{operador_token}}"
               }
             ],
+            "url": "{{base_url}}/turnos/sede?fecha=2025-10-20"
+          }
+        },
+        {
+          "name": "Turnos medico filtrados por sede",
+          "request": {
+            "description": "200 datos [] si en esa sede no tiene turnos. El ID del medico siempre es el autenticado; id_medico enviado se ignora. Puede listar una sede distinta de su sede principal.",
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "url": "{{base_url}}/turnos/medico?fecha=2025-10-20&id_sede={{otra_sede_id}}&id_medico=999999"
+          }
+        },
+        {
+          "name": "Turnos sede filtrados por medico y estado",
+          "request": {
+            "description": "200 datos [] si no coinciden. Combina fecha, id_medico y estado=confirmado con AND; la sede siempre es la del operador.",
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "url": "{{base_url}}/turnos/sede?fecha=2025-10-20&id_medico={{id_medico}}&estado=confirmado"
+          }
+        },
+        {
+          "name": "Turnos medico: fecha invalida (400)",
+          "request": {
+            "description": "400 por fecha inexistente. Tambien se rechazan fecha faltante, id_sede no entero positivo seguro y parametros repetidos o estructurados.",
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "url": "{{base_url}}/turnos/medico?fecha=2027-02-29"
+          }
+        },
+        {
+          "name": "Turnos sede: estado invalido (400)",
+          "request": {
+            "description": "400: solo confirmado, cancelado o atendido. id_medico invalido tambien responde 400.",
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "url": "{{base_url}}/turnos/sede?fecha=2025-10-20&estado=pendiente"
+          }
+        },
+        {
+          "name": "Turnos medico sin token (401)",
+          "request": {
+            "description": "Sin autenticacion: 401; con token de paciente u operador: 403.",
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/turnos/medico?fecha=2025-10-20"
+          }
+        },
+        {
+          "name": "Turnos sede con rol incorrecto (403)",
+          "request": {
+            "description": "Token de medico en listado exclusivo de operador: 403.",
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
             "url": "{{base_url}}/turnos/sede?fecha=2025-10-20"
           }
         },
@@ -1508,6 +1632,44 @@
             "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
             "url": "{{base_url}}/turnos/{{id_turno_otra_sede}}/cancelar"
           }
+        },
+        {
+          "name": "Medico cancela turno propio fuera de sede principal",
+          "request": {
+            "description": "Configurar id_turno_propio_otra_sede con un confirmado del medico autenticado en otra sede. Responde 200 y notifica al paciente. Ejecutar sobre un turno distinto del ejemplo de atencion.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "url": "{{base_url}}/turnos/{{id_turno_propio_otra_sede}}/cancelar"
+          }
+        },
+        {
+          "name": "Medico atiende turno propio fuera de sede principal",
+          "request": {
+            "description": "Configurar id_turno_propio_otra_sede_para_atender con otro confirmado del medico autenticado en una sede distinta de la principal. Responde 200, crea historial y notifica al paciente.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Diagnostico en otra sede\"\n}" },
+            "url": "{{base_url}}/turnos/{{id_turno_propio_otra_sede_para_atender}}/atender"
+          }
+        },
+        {
+          "name": "Medico no cancela turno de otro medico (403)",
+          "request": {
+            "description": "Configurar id_turno_otro_medico con un turno asignado a otro medico; responde 403 sin cambiar estado ni notificar.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "url": "{{base_url}}/turnos/{{id_turno_otro_medico}}/cancelar"
+          }
+        },
+        {
+          "name": "Medico no atiende turno de otro medico (403)",
+          "request": {
+            "description": "Configurar id_turno_otro_medico con un turno asignado a otro medico; responde 403 sin cambiar estado ni notificar.",
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Intento sobre turno ajeno\"\n}" },
+            "url": "{{base_url}}/turnos/{{id_turno_otro_medico}}/atender"
+          }
         }
       ]
     },
@@ -1515,9 +1677,9 @@
       "name": "Historial clinico",
       "item": [
         {
-          "name": "Crear",
+          "name": "Crear para turno atendido sin historial",
           "request": {
-            "description": "Rol: medico. Body: id_turno, diagnostico, tratamiento opcional, observaciones opcional. El turno debe estar atendido, ser del medico y no tener historial cargado. Exito: 201. Errores: 400, 403, 404, 409.",
+            "description": "Rol: medico. Configurar id_turno_atendido_sin_historial con un turno propio ya atendido que todavia no tenga historial. Body: id_turno entero positivo, diagnostico texto no vacio (maximo 255), tratamiento y observaciones opcionales como texto de hasta 255. No cambia el estado ni notifica. Exito: 201. Datos invalidos: 400; ajeno: 403; inexistente: 404; estado incompatible o duplicado: 409.",
             "method": "POST",
             "header": [
               {
@@ -1531,8 +1693,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico de prueba\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Control en 15 dias\"\n}"
+              "raw": "{\n  \"id_turno\": {{id_turno_atendido_sin_historial}},\n  \"diagnostico\": \"Diagnostico de prueba\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Control en 15 dias\"\n}"
             },
+            "url": "{{base_url}}/historial-clinico"
+          }
+        },
+        {
+          "name": "Rechazar historial duplicado (409)",
+          "request": {
+            "description": "Usa el turno cuyo historial se creo en PATCH /turnos/:id/atender. Responde 409 y no cambia nuevamente el estado ni genera otra notificacion.",
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Intento duplicado\"\n}" },
             "url": "{{base_url}}/historial-clinico"
           }
         },

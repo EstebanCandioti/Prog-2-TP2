@@ -143,6 +143,32 @@ Fechas devuelve `datos: ["2026-11-10", "2026-11-12"]`: fechas distintas con agen
 
 `POST /turnos` conserva su cuerpo (`id_medico`, `id_especialidad`, `id_sede`, `fecha`, `hora`, `nota`, más `id_paciente` para operador), cobertura, permisos y notificación. Exige fecha real `YYYY-MM-DD` y hora exacta `HH:mm`. Solo acepta inicios de bloque generados: fuera del rango o de la división responde `400`; si el bloque existe pero está ocupado, `409`; si está libre, responde `201` y utiliza su `id_agenda`. Por ejemplo, con agenda `09:00`–`10:10` se ofrecen `09:00`, `09:20` y `09:40`, pero no `10:00`; reservar `09:10` responde `400`. Si `09:20` está confirmado, no se ofrece ni puede reservarse de nuevo. La disponibilidad es una consulta puntual: B06 todavía no evita reservas simultáneas de B08 y no garantiza que un horario consultado siga libre al reservar. No se restringen fechas pasadas.
 
+### Listados y gestión de turnos (B07)
+
+`GET /turnos/medico?fecha=2026-11-10` requiere token de médico y fecha obligatoria real `YYYY-MM-DD`. Toma siempre el ID del médico autenticado: sin `id_sede` lista sus turnos de todas las sedes; `&id_sede=2` limita el resultado a esa sede sin cambiar el médico consultado. Un `id_medico` adicional enviado por el cliente no modifica ese alcance. `GET /turnos/sede?fecha=2026-11-10` requiere token de operador y toma siempre `id_sede` de su usuario autenticado. `&id_medico=3&estado=confirmado` combina ambos filtros con `AND`; sin ellos devuelve los tres estados y los turnos de todos los médicos de su sede. Un `id_sede` enviado por el cliente no cambia la sede consultada. El operador sin sede válida recibe `403`.
+
+Ambos listados devuelven `200` con `datos` como arreglo ordenado por hora e ID de turno, o `[]` si no hay coincidencias; no tienen paginación. Conservan nota, IDs y nombres de médico, especialidad y sede, y agregan `paciente_nombre`, `paciente_apellido` y `paciente_fecha_nacimiento` en formato `YYYY-MM-DD`. Por ejemplo: `{"id":12,"nota":"Control","hora":"09:20","estado":"confirmado","id_paciente":2,"id_agenda":4,"id_medico":3,"id_especialidad":1,"id_sede":2,"paciente_nombre":"Ana","paciente_apellido":"López","paciente_fecha_nacimiento":"1990-05-14"}` (además de los demás campos existentes). No incluyen contraseña, hash ni historial. `GET /turnos/mis-turnos` conserva su contrato anterior.
+
+La fecha faltante o inválida, un ID no entero positivo seguro, un estado distinto de `confirmado`, `cancelado` o `atendido`, o parámetros repetidos/estructurados responden `400`. Sin token se responde `401`; con rol no permitido, `403`. El médico puede cancelar o atender turnos asignados a él en cualquiera de sus sedes, incluso fuera de su sede principal; un turno de otro médico responde `403`. Paciente y operador mantienen sus límites actuales, al igual que las restricciones de estado y notificaciones.
+
+### Atención con historial clínico (B08)
+
+`PATCH /turnos/:id/atender` sigue siendo exclusivo para médicos y ahora recibe `{"diagnostico":"...","tratamiento":"...","observaciones":"..."}`. `diagnostico` es obligatorio, debe ser texto no vacío y admite hasta 255 caracteres; `tratamiento` y `observaciones` son opcionales, pero si se envían deben ser texto de hasta 255 caracteres. Un cuerpo ausente/no-objeto, tipos incorrectos, diagnóstico vacío o campos demasiado largos responden `400` sin modificar datos ni notificar.
+
+El turno debe existir, estar confirmado y pertenecer al médico autenticado, sin limitarlo a su sede principal. La creación del historial y el cambio de estado a `atendido` se realizan en una única transacción y con la misma conexión; cualquier fallo revierte ambas escrituras. Cada turno admite un solo historial. La operación responde `200` con los mismos datos del turno que devolvía anteriormente y, únicamente después del `commit` y de liberar la conexión, crea la notificación de atención para el paciente. Un turno de otro médico responde `403`; un estado incompatible o un historial existente, `409`.
+
+`POST /historial-clinico` se conserva para cargar el historial de un turno que ya estaba atendido pero todavía no lo tiene. Requiere `id_turno` entero positivo y aplica las mismas validaciones clínicas. Solo puede usarlo el médico dueño del turno; responde `201` al crear, `409` si el turno no está atendido o ya posee historial, y no vuelve a cambiar el estado ni crea una notificación de atención.
+
+Esta entrega no cambia disponibilidad, reservas ni cancelaciones. El control de reservas simultáneas continúa fuera de alcance.
+
+### Eliminación de especialidades y coberturas en uso (B09)
+
+Los `DELETE /especialidades/:id` y `DELETE /coberturas/:id` conservan el acceso exclusivo para administradores, el `404` para registros inexistentes y la auditoría `BAJA` únicamente después de una eliminación exitosa. Las comprobaciones de dependencias usan consultas parametrizadas y no eliminan relaciones asociadas.
+
+Una especialidad con médicos asociados continúa respondiendo `409`. También responde `409` con «No se puede eliminar la especialidad porque tiene agendas asociadas» si cualquier agenda la referencia. Una cobertura con usuarios asociados continúa respondiendo `409`; además, cualquier turno histórico o vigente que la referencie impide eliminarla, sin importar su estado ni que actualmente ningún usuario conserve esa cobertura, con «No se puede eliminar la cobertura porque tiene turnos asociados».
+
+Como respaldo ante una relación creada entre la comprobación y el `DELETE`, el error de clave foránea `ER_ROW_IS_REFERENCED_2` se traduce a `409` indicando que el registro tiene datos asociados. Otros errores se propagan al manejo global. Ningún rechazo registra auditoría.
+
 Todas las respuestas usan el formato:
 
 ```json

@@ -49,6 +49,10 @@ Si una prueba negativa devuelve el error esperado, Postman la marca como correct
 - rol no permitido: `403`;
 - recurso inexistente: `404`.
 
+En la colección de fase 04, la atención de un turno incluye los campos clínicos en el cuerpo de `PATCH /turnos/:id/atender`. También se documentan los rechazos por datos clínicos inválidos, turno ajeno, estado incompatible e historial duplicado. El runner comprueba que `POST /historial-clinico` responda `409` al intentar volver a cargar el historial creado durante la atención.
+
+La misma colección incluye los rechazos `409` al eliminar una especialidad usada por agendas y una cobertura conservada por turnos aunque ya no esté asignada a ningún usuario. Esos ejemplos usan variables configurables para apuntar a registros que cumplan cada condición sin alterar relaciones desde Postman.
+
 De esta forma, al terminar el **Run**, Postman muestra cuales pruebas pasaron y cuales fallaron.
 
 ## Importante

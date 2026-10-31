@@ -50,7 +50,7 @@
           "  '36 - Turnos medico por fecha': 200,",
           "  '37 - Turnos sede por fecha': 200,",
           "  '38 - Atender turno': 200,",
-          "  '39 - Crear historial clinico': 201,",
+          "  '39 - Historial duplicado esperado': 409,",
           "  '40 - Historial como paciente': 200,",
           "  '41 - Historial como medico': 200,",
           "  '42 - Listar notificaciones': 200,",
@@ -893,13 +893,21 @@
           {
             "key": "Authorization",
             "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diagnostico\": \"Diagnostico runner {{run_suffix}}\",\n  \"tratamiento\": \"Tratamiento de prueba\",\n  \"observaciones\": \"Generado desde Postman Runner\"\n}"
+        },
         "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
       }
     },
     {
-      "name": "39 - Crear historial clinico",
+      "name": "39 - Historial duplicado esperado",
       "request": {
         "method": "POST",
         "header": [

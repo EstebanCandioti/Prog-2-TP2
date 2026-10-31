@@ -1,15 +1,9 @@
 import { Response } from 'express';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
+import { validarDatosClinicos } from '../services/historialClinicoService';
 import { AuthRequest } from '../types/auth';
 import { responder } from '../utils/respuesta';
-
-interface HistorialBody {
-  id_turno: number;
-  diagnostico: string;
-  tratamiento?: string;
-  observaciones?: string;
-}
 
 const obtenerIdPacienteParam = (req: AuthRequest, res: Response): number | null => {
   const idPaciente = Number(req.params.id_paciente);
@@ -28,20 +22,26 @@ export const crearHistorialClinico = async (req: AuthRequest, res: Response): Pr
     return;
   }
 
-  const body = req.body as HistorialBody;
-  const { id_turno, diagnostico, tratamiento, observaciones } = body;
-
-  if (!id_turno || !diagnostico) {
-    responder(res, 400, 'El turno y el diagnostico son obligatorios');
+  const validacion = validarDatosClinicos(req.body);
+  if (validacion.error !== null) {
+    responder(res, 400, validacion.error);
     return;
   }
+
+  const idTurno = (req.body as Record<string, unknown>).id_turno;
+  if (typeof idTurno !== 'number' || !Number.isSafeInteger(idTurno) || idTurno <= 0) {
+    responder(res, 400, 'El id_turno debe ser un entero positivo');
+    return;
+  }
+
+  const { diagnostico, tratamiento, observaciones } = validacion.datos;
 
   const [turnos] = await pool.query<RowDataPacket[]>(
     `SELECT turno.id, turno.estado, turno.id_paciente, agenda.id_medico
      FROM turno
      INNER JOIN agenda ON agenda.id = turno.id_agenda
      WHERE turno.id = ?`,
-    [id_turno]
+    [idTurno]
   );
   const turno = turnos[0];
 
@@ -62,7 +62,7 @@ export const crearHistorialClinico = async (req: AuthRequest, res: Response): Pr
 
   const [historialesExistentes] = await pool.query<RowDataPacket[]>(
     'SELECT id FROM historial_clinico WHERE id_turno = ?',
-    [id_turno]
+    [idTurno]
   );
 
   if (historialesExistentes.length > 0) {
@@ -70,12 +70,21 @@ export const crearHistorialClinico = async (req: AuthRequest, res: Response): Pr
     return;
   }
 
-  const [resultado] = await pool.query<ResultSetHeader>(
-    `INSERT INTO historial_clinico
-      (id_turno, id_medico, id_paciente, diagnostico, tratamiento, observaciones)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id_turno, req.usuario.id, turno.id_paciente, diagnostico, tratamiento ?? null, observaciones ?? null]
-  );
+  let resultado: ResultSetHeader;
+  try {
+    [resultado] = await pool.query<ResultSetHeader>(
+      `INSERT INTO historial_clinico
+        (id_turno, id_medico, id_paciente, diagnostico, tratamiento, observaciones)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [idTurno, req.usuario.id, turno.id_paciente, diagnostico, tratamiento ?? null, observaciones ?? null]
+    );
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {
+      responder(res, 409, 'El turno ya tiene historial clinico cargado');
+      return;
+    }
+    throw error;
+  }
 
   const [historiales] = await pool.query<RowDataPacket[]>('SELECT * FROM historial_clinico WHERE id = ?', [
     resultado.insertId
