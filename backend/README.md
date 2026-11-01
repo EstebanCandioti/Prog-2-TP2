@@ -82,11 +82,28 @@ El comando `seed:demo` sigue preparando cuentas; la carga B10 es el paso SQL sep
 
 - `GET /health`
 - `GET /coberturas`
+- `GET /medicos`
 - `POST /auth/registro`
 - `POST /auth/login`
 - `GET /auth/perfil`
 - `GET /auth/perfil-paciente` para probar `verificarRol('paciente')`
 - `GET /auth/perfil-admin` para probar error `403` con token de paciente
+
+### Notificaciones: consulta y marcado
+
+Requieren `Authorization: Bearer <token>` válido de cualquier rol (`admin`, `medico`, `operador` o `paciente`). El destinatario se obtiene exclusivamente del token: no se envía ni se utiliza un ID de usuario del cliente.
+
+- `GET /notificaciones`: listado completo propio, ordenado por fecha descendente.
+- `PATCH /notificaciones/:id/leida`: conserva el marcado individual de una notificación propia y su respuesta actual.
+- `PATCH /notificaciones/leidas`: sin cuerpo obligatorio ni parámetros, marca **todas** las pendientes del usuario autenticado. Ejecuta `UPDATE notificacion SET leida = 1 WHERE id_usuario = ? AND leida = 0` con el ID parametrizado. No modifica notificaciones ajenas, las ya leídas ni sus mensajes o fechas.
+
+Ejemplo de respuesta del marcado masivo (`cantidad_actualizada` proviene de `affectedRows`):
+
+```json
+{"codigo":200,"estado":"ok","datos":{"cantidad_actualizada":3}}
+```
+
+Sin pendientes, incluso al repetir la operación, devuelve `200` con `cantidad_actualizada: 0`. Sin token o con token inválido/vencido devuelve `401` en el formato uniforme; los demás errores conservan el manejo global. Para verificar el aislamiento, guardar el listado de un segundo usuario, marcar las pendientes del primero y volver a consultar ambos: solo el primero debe cambiar. Los ejemplos ordenados están en **Notificaciones / Marcado masivo (F09)** de Postman; no preparan datos ni forman parte de los runners generales.
 
 ### Permisos de catálogos
 
@@ -98,6 +115,30 @@ El comando `seed:demo` sigue preparando cuentas; la carga B10 es el paso SQL sep
 | `POST`, `PUT` y `DELETE` de sedes, especialidades y coberturas | Solo administrador |
 
 Las rutas autenticadas requieren token. Las consultas por ID y las operaciones de escritura también verifican el rol administrador.
+
+### Listado de médicos para selección (B01)
+
+`GET /medicos` requiere token de `admin`, `medico`, `operador` o `paciente`. Es un listado de lectura separado de `GET /usuarios`, que continúa siendo exclusivo del administrador. Devuelve `200` con `datos` como arreglo sin paginación, ordenado por apellido, nombre e ID. Solo lista usuarios con rol `medico` y cada elemento incluye exclusivamente `id`, `nombre`, `apellido` y `especialidades: [{ id, descripcion }]`, sin datos personales adicionales. Médicos y especialidades no se repiten.
+
+Ejemplos (reemplazar los IDs por los de la base local):
+
+| Consulta | Resultado esperado |
+| --- | --- |
+| `/medicos` | Todos los médicos, incluidos los que no tienen agendas. Un médico sin especialidades tiene `especialidades: []`. |
+| `/medicos?id_especialidad=1` | Médicos con esa especialidad asignada en `medico_especialidad`, aunque no tengan agenda. |
+| `/medicos?id_sede=2` | Médicos con alguna agenda en esa sede; no se usa `usuario.id_sede`. |
+| `/medicos?id_especialidad=1&id_sede=2` | Médicos con esa especialidad asignada y una agenda que coincida con la sede y la especialidad solicitadas. |
+| `/medicos?id_especialidad=999999` | `200` con `datos: []` si el ID no tiene coincidencias; no responde `404`. |
+
+Todas las especialidades asignadas se conservan en la respuesta, incluso al filtrar por una de ellas. Por ejemplo, al consultar `/medicos?id_especialidad=1`, un médico con dos especialidades puede devolver:
+
+```json
+{"codigo":200,"estado":"ok","datos":[{"id":3,"nombre":"Ana","apellido":"López","especialidades":[{"id":1,"descripcion":"Clínica médica"},{"id":2,"descripcion":"Pediatría"}]}]}
+```
+
+Para comprobar el caso de un médico sin agenda, consultar `/medicos` con una base que ya contenga ese caso: debe aparecer con sus especialidades asignadas, o con `[]` si tampoco tiene especialidades. Solo el filtro por sede exige agenda. No se exige fecha, agenda futura ni horarios libres. El operador puede consultar cualquier sede en este listado; se conservan sus restricciones de sede en disponibilidad, reservas y modificaciones.
+
+Los filtros opcionales deben ser valores simples de dígitos que representen enteros positivos seguros. Por ejemplo, `id_sede=0`, `id_especialidad=abc`, `id_sede=1.5`, `id_sede=9007199254740992`, `id_sede=1&id_sede=2` e `id_especialidad[id]=1` responden `400`; también se rechazan valores vacíos, negativos y arreglos. Sin token o con token inválido, `401`. Un filtro válido sin coincidencias devuelve `200` con `[]`. Los errores usan el formato uniforme del proyecto.
 
 ### Alta administrativa de usuarios (B02)
 
@@ -180,7 +221,7 @@ Fechas devuelve `datos: ["2026-11-10", "2026-11-12"]`: fechas distintas con agen
 
 `GET /turnos/medico?fecha=2026-11-10` requiere token de médico y fecha obligatoria real `YYYY-MM-DD`. Toma siempre el ID del médico autenticado: sin `id_sede` lista sus turnos de todas las sedes; `&id_sede=2` limita el resultado a esa sede sin cambiar el médico consultado. Un `id_medico` adicional enviado por el cliente no modifica ese alcance. `GET /turnos/sede?fecha=2026-11-10` requiere token de operador y toma siempre `id_sede` de su usuario autenticado. `&id_medico=3&estado=confirmado` combina ambos filtros con `AND`; sin ellos devuelve los tres estados y los turnos de todos los médicos de su sede. Un `id_sede` enviado por el cliente no cambia la sede consultada. El operador sin sede válida recibe `403`.
 
-Ambos listados devuelven `200` con `datos` como arreglo ordenado por hora e ID de turno, o `[]` si no hay coincidencias; no tienen paginación. Conservan nota, IDs y nombres de médico, especialidad y sede, y agregan `paciente_nombre`, `paciente_apellido` y `paciente_fecha_nacimiento` en formato `YYYY-MM-DD`. Por ejemplo: `{"id":12,"nota":"Control","hora":"09:20","estado":"confirmado","id_paciente":2,"id_agenda":4,"id_medico":3,"id_especialidad":1,"id_sede":2,"paciente_nombre":"Ana","paciente_apellido":"López","paciente_fecha_nacimiento":"1990-05-14"}` (además de los demás campos existentes). No incluyen contraseña, hash ni historial. `GET /turnos/mis-turnos` conserva su contrato anterior.
+Ambos listados devuelven `200` con `datos` como arreglo ordenado por hora e ID de turno, o `[]` si no hay coincidencias; no tienen paginación. Conservan nota, IDs y nombres de médico, especialidad y sede, y agregan `paciente_nombre`, `paciente_apellido` y `paciente_fecha_nacimiento` en formato `YYYY-MM-DD`. Por ejemplo: `{"id":12,"nota":"Control","hora":"09:20","estado":"confirmado","id_paciente":2,"id_agenda":4,"id_medico":3,"id_especialidad":1,"id_sede":2,"paciente_nombre":"Ana","paciente_apellido":"López","paciente_fecha_nacimiento":"1990-05-14"}` (además de los demás campos existentes). No incluyen contraseña, hash ni historial. `GET /turnos/mis-turnos` usa el contrato paginado de B11 descrito más abajo.
 
 La fecha faltante o inválida, un ID no entero positivo seguro, un estado distinto de `confirmado`, `cancelado` o `atendido`, o parámetros repetidos/estructurados responden `400`. Sin token se responde `401`; con rol no permitido, `403`. El médico puede cancelar o atender turnos asignados a él en cualquiera de sus sedes, incluso fuera de su sede principal; un turno de otro médico responde `403`. Paciente y operador mantienen sus límites actuales, al igual que las restricciones de estado y notificaciones.
 
@@ -201,6 +242,31 @@ Los `DELETE /especialidades/:id` y `DELETE /coberturas/:id` conservan el acceso 
 Una especialidad con médicos asociados continúa respondiendo `409`. También responde `409` con «No se puede eliminar la especialidad porque tiene agendas asociadas» si cualquier agenda la referencia. Una cobertura con usuarios asociados continúa respondiendo `409`; además, cualquier turno histórico o vigente que la referencie impide eliminarla, sin importar su estado ni que actualmente ningún usuario conserve esa cobertura, con «No se puede eliminar la cobertura porque tiene turnos asociados».
 
 Como respaldo ante una relación creada entre la comprobación y el `DELETE`, el error de clave foránea `ER_ROW_IS_REFERENCED_2` se traduce a `409` indicando que el registro tiene datos asociados. Otros errores se propagan al manejo global. Ningún rechazo registra auditoría.
+
+### Turnos paginados del paciente e historial por turno (B11)
+
+`GET /turnos/mis-turnos` continúa siendo exclusivo de pacientes y toma siempre su ID de `req.usuario.id`. Solo acepta `tipo` y `pagina`: por defecto `tipo=todos` y `pagina=1`, con un tamaño fijo de 20 registros. Usa `LIMIT/OFFSET` en SQL y devuelve `datos: { items, total, pagina, limite: 20 }`. `total` cuenta todos los turnos que corresponden al tipo elegido, no solo los de la página. El conteo y los resultados comparten condiciones y parámetros.
+
+| Consulta | Resultado |
+| --- | --- |
+| `/turnos/mis-turnos` | Primera página de `todos`, orden fecha, hora e ID descendentes. |
+| `/turnos/mis-turnos?tipo=todos&pagina=2` | Segunda página de todos los turnos propios, incluidos próximos, pasados, atendidos y cancelados. |
+| `/turnos/mis-turnos?tipo=proximos&pagina=1` | Confirmados con fecha y hora iguales o posteriores al momento de MySQL, orden fecha, hora e ID ascendentes. |
+| `/turnos/mis-turnos?tipo=todos&pagina=999999` | Si queda fuera del listado, `items: []`, conservando `total`, la página solicitada y `limite: 20`. |
+
+Para `proximos` se obtiene una única referencia temporal desde `NOW()` de MySQL, compartida por conteo y página. No se usa el reloj del servidor Node ni una fecha del cliente. Se conservan los campos de cada turno: `id`, `nota`, `fecha`, `hora`, `estado`, `id_paciente`, `id_cobertura`, `id_agenda`, `id_medico`, `id_especialidad`, `id_sede`, `medico_nombre`, `medico_apellido`, `sede_nombre` y `especialidad_descripcion`. El listado no incluye datos clínicos.
+
+Sin coincidencias, un ejemplo de respuesta es `{"codigo":200,"estado":"ok","datos":{"items":[],"total":0,"pagina":1,"limite":20}}`. Una página posterior a la última también responde `200` con `items: []`, sin cambiar el total real. `tipo=historial`, `tipo=` u otros tipos responden `400`. También se rechazan páginas vacías, negativas, decimales, no numéricas o fuera del entero seguro, offsets que desborden ese límite, parámetros repetidos/estructurados y cualquier parámetro distinto de `tipo` y `pagina` (incluidos filtros por médico, sede, especialidad, estado, paciente o fechas). Sin token válido, `401`; con otro rol, `403`.
+
+`GET /turnos/:id/historial` permite al paciente consultar el registro clínico de un turno propio atendido. Valida el ID como entero positivo seguro (`400` si es inválido), busca el turno (`404` si no existe), comprueba su dueño (`403` si es ajeno) y exige estado `atendido` (`409` si no lo está). Solo después consulta los datos clínicos. Un atendido sin historial responde `404` con «El turno atendido todavia no tiene historial clinico cargado». Sin token válido, `401`; con otro rol, `403`.
+
+Ejemplo de respuesta exitosa de `/turnos/12/historial` (IDs y textos ilustrativos):
+
+```json
+{"codigo":200,"estado":"ok","datos":{"id":5,"id_turno":12,"id_medico":3,"id_paciente":2,"diagnostico":"Control clínico","tratamiento":"Seguimiento","observaciones":null,"fecha_registro":"2026-11-01T12:00:00.000Z"}}
+```
+
+Los endpoints `POST /historial-clinico` y `GET /historial-clinico/paciente/:id_paciente` mantienen sus contratos y permisos. Las futuras pestañas del frontend enviarán `tipo=proximos` y `tipo=todos`, con su propia página, y pedirán el historial por ID solo al abrir un turno atendido. `todos` incluye también próximos; no hay un filtro de solo pasados ni un `tipo=historial`. Esta entrega implementa únicamente el backend. B11 se verificó en Windows mediante build y 419 comprobaciones con MySQL en una base temporal, incluyendo paginación, corte temporal, permisos clínicos y actualización tras cancelar; la pantalla frontend sigue pendiente.
 
 Todas las respuestas usan el formato:
 

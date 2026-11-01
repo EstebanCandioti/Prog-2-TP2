@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Atender turno</h2>
+<mat-dialog-content [attr.aria-busy]="guardando()">
+  <dl class="appointment-summary">
+    <div><dt>Paciente</dt><dd>{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }}</dd></div>
+    <div><dt>Fecha y hora</dt><dd>{{ fecha | date:'dd/MM/yyyy' }} · {{ turno.hora.slice(0, 5) }}</dd></div>
+    <div><dt>Sede</dt><dd>{{ turno.id_sede }}. {{ turno.sede_nombre }}</dd></div>
+    <div><dt>Nota del paciente</dt><dd class="patient-note">{{ turno.nota?.trim() || 'Sin nota registrada' }}</dd></div>
+  </dl>
+  <p class="intro">Al guardar, el turno quedará atendido y se registrará su historial clínico.</p>
+
+  @if (error()) { <p class="error-message" role="alert">{{ error() }}</p> }
+  @if (guardando()) {
+    <div class="status" role="status" aria-live="polite"><mat-spinner diameter="24"></mat-spinner><span>Guardando atención…</span></div>
+  }
+
+  <form id="atencion-formulario" [formGroup]="formulario" (ngSubmit)="guardar()">
+    <mat-form-field appearance="outline">
+      <mat-label>Diagnóstico</mat-label>
+      <textarea matInput formControlName="diagnostico" rows="3" maxlength="255"></textarea>
+      <mat-hint align="end">{{ formulario.controls.diagnostico.value.length }}/255</mat-hint>
+      @if (formulario.controls.diagnostico.hasError('required') || formulario.controls.diagnostico.hasError('pattern')) {
+        <mat-error>Ingresá un diagnóstico que no contenga solo espacios.</mat-error>
+      } @else if (formulario.controls.diagnostico.hasError('maxlength')) {
+        <mat-error>El diagnóstico admite hasta 255 caracteres.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Tratamiento (opcional)</mat-label>
+      <textarea matInput formControlName="tratamiento" rows="3" maxlength="255"></textarea>
+      <mat-hint align="end">{{ formulario.controls.tratamiento.value.length }}/255</mat-hint>
+      @if (formulario.controls.tratamiento.hasError('maxlength')) {
+        <mat-error>El tratamiento admite hasta 255 caracteres.</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Observaciones (opcional)</mat-label>
+      <textarea matInput formControlName="observaciones" rows="3" maxlength="255"></textarea>
+      <mat-hint align="end">{{ formulario.controls.observaciones.value.length }}/255</mat-hint>
+      @if (formulario.controls.observaciones.hasError('maxlength')) {
+        <mat-error>Las observaciones admiten hasta 255 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close [disabled]="guardando()">Volver</button>
+  <button mat-flat-button class="primary-action" type="submit" form="atencion-formulario" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar atención' }}</button>
+</mat-dialog-actions>

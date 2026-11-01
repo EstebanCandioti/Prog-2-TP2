@@ -1,0 +1,62 @@
+<main class="notifications-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Mi cuenta</p>
+      <h1>Notificaciones</h1>
+      <p class="subtitle">Revisá tus avisos y marcá como leídos los que ya consultaste.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="notificaciones.actualizar()" [disabled]="notificaciones.cargando()"><mat-icon>refresh</mat-icon>Actualizar</button>
+  </header>
+
+  <app-notificacion-marcado-masivo class="bulk-action" />
+
+  @if (notificaciones.cargado()) {
+    <p class="list-summary">{{ notificaciones.noLeidas() }} sin leer · {{ notificaciones.lista().length }} {{ notificaciones.lista().length === 1 ? 'notificación' : 'notificaciones' }}</p>
+  }
+  @if (notificaciones.cargando() && notificaciones.cargado()) {
+    <div class="refresh-status" role="status" aria-live="polite"><mat-spinner diameter="22"></mat-spinner><span>Actualizando notificaciones…</span></div>
+  }
+  @if (notificaciones.error()) {
+    <div class="error-message" role="alert">
+      <p>{{ notificaciones.error() }}</p>
+      <button mat-stroked-button type="button" (click)="notificaciones.actualizar()" [disabled]="notificaciones.cargando()">Reintentar</button>
+    </div>
+  }
+
+  @if (notificaciones.cargando() && !notificaciones.cargado()) {
+    <div class="state-message" role="status" aria-live="polite"><mat-spinner diameter="36"></mat-spinner><p>Cargando notificaciones…</p></div>
+  } @else if (!notificaciones.cargado() && !notificaciones.error()) {
+    <div class="state-message"><mat-icon>notifications_none</mat-icon><p>Las notificaciones se consultarán al activar esta pestaña.</p></div>
+  } @else if (notificaciones.cargado() && notificaciones.lista().length === 0 && !notificaciones.error()) {
+    <div class="state-message"><mat-icon>notifications_none</mat-icon><p>No tenés notificaciones por ahora.</p></div>
+  } @else if (notificaciones.lista().length > 0) {
+    <ul class="notification-list" aria-label="Notificaciones, de la más reciente a la más antigua">
+      @for (notificacion of notificaciones.lista(); track notificacion.id) {
+        <li>
+          <mat-card class="notification-card" [class.unread]="notificacion.leida === 0">
+            <mat-card-content>
+              <div class="notification-heading">
+                <span class="read-status"><mat-icon aria-hidden="true">{{ notificacion.leida === 0 ? 'mark_email_unread' : 'done_all' }}</mat-icon>{{ notificacion.leida === 0 ? 'No leída' : 'Leída' }}</span>
+                <time [attr.datetime]="notificacion.fecha">{{ notificacion.fecha | date:'dd/MM/yyyy · HH:mm' }}</time>
+              </div>
+              <p class="message">{{ notificacion.mensaje }}</p>
+              @if (notificacion.leida === 0) {
+                @if (notificaciones.erroresMarcado().get(notificacion.id); as errorMarcado) {
+                  <p class="mark-error" role="alert">{{ errorMarcado }}</p>
+                }
+                <div class="notification-actions">
+                  @if (notificaciones.marcando().has(notificacion.id)) {
+                    <span class="mark-status" role="status" aria-live="polite"><mat-spinner diameter="18"></mat-spinner>Marcando como leída…</span>
+                  }
+                  <button mat-stroked-button class="read-action" type="button" (click)="notificaciones.marcarComoLeida(notificacion.id)" [disabled]="notificaciones.bloqueoMarcado() || notificaciones.marcando().has(notificacion.id)" [attr.aria-label]="'Marcar como leída la notificación ' + notificacion.id">
+                    <mat-icon>done</mat-icon>Marcar como leída
+                  </button>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+        </li>
+      }
+    </ul>
+  }
+</main>

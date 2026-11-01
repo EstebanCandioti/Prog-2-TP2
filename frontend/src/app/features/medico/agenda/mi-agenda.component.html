@@ -1,0 +1,90 @@
+<main class="agenda-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Área médica</p>
+      <h1>Mi agenda</h1>
+      <p class="subtitle">Organizá tus horarios de atención en todas las sedes.</p>
+    </div>
+    <button mat-flat-button class="primary-action" type="button" (click)="abrirFormulario()" [disabled]="dialogoAbierto() || fecha.invalid">
+      <mat-icon>add</mat-icon>
+      Agregar horario
+    </button>
+  </header>
+
+  @if (errorAccion()) { <p class="action-error" role="alert">{{ errorAccion() }}</p> }
+
+  <mat-card class="agenda-card">
+    <mat-card-content>
+      <div class="date-bar">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de atención</mat-label>
+          <input matInput [formControl]="fecha" [matDatepicker]="calendario" [min]="fechaMinima" [max]="fechaMaxima" readonly (click)="calendario.open()" (dateChange)="cargarAgendas()" />
+          <mat-datepicker-toggle matIconSuffix [for]="calendario"></mat-datepicker-toggle>
+          <mat-datepicker #calendario></mat-datepicker>
+          @if (fecha.hasError('required')) {
+            <mat-error>Seleccioná una fecha.</mat-error>
+          } @else if (fecha.invalid) {
+            <mat-error>Elegí una fecha válida.</mat-error>
+          }
+        </mat-form-field>
+        @if (!cargando() && !error() && fecha.valid) {
+          <p class="day-summary">{{ agendas().length }} {{ agendas().length === 1 ? 'horario' : 'horarios' }} en el día</p>
+        }
+      </div>
+
+      @if (fecha.invalid) {
+        <div class="state-message"><mat-icon>calendar_month</mat-icon><p>Elegí una fecha válida para consultar tu agenda.</p></div>
+      } @else if (cargando()) {
+        <div class="state-message" role="status" aria-live="polite">
+          <mat-spinner diameter="36"></mat-spinner><p>Cargando horarios…</p>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ error() }}</p>
+          <button mat-stroked-button type="button" (click)="cargarAgendas()">Reintentar</button>
+        </div>
+      } @else if (agendas().length === 0) {
+        <div class="state-message">
+          <mat-icon>event_available</mat-icon>
+          <p>No tenés horarios para este día.</p>
+          <span>Podés agregar un rango de atención desde “Agregar horario”.</span>
+        </div>
+      } @else {
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Horarios de atención del día seleccionado">
+          <table mat-table [dataSource]="agendas()" aria-label="Mi agenda del día">
+            <ng-container matColumnDef="entrada">
+              <th mat-header-cell *matHeaderCellDef>Hora de entrada</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.hora_entrada }}</td>
+            </ng-container>
+            <ng-container matColumnDef="salida">
+              <th mat-header-cell *matHeaderCellDef>Hora de salida</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.hora_salida }}</td>
+            </ng-container>
+            <ng-container matColumnDef="especialidad">
+              <th mat-header-cell *matHeaderCellDef>Especialidad</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.id_especialidad }}. {{ agenda.especialidad_descripcion }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sede">
+              <th mat-header-cell *matHeaderCellDef>Sede</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.id_sede }}. {{ agenda.sede_nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="actions">Acciones</th>
+              <td mat-cell *matCellDef="let agenda" class="actions">
+                <button mat-icon-button type="button" matTooltip="Editar horario" [attr.aria-label]="'Editar horario de ' + agenda.hora_entrada + ' a ' + agenda.hora_salida" (click)="abrirFormulario(agenda)" [disabled]="dialogoAbierto()">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button type="button" class="delete-action" matTooltip="Eliminar horario" [attr.aria-label]="'Eliminar horario de ' + agenda.hora_entrada + ' a ' + agenda.hora_salida" (click)="confirmarEliminacion(agenda)" [disabled]="dialogoAbierto()">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let fila; columns: columnas;"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

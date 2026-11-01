@@ -1,0 +1,33 @@
+<section class="confirmed-section" aria-label="Turnos confirmados del médico">
+  <h2>Turnos confirmados</h2>
+  @if (cargando()) {
+    <div class="status" role="status" aria-live="polite"><mat-spinner diameter="28"></mat-spinner><span>Cargando turnos confirmados…</span></div>
+  } @else if (error()) {
+    <div class="error-message" role="alert"><p>{{ error() }}</p><button mat-stroked-button type="button" (click)="recargar()">Reintentar turnos</button></div>
+  } @else if (grupos().length === 0) {
+    <p class="empty">No hay turnos confirmados para este médico en la fecha seleccionada.</p>
+  } @else {
+    @for (grupo of grupos(); track grupo.idAgenda) {
+      <div class="range-group">
+        <h3>{{ grupo.especialidad }} <span>· Agenda {{ grupo.idAgenda }} @if (grupo.salida) { · {{ grupo.entrada }}–{{ grupo.salida }} }</span></h3>
+        <ul class="appointments">
+          @for (turno of grupo.turnos; track turno.id) {
+            <li>
+              <div class="appointment">
+                <strong class="time">{{ turno.hora.slice(0, 5) }}</strong>
+                <div class="patient"><strong>{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }}</strong><span>{{ turno.especialidad_descripcion }}</span></div>
+                <div class="actions">
+                  <button mat-icon-button type="button" matTooltip="Nota del paciente" [attr.aria-label]="(notaVisible() === turno.id ? 'Ocultar' : 'Ver') + ' nota de ' + turno.paciente_apellido + ', ' + turno.paciente_nombre" [attr.aria-expanded]="notaVisible() === turno.id" [attr.aria-controls]="'nota-confirmado-' + turno.id" (click)="alternarNota(turno)"><mat-icon>sticky_note_2</mat-icon></button>
+                  <button mat-button type="button" class="cancel-action" [attr.aria-label]="'Cancelar turno de ' + turno.paciente_apellido + ', ' + turno.paciente_nombre + ' a las ' + turno.hora" (click)="cancelar(turno)" [disabled]="cancelacionAbierta()">Cancelar</button>
+                </div>
+              </div>
+              <div [id]="'nota-confirmado-' + turno.id">
+                @if (notaVisible() === turno.id) { <p class="patient-note"><strong>Nota del paciente:</strong> {{ turno.nota?.trim() || 'Sin nota registrada' }}</p> }
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+</section>

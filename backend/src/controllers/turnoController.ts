@@ -338,15 +338,93 @@ export const atenderTurno = async (req: AuthRequest, res: Response): Promise<voi
 };
 
 export const listarMisTurnos = async (req: AuthRequest, res: Response): Promise<void> => {
-  const [turnos] = await pool.query<RowDataPacket[]>(
+  if (!querySimple(req)) {
+    responder(res, 400, 'Los parámetros deben ser valores simples');
+    return;
+  }
+  if (Object.keys(req.query).some((clave) => clave !== 'tipo' && clave !== 'pagina')) {
+    responder(res, 400, 'Solo se permiten los parámetros tipo y pagina');
+    return;
+  }
+
+  const tipo = req.query.tipo ?? 'todos';
+  if (tipo !== 'proximos' && tipo !== 'todos') {
+    responder(res, 400, 'El tipo debe ser proximos o todos');
+    return;
+  }
+  if (req.query.pagina !== undefined && !idQueryValido(req.query.pagina)) {
+    responder(res, 400, 'pagina debe ser un entero positivo seguro');
+    return;
+  }
+
+  const limite = 20;
+  const pagina = Number(req.query.pagina ?? 1);
+  const offset = (pagina - 1) * limite;
+  if (!Number.isSafeInteger(offset)) {
+    responder(res, 400, 'El desplazamiento de pagina debe ser un entero seguro');
+    return;
+  }
+
+  const condiciones = ['turno.id_paciente = ?'];
+  const valores: Array<string | number> = [req.usuario!.id];
+  if (tipo === 'proximos') {
+    // Compartir el mismo instante de MySQL entre el conteo y la página.
+    const [reloj] = await pool.query<RowDataPacket[]>("SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:%s') AS ahora");
+    condiciones.push('turno.estado = ?', 'TIMESTAMP(turno.fecha, turno.hora) >= ?');
+    valores.push('confirmado', reloj[0].ahora);
+  }
+
+  const where = `WHERE ${condiciones.join(' AND ')}`;
+  const orden = tipo === 'proximos' ? 'ASC' : 'DESC';
+  const [totales] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS total ${turnoListadoFrom} ${where}`,
+    valores
+  );
+  const [items] = await pool.query<RowDataPacket[]>(
     `SELECT ${turnoListadoSelect}
      ${turnoListadoFrom}
-     WHERE turno.id_paciente = ?
-     ORDER BY turno.fecha ASC, turno.hora ASC`,
-    [req.usuario?.id]
+     ${where}
+     ORDER BY turno.fecha ${orden}, turno.hora ${orden}, turno.id ${orden}
+     LIMIT ? OFFSET ?`,
+    [...valores, limite, offset]
   );
 
-  responder(res, 200, 'ok', turnos);
+  responder(res, 200, 'ok', { items, total: Number(totales[0].total), pagina, limite });
+};
+
+export const obtenerHistorialTurno = async (req: AuthRequest, res: Response): Promise<void> => {
+  const id = obtenerIdParam(req, res);
+  if (id === null) return;
+
+  const [turnos] = await pool.query<RowDataPacket[]>(
+    'SELECT id, id_paciente, estado FROM turno WHERE id = ? LIMIT 1',
+    [id]
+  );
+  const turno = turnos[0];
+  if (!turno) {
+    responder(res, 404, 'Turno no encontrado');
+    return;
+  }
+  if (Number(turno.id_paciente) !== req.usuario!.id) {
+    responder(res, 403, 'El paciente solo puede consultar el historial de sus propios turnos');
+    return;
+  }
+  if (turno.estado !== 'atendido') {
+    responder(res, 409, 'El historial clinico solo puede consultarse para turnos atendidos');
+    return;
+  }
+
+  const [historiales] = await pool.query<RowDataPacket[]>(
+    `SELECT id, id_turno, id_medico, id_paciente, diagnostico, tratamiento, observaciones, fecha_registro
+     FROM historial_clinico WHERE id_turno = ? ORDER BY id ASC LIMIT 1`,
+    [id]
+  );
+  if (historiales.length === 0) {
+    responder(res, 404, 'El turno atendido todavia no tiene historial clinico cargado');
+    return;
+  }
+
+  responder(res, 200, 'ok', historiales[0]);
 };
 
 export const listarTurnosMedico = async (req: AuthRequest, res: Response): Promise<void> => {

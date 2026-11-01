@@ -59,6 +59,73 @@ select { font: inherit; }
 
 a { color: inherit; }
 
+// Overrides limitados a la navegación del flujo de reserva.
+.reservation-stepper {
+	@include mat.stepper-overrides((
+		header-hover-state-layer-color: var(--green-100),
+		header-hover-state-layer-shape: 8px,
+		header-focus-state-layer-color: var(--green-100),
+		header-focus-state-layer-shape: 8px
+	));
+
+	.mat-step-header {
+		border-radius: 8px;
+
+		&:focus-visible,
+		&.cdk-keyboard-focused {
+			outline: 2px solid var(--green-700);
+			outline-offset: 2px;
+		}
+	}
+
+	&.mat-stepper-horizontal {
+		.mat-horizontal-stepper-header-container {
+			display: grid;
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			align-items: stretch;
+			gap: 8px;
+			padding: 10px;
+		}
+
+		.mat-stepper-horizontal-line {
+			display: none;
+		}
+
+		.mat-horizontal-stepper-header {
+			box-sizing: border-box;
+			min-width: 0;
+			height: auto;
+			min-height: 72px;
+			padding: 10px 6px;
+			flex-direction: column;
+			justify-content: center;
+			gap: 8px;
+
+			.mat-step-icon {
+				margin: 0;
+			}
+
+			.mat-step-label {
+				min-width: 0;
+				width: 100%;
+				white-space: normal;
+				text-align: center;
+				overflow: visible;
+			}
+
+			.mat-step-text-label {
+				overflow: visible;
+				overflow-wrap: anywhere;
+			}
+		}
+	}
+
+	// Desplazar encabezados y contenido juntos conserva la alineación de la guía.
+	&.mat-stepper-vertical .mat-vertical-stepper-wrapper {
+		padding: 10px;
+	}
+}
+
 .app-snackbar {
 	max-width: calc(100vw - 32px);
 	overflow-wrap: anywhere;

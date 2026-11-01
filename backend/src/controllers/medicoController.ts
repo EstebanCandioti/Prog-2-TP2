@@ -14,6 +14,78 @@ const leerId = (valor: unknown): number | null => {
   return Number.isSafeInteger(id) && id > 0 ? id : null;
 };
 
+interface MedicoEspecialidadRow extends RowDataPacket {
+  id: number;
+  nombre: string;
+  apellido: string;
+  id_especialidad: number | null;
+  descripcion: string | null;
+}
+
+interface MedicoListado {
+  id: number;
+  nombre: string;
+  apellido: string;
+  especialidades: Array<{ id: number; descripcion: string }>;
+}
+
+export const listarMedicos = async (req: AuthRequest, res: Response): Promise<void> => {
+  const idEspecialidad = req.query.id_especialidad === undefined ? null : leerId(req.query.id_especialidad);
+  const idSede = req.query.id_sede === undefined ? null : leerId(req.query.id_sede);
+
+  if ((req.query.id_especialidad !== undefined && idEspecialidad === null) ||
+      (req.query.id_sede !== undefined && idSede === null)) {
+    responder(res, 400, 'Los filtros de especialidad y sede deben ser enteros positivos seguros y simples');
+    return;
+  }
+
+  const condiciones = ['medico.rol = ?'];
+  const valores: Array<string | number> = ['medico'];
+
+  if (idEspecialidad !== null) {
+    condiciones.push(`EXISTS (
+      SELECT 1 FROM medico_especialidad filtro
+      WHERE filtro.id_medico = medico.id AND filtro.id_especialidad = ?
+    )`);
+    valores.push(idEspecialidad);
+  }
+
+  if (idSede !== null) {
+    condiciones.push(`EXISTS (
+      SELECT 1 FROM agenda
+      WHERE agenda.id_medico = medico.id AND agenda.id_sede = ?
+        ${idEspecialidad !== null ? 'AND agenda.id_especialidad = ?' : ''}
+    )`);
+    valores.push(idSede);
+    if (idEspecialidad !== null) valores.push(idEspecialidad);
+  }
+
+  const [filas] = await pool.query<MedicoEspecialidadRow[]>(
+    `SELECT DISTINCT medico.id, medico.nombre, medico.apellido,
+       especialidad.id AS id_especialidad, especialidad.descripcion
+     FROM usuario medico
+     LEFT JOIN medico_especialidad ON medico_especialidad.id_medico = medico.id
+     LEFT JOIN especialidad ON especialidad.id = medico_especialidad.id_especialidad
+     WHERE ${condiciones.join(' AND ')}
+     ORDER BY medico.apellido, medico.nombre, medico.id, especialidad.descripcion, especialidad.id`,
+    valores
+  );
+
+  const medicos = new Map<number, MedicoListado>();
+  for (const fila of filas) {
+    let medico = medicos.get(fila.id);
+    if (!medico) {
+      medico = { id: fila.id, nombre: fila.nombre, apellido: fila.apellido, especialidades: [] };
+      medicos.set(fila.id, medico);
+    }
+    if (fila.id_especialidad !== null && fila.descripcion !== null) {
+      medico.especialidades.push({ id: fila.id_especialidad, descripcion: fila.descripcion });
+    }
+  }
+
+  responder(res, 200, 'ok', Array.from(medicos.values()));
+};
+
 const parametrosDisponibilidad = async (req: AuthRequest, res: Response, requiereFecha: boolean): Promise<{
   idMedico: number;
   idEspecialidad: number;

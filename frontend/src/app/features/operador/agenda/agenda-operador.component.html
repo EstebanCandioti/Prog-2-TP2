@@ -1,0 +1,105 @@
+<main class="agenda-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Área de operaciones</p>
+      <h1>Agenda por sede</h1>
+      <p class="subtitle">Consultá los rangos de atención y gestioná la agenda de tu sede.</p>
+    </div>
+    @if (puedeGestionar()) {
+      <button mat-flat-button class="primary-action" type="button" (click)="abrirFormulario()" [disabled]="dialogoAbierto() || cargando()"><mat-icon>add</mat-icon>Nueva agenda</button>
+    }
+  </header>
+
+  @if (!sedeOperador() || (!cargandoSedes() && !errorSedes() && !sedeAsignadaValida())) {
+    <p class="permission-message" role="alert">No se pudo identificar una sede válida del operador. Podés consultar agendas, pero no modificarlas ni consultar turnos. Volvé a iniciar sesión o consultá al administrador.</p>
+  }
+
+  <mat-card class="agenda-card">
+    <mat-card-content>
+      <div class="filters">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de atención</mat-label>
+          <input matInput [formControl]="fecha" [matDatepicker]="calendario" [min]="fechaMinima" [max]="fechaMaxima" readonly (click)="calendario.open()" />
+          <mat-datepicker-toggle matIconSuffix [for]="calendario"></mat-datepicker-toggle>
+          <mat-datepicker #calendario></mat-datepicker>
+          @if (fecha.hasError('required')) { <mat-error>Seleccioná una fecha.</mat-error> }
+          @else if (fecha.invalid) { <mat-error>Elegí una fecha válida.</mat-error> }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select [formControl]="idSede">
+            @for (sede of sedes(); track sede.id) {
+              <mat-option [value]="sede.id">{{ sede.id }}. {{ sede.nombre }}{{ sede.id === sedeOperador() ? ' (tu sede)' : '' }}</mat-option>
+            }
+          </mat-select>
+          @if (idSede.hasError('required')) { <mat-error>Seleccioná una sede.</mat-error> }
+          @else if (idSede.invalid) { <mat-error>Elegí una sede disponible.</mat-error> }
+        </mat-form-field>
+      </div>
+      @if (cargandoSedes()) {
+        <div class="catalog-status" role="status"><mat-spinner diameter="24"></mat-spinner><span>Cargando sedes…</span></div>
+      } @else if (errorSedes()) {
+        <div class="error-message" role="alert"><p>{{ errorSedes() }}</p><button mat-stroked-button type="button" (click)="cargarSedes()">Reintentar sedes</button></div>
+      } @else if (sedes().length === 0) {
+        <p class="permission-message">No hay sedes disponibles para consultar.</p>
+      } @else if (sedeDisponible() && !puedeGestionar() && fecha.valid) {
+        <p class="permission-message">Esta sede se muestra solo para consulta. Las modificaciones y los turnos confirmados están disponibles únicamente en tu sede asignada.</p>
+      }
+
+      @if (fecha.invalid || !sedeDisponible()) {
+        <div class="state-message"><mat-icon>calendar_month</mat-icon><p>Elegí una fecha y una sede válidas para consultar las agendas.</p></div>
+      } @else if (cargando()) {
+        <div class="state-message" role="status" aria-live="polite"><mat-spinner diameter="36"></mat-spinner><p>Cargando agendas…</p></div>
+      } @else if (error()) {
+        <div class="state-message error-state" role="alert"><mat-icon>error_outline</mat-icon><p>{{ error() }}</p><button mat-stroked-button type="button" (click)="recargar()">Reintentar agendas</button></div>
+      } @else if (!cargandoSedes() && !errorSedes() && medicos().length === 0) {
+        <div class="state-message"><mat-icon>event_available</mat-icon><p>No hay agendas para la fecha y sede seleccionadas.</p></div>
+      } @else if (medicos().length > 0) {
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Agendas agrupadas por médico">
+          <table mat-table [dataSource]="medicos()" multiTemplateDataRows aria-label="Agenda de la sede">
+            <ng-container matColumnDef="medico">
+              <th mat-header-cell *matHeaderCellDef>Médico</th>
+              <td mat-cell *matCellDef="let medico">{{ medico.id }}. {{ medico.apellido }}, {{ medico.nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="rangos">
+              <th mat-header-cell *matHeaderCellDef>Rangos de atención</th>
+              <td mat-cell *matCellDef="let medico">
+                <ul class="ranges">
+                  @for (rango of medico.rangos; track rango.id) {
+                    <li>
+                      <div class="range-information"><strong>{{ rango.hora_entrada }}–{{ rango.hora_salida }}</strong><span>{{ rango.id_especialidad }}. {{ rango.especialidad_descripcion }}</span></div>
+                      @if (puedeGestionar()) {
+                        <button mat-stroked-button class="add-appointment" type="button" (click)="$event.stopPropagation(); asignarTurno(rango)" [attr.aria-label]="'Agregar turno de ' + rango.especialidad_descripcion + ' con ' + medico.apellido + ', ' + medico.nombre + ', rango ' + rango.hora_entrada + ' a ' + rango.hora_salida" [disabled]="dialogoAbierto()">Agregar turno</button>
+                      }
+                    </li>
+                  }
+                </ul>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="actions">Acciones</th>
+              <td mat-cell *matCellDef="let medico" class="actions">
+                @if (puedeGestionar()) {
+                  <button mat-icon-button type="button" matTooltip="Gestionar rangos" [attr.aria-label]="'Gestionar agenda de ' + medico.apellido + ', ' + medico.nombre" (click)="$event.stopPropagation(); abrirFormulario(medico)" [disabled]="dialogoAbierto()"><mat-icon>edit</mat-icon></button>
+                  <button mat-icon-button type="button" matTooltip="Turnos confirmados" [attr.aria-label]="(abiertos().has(medico.id) ? 'Ocultar' : 'Ver') + ' turnos confirmados de ' + medico.apellido + ', ' + medico.nombre" [attr.aria-expanded]="abiertos().has(medico.id)" [attr.aria-controls]="'turnos-medico-' + medico.id" (click)="$event.stopPropagation(); alternarTurnos(medico)" [disabled]="dialogoAbierto()"><mat-icon>{{ abiertos().has(medico.id) ? 'expand_less' : 'expand_more' }}</mat-icon></button>
+                } @else { <span class="read-only">Solo consulta</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="turnos">
+              <td mat-cell *matCellDef="let medico" [attr.colspan]="columnas.length">
+                <div [id]="'turnos-medico-' + medico.id">
+                  @if (abiertos().has(medico.id) && puedeGestionar()) {
+                    <app-turnos-confirmados [fecha]="fechaConsulta()!" [idSede]="idSede.value!" [idMedico]="medico.id" [rangos]="medico.rangos" [actualizacion]="versionesTurnos()[medico.id] ?? 0"></app-turnos-confirmados>
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let medico; columns: columnas;" class="medico-row" [class.expandable]="puedeGestionar() && !dialogoAbierto()" [class.expanded]="abiertos().has(medico.id) && puedeGestionar()" (click)="alternarTurnos(medico)"></tr>
+            <tr mat-row *matRowDef="let medico; columns: ['turnos'];" class="detail-row" [class.detail-open]="abiertos().has(medico.id) && puedeGestionar()"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

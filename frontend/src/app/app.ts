@@ -8,17 +8,20 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from './core/services/auth.service';
 import { navigationByRole } from './core/config/navigation';
 import { SessionService } from './core/services/session.service';
+import { NotificacionService } from './core/services/notificacion.service';
 import { RolUsuario } from './core/models/usuario.model';
+import { NotificacionCampanaComponent } from './features/notificaciones/notificacion-campana.component';
 
 @Component({
   selector: 'app-root',
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [NotificacionCampanaComponent, MatButtonModule, MatIconModule, MatMenuModule, MatToolbarModule, MatTooltipModule, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './layout.html',
   styleUrl: './layout.css'
 })
 export class App {
   protected readonly title = signal('Clínica Virtual');
   readonly session = inject(SessionService);
+  readonly notificaciones = inject(NotificacionService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly profile = signal<{ nombre: string; apellido: string } | null>(null);
@@ -33,6 +36,7 @@ export class App {
   readonly displayRole = computed(() => this.roleLabel(this.session.sesionActual()?.usuario.rol));
 
   constructor() {
+    this.notificaciones.iniciarSeguimiento();
     effect((onCleanup) => {
       if (!this.session.sesionActual()) {
         this.profile.set(null);

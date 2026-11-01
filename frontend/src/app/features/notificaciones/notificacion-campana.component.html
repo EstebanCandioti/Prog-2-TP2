@@ -1,0 +1,62 @@
+<button #campana mat-icon-button type="button" matTooltip="Notificaciones" cdkOverlayOrigin #origen="cdkOverlayOrigin"
+  [attr.aria-label]="'Notificaciones: ' + notificaciones.noLeidas() + ' sin leer'"
+  aria-haspopup="dialog" [attr.aria-expanded]="abierto()" [attr.aria-controls]="abierto() ? 'panel-notificaciones' : null"
+  (click)="alternar()">
+  <mat-icon [matBadge]="notificaciones.noLeidas() > 99 ? '99+' : notificaciones.noLeidas()"
+    [matBadgeHidden]="notificaciones.noLeidas() === 0">notifications</mat-icon>
+</button>
+
+<ng-template cdkConnectedOverlay [cdkConnectedOverlayOrigin]="origen" [cdkConnectedOverlayOpen]="abierto()"
+  [cdkConnectedOverlayPositions]="posiciones" [cdkConnectedOverlayViewportMargin]="12"
+  [cdkConnectedOverlayPush]="true" [cdkConnectedOverlayFlexibleDimensions]="false"
+  [cdkConnectedOverlayDisposeOnNavigation]="true" [cdkConnectedOverlayDisableClose]="true"
+  (overlayOutsideClick)="cerrarDesdeFuera($event)" (overlayKeydown)="manejarTecla($event)" (detach)="abierto.set(false)">
+  <section id="panel-notificaciones" class="notification-panel" role="dialog" aria-labelledby="panel-notificaciones-titulo"
+    cdkTrapFocus [cdkTrapFocusAutoCapture]="true">
+    <header class="panel-heading">
+      <div><h2 id="panel-notificaciones-titulo">Notificaciones</h2><p>{{ notificaciones.noLeidas() }} sin leer</p></div>
+      <button #cierre cdkFocusInitial mat-icon-button type="button" aria-label="Cerrar notificaciones" (click)="abierto.set(false)"><mat-icon>close</mat-icon></button>
+    </header>
+
+    <div class="panel-status">
+      @if (notificaciones.cargando()) {
+        <p class="loading" role="status" aria-live="polite"><mat-spinner diameter="22"></mat-spinner>{{ notificaciones.cargado() ? 'Actualizando notificaciones…' : 'Cargando notificaciones…' }}</p>
+      }
+      @if (notificaciones.error()) {
+        <div class="error" role="alert"><p>{{ notificaciones.error() }}</p>
+          <button mat-stroked-button type="button" (click)="notificaciones.actualizar()" [disabled]="notificaciones.cargando()">Reintentar consulta</button>
+        </div>
+      }
+      @if (!notificaciones.cargado() && !notificaciones.cargando() && !notificaciones.error()) {
+        <p class="empty" role="status">Las notificaciones se consultarán al activar esta pestaña.</p>
+      }
+    </div>
+
+    @if (notificaciones.recientesSinLeer().length > 0) {
+      <ul class="pending-list" aria-label="Hasta diez notificaciones sin leer más recientes">
+        @for (notificacion of notificaciones.recientesSinLeer(); track notificacion.id) {
+          <li>
+            <time [attr.datetime]="notificacion.fecha">{{ notificacion.fecha | date:'dd/MM/yyyy · HH:mm' }}</time>
+            <p class="message">{{ notificacion.mensaje }}</p>
+            @if (notificaciones.erroresMarcado().get(notificacion.id); as errorMarcado) {
+              <p class="error" role="alert">{{ errorMarcado }}</p>
+            }
+            @if (notificaciones.marcando().has(notificacion.id)) {
+              <p class="loading" role="status"><mat-spinner diameter="18"></mat-spinner>Marcando como leída…</p>
+            }
+            <button mat-stroked-button class="read-action" type="button" (click)="marcarComoLeida(notificacion.id)"
+              [disabled]="notificaciones.bloqueoMarcado() || notificaciones.marcando().has(notificacion.id)"
+              [attr.aria-label]="'Marcar como leída la notificación ' + notificacion.id"><mat-icon>done</mat-icon>Marcar como leída</button>
+          </li>
+        }
+      </ul>
+    } @else if (notificaciones.cargado()) {
+      <p class="empty">No tenés notificaciones sin leer</p>
+    }
+
+    <footer class="panel-actions">
+      <app-notificacion-marcado-masivo />
+      <a mat-button routerLink="/notificaciones" (click)="abierto.set(false)">Ver todas<mat-icon>arrow_forward</mat-icon></a>
+    </footer>
+  </section>
+</ng-template>

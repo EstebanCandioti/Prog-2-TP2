@@ -18,6 +18,14 @@
       "value": ""
     },
     {
+      "key": "paciente_sin_turnos_token",
+      "value": ""
+    },
+    {
+      "key": "id_turno_otro_paciente",
+      "value": ""
+    },
+    {
       "key": "operador_token",
       "value": ""
     },
@@ -1299,6 +1307,203 @@
       ]
     },
     {
+      "name": "Médicos para selección (B01)",
+      "description": "Lectura para admin, medico, operador y paciente. Respuesta uniforme 200 con datos como arreglo sin paginacion, orden apellido/nombre/id. Solo id, nombre, apellido y especialidades [{id, descripcion}], sin duplicados. GET /usuarios conserva acceso exclusivo de admin. Estas consultas no modifican datos ni calculan disponibilidad.",
+      "item": [
+        {
+          "name": "Listado completo (admin)",
+          "request": {
+            "description": "200: lista todos los usuarios con rol medico, incluidos medicos sin agenda o sin especialidades. Un medico sin especialidades devuelve especialidades: []. Ejemplo de datos: [{\"id\":3,\"nombre\":\"Ana\",\"apellido\":\"Lopez\",\"especialidades\":[{\"id\":1,\"descripcion\":\"Clinica medica\"}]}].",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos"
+          }
+        },
+        {
+          "name": "Filtro por especialidad (medico)",
+          "request": {
+            "description": "200: comprueba la asignacion en medico_especialidad sin exigir agenda. Conserva todas las especialidades del medico en la respuesta, aunque se filtre por una sola.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_especialidad={{id_especialidad}}"
+          }
+        },
+        {
+          "name": "Filtro por sede (operador)",
+          "request": {
+            "description": "200: medicos con al menos una agenda en otra_sede_id, aunque usuario.id_sede sea diferente. El operador puede consultar cualquier sede en este listado. No exige fecha ni bloques libres.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_sede={{otra_sede_id}}"
+          }
+        },
+        {
+          "name": "Filtro por sede y especialidad (paciente)",
+          "request": {
+            "description": "200: exige especialidad asignada y una misma agenda del medico que coincida con la sede y especialidad indicadas. No basta con tener la especialidad asignada y una agenda de otra especialidad en esa sede. Devuelve todas las especialidades asignadas.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_sede={{id_sede}}&id_especialidad={{id_especialidad}}"
+          }
+        },
+        {
+          "name": "Incluye medico sin agenda",
+          "request": {
+            "description": "200: comprobar con un medico existente sin agendas que aparezca en el listado. No enviar id_sede. Puede aparecer con especialidades asignadas o con especialidades: []. Ejemplo de elemento: {\"id\":12,\"nombre\":\"Luis\",\"apellido\":\"Perez\",\"especialidades\":[]}. Este ejemplo no crea ni carga datos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos"
+          }
+        },
+        {
+          "name": "Sin coincidencias (200)",
+          "request": {
+            "description": "Usar un ID valido sin coincidencias en la base local. Responde {\"codigo\":200,\"estado\":\"ok\",\"datos\":[]}; no 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_especialidad=999999"
+          }
+        },
+        {
+          "name": "Filtro no numerico (400)",
+          "request": {
+            "description": "400 con respuesta uniforme; los filtros deben representar enteros positivos seguros.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_especialidad=abc"
+          }
+        },
+        {
+          "name": "Filtro no positivo (400)",
+          "request": {
+            "description": "400. Tambien se rechazan negativos y decimales, por ejemplo id_sede=-1 e id_sede=1.5.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_sede=0"
+          }
+        },
+        {
+          "name": "Filtro vacio (400)",
+          "request": {
+            "description": "400: un filtro opcional enviado vacio es invalido.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_especialidad="
+          }
+        },
+        {
+          "name": "Filtro fuera de entero seguro (400)",
+          "request": {
+            "description": "400: supera Number.MAX_SAFE_INTEGER. Un entero seguro positivo inexistente devuelve 200 con [].",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_sede=9007199254740992"
+          }
+        },
+        {
+          "name": "Filtro repetido (400)",
+          "request": {
+            "description": "400: los filtros deben ser valores simples, no arreglos de parametros repetidos. Tambien se rechaza repetir id_especialidad.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_sede=1&id_sede=2"
+          }
+        },
+        {
+          "name": "Filtro estructurado (400)",
+          "request": {
+            "description": "400: no se admiten objetos ni arreglos; tambien se rechaza id_especialidad[]=1.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/medicos?id_especialidad[id]=1"
+          }
+        },
+        {
+          "name": "Sin token (401)",
+          "request": {
+            "description": "401 con respuesta uniforme para la lectura sin autenticacion.",
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/medicos"
+          }
+        },
+        {
+          "name": "Token invalido (401)",
+          "request": {
+            "description": "401 con respuesta uniforme; los cuatro roles admitidos requieren un token valido.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token-invalido"
+              }
+            ],
+            "url": "{{base_url}}/medicos"
+          }
+        }
+      ]
+    },
+    {
       "name": "Disponibilidad de medicos (B06)",
       "description": "Paciente y operador; sin token: 401, otros roles: 403. Una agenda puede tener varios rangos el mismo dia. Bloques completos de 20 minutos, sin reservas canceladas; los confirmados del medico bloquean intervalos superpuestos aun en otra agenda. Fechas con agenda y sin reservas, parcialmente ocupadas o completas se listan igual; horarios devuelve [] si ninguno queda libre.",
       "item": [
@@ -1511,8 +1716,28 @@
         },
         {
           "name": "Mis turnos paciente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json().datos;",
+                  "pm.test('Mis turnos: formato paginado B11', () => {",
+                  "  pm.expect(datos).to.be.an('object');",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(1);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
-            "description": "Rol: paciente. Exito: 200 con sus turnos.",
+            "description": "Rol: paciente. Sin parametros equivale a tipo=todos y pagina=1. Responde 200 con datos {items, total, pagina, limite:20}; conserva campos de cada turno y ordena por fecha, hora e ID descendentes. No incluye historial clinico.",
             "method": "GET",
             "header": [
               {
@@ -1674,6 +1899,791 @@
       ]
     },
     {
+      "name": "Paciente: turnos e historial (B11)",
+      "description": "Solo pacientes autenticados. Listado de lectura paginado de 20, sin historial embebido. tipo=proximos usa el reloj de MySQL; tipo=todos incluye tambien proximos. Los ejemplos de detalle requieren turnos del paciente autenticado en los estados indicados. No cargan datos. Futuras pestanas del frontend enviaran tipo y pagina.",
+      "item": [
+        {
+          "name": "Todos, primera pagina",
+          "request": {
+            "description": "200: datos {items, total, pagina:1, limite:20}. Incluye todos los estados y fechas; orden fecha, hora e ID DESC.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=todos&pagina=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});",
+                  "pm.test('Datos paginados', () => {",
+                  "  const datos = pm.response.json().datos;",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(1);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Proximos, primera pagina",
+          "request": {
+            "description": "200: solo confirmados con fecha/hora >= momento de MySQL; orden fecha, hora e ID ASC. total cuenta solo proximos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=proximos&pagina=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});",
+                  "pm.test('Datos paginados', () => {",
+                  "  const datos = pm.response.json().datos;",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(1);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Todos, segunda pagina",
+          "request": {
+            "description": "200: siguientes 20; total conserva la cantidad completa del paciente para tipo=todos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=todos&pagina=2"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});",
+                  "pm.test('Datos paginados', () => {",
+                  "  const datos = pm.response.json().datos;",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(2);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagina posterior a la ultima",
+          "request": {
+            "description": "200: con los datos locales se espera items:[], pagina:999999, limite:20 y total real, no 404.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=todos&pagina=999999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});",
+                  "pm.test('Datos paginados', () => {",
+                  "  const datos = pm.response.json().datos;",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(999999);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paciente sin coincidencias",
+          "request": {
+            "description": "Configurar paciente_sin_turnos_token de un paciente existente sin turnos. 200: {items:[], total:0, pagina:1, limite:20}.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_sin_turnos_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=todos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});",
+                  "pm.test('Datos paginados', () => {",
+                  "  const datos = pm.response.json().datos;",
+                  "  pm.expect(datos.items).to.be.an('array');",
+                  "  pm.expect(datos.items.length).to.be.at.most(20);",
+                  "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+                  "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+                  "  pm.expect(datos.pagina).to.eql(1);",
+                  "  pm.expect(datos.limite).to.eql(20);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipo no permitido (400)",
+          "request": {
+            "description": "400: solo proximos o todos; no existe tipo=historial. Tambien se rechaza tipo vacio.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagina invalida (400)",
+          "request": {
+            "description": "400: tambien se rechazan paginas vacias, negativas, decimales y no numericas.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?pagina=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagina no segura (400)",
+          "request": {
+            "description": "400: pagina fuera del rango entero positivo seguro.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?pagina=9007199254740992"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Offset no seguro (400)",
+          "request": {
+            "description": "400: pagina numericamente segura cuyo offset (pagina-1)*20 desborda el entero seguro.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?pagina=9007199254740991"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipo repetido (400)",
+          "request": {
+            "description": "400: parametros repetidos no son valores simples.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo=todos&tipo=proximos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagina repetida (400)",
+          "request": {
+            "description": "400: pagina repetida.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?pagina=1&pagina=2"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipo estructurado (400)",
+          "request": {
+            "description": "400: no se aceptan objetos ni arreglos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?tipo[valor]=todos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagina estructurada (400)",
+          "request": {
+            "description": "400: no se aceptan objetos ni arreglos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?pagina[]=1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtro adicional no admitido (400)",
+          "request": {
+            "description": "400: solo se permiten tipo y pagina; no se filtra por paciente, medico, sede, especialidad, estado ni fechas.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos?id_medico={{id_medico}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado sin token (401)",
+          "request": {
+            "description": "401 con formato uniforme.",
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/turnos/mis-turnos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado con rol incorrecto (403)",
+          "request": {
+            "description": "403: medico, operador y admin no acceden al listado del paciente.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/mis-turnos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial propio atendido",
+          "request": {
+            "description": "200: configurar turno_atender_id con un turno atendido del paciente autenticado y con historial. Devuelve exclusivamente id, id_turno, id_medico, id_paciente, diagnostico, tratamiento, observaciones y fecha_registro.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: ID invalido (400)",
+          "request": {
+            "description": "400: ID entero positivo seguro requerido; tambien rechaza letras, negativos, decimales y valores inseguros.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/0/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: turno inexistente (404)",
+          "request": {
+            "description": "404: Turno no encontrado.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/999999/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: turno ajeno (403)",
+          "request": {
+            "description": "Configurar id_turno_otro_paciente con un turno de otro paciente. 403 antes de consultar datos clinicos, cualquiera sea su estado.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{id_turno_otro_paciente}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: turno no atendido (409)",
+          "request": {
+            "description": "Configurar turno_id con un turno propio confirmado o cancelado. 409: El historial clinico solo puede consultarse para turnos atendidos.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{turno_id}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial: atendido sin registro (404)",
+          "request": {
+            "description": "Configurar un turno propio atendido sin historial. 404: El turno atendido todavia no tiene historial clinico cargado.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{id_turno_atendido_sin_historial}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 404', () => pm.response.to.have.status(404));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial sin token (401)",
+          "request": {
+            "description": "401 con formato uniforme.",
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial con rol incorrecto (403)",
+          "request": {
+            "description": "403: este endpoint es exclusivo de pacientes; conserva los endpoints clinicos existentes del medico.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
+            "url": "{{base_url}}/turnos/{{turno_atender_id}}/historial"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado esperado: 403', () => pm.response.to.have.status(403));",
+                  "pm.test('Respuesta uniforme', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('codigo', pm.response.code);",
+                  "  pm.expect(json).to.have.property('estado');",
+                  "  pm.expect(json).to.have.property('datos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Historial clinico",
       "item": [
         {
@@ -1768,6 +2778,161 @@
             ],
             "url": "{{base_url}}/notificaciones/{{notificacion_id}}/leida"
           }
+        },
+        {
+          "name": "Marcado masivo (F09)",
+          "description": "Ejecutar en orden, solo en una base de prueba de Windows. A=paciente_token y B=medico_token deben ser usuarios distintos. A debe tener pendientes; conviene que B tambien tenga pendientes para comprobar aislamiento. Sin operaciones concurrentes entre capturas. No crea datos; SI marca todas las notificaciones pendientes de A. Cambiar los tokens permite probar cualquier rol autenticado.",
+          "item": [
+            {
+              "name": "01 - Capturar notificaciones de B antes",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.collectionVariables.unset('f09_notificaciones_b_antes');",
+                  "pm.test('B autenticado: listado propio', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });",
+                  "const lista = pm.response.json().datos;",
+                  "if (Array.isArray(lista)) pm.collectionVariables.set('f09_notificaciones_b_antes', JSON.stringify(lista.sort((a, b) => a.id - b.id)));"
+                ] }
+              }],
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+                "url": "{{base_url}}/notificaciones"
+              }
+            },
+            {
+              "name": "02 - Capturar pendientes propias de A",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.collectionVariables.unset('f09_pendientes_a_antes');",
+                  "pm.test('A tiene pendientes para el caso positivo', () => {",
+                  "  pm.response.to.have.status(200);",
+                  "  const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
+                  "  const pendientes = lista.filter(n => n.leida === 0).length;",
+                  "  pm.collectionVariables.set('f09_pendientes_a_antes', pendientes);",
+                  "  pm.expect(pendientes).to.be.above(0);",
+                  "});"
+                ] }
+              }],
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "url": "{{base_url}}/notificaciones"
+              }
+            },
+            {
+              "name": "03 - Marcar todas las pendientes propias de A",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('200 uniforme y cantidad igual a las pendientes propias', () => {",
+                  "  pm.response.to.have.status(200); const json = pm.response.json();",
+                  "  pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok');",
+                  "  const cantidad = json.datos.cantidad_actualizada;",
+                  "  pm.expect(Number.isSafeInteger(cantidad)).to.eql(true); pm.expect(cantidad).to.be.above(0);",
+                  "  pm.expect(pm.collectionVariables.get('f09_pendientes_a_antes')).to.not.eql(undefined);",
+                  "  pm.expect(cantidad).to.eql(Number(pm.collectionVariables.get('f09_pendientes_a_antes')));",
+                  "});"
+                ] }
+              }],
+              "request": {
+                "description": "Cualquier rol autenticado. Sin cuerpo ni parametros de usuario. Ejemplo: { codigo: 200, estado: 'ok', datos: { cantidad_actualizada: 3 } }. La cantidad proviene de affectedRows; afecta todas las pendientes propias, no solo diez.",
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "url": "{{base_url}}/notificaciones/leidas"
+              },
+              "response": [{
+                "name": "Pendientes propias actualizadas",
+                "status": "OK",
+                "code": 200,
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 3 }\n}"
+              }]
+            },
+            {
+              "name": "04 - Confirmar A sin pendientes",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('Todas las notificaciones de A estan leidas', () => { pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array'); pm.expect(lista.every(n => n.leida === 1)).to.eql(true); });"
+                ] }
+              }],
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "url": "{{base_url}}/notificaciones"
+              }
+            },
+            {
+              "name": "05 - Marcar sin pendientes devuelve cero",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('Repeticion idempotente: 200 y cantidad 0', () => { pm.response.to.have.status(200); const json = pm.response.json(); pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok'); pm.expect(json.datos).to.eql({ cantidad_actualizada: 0 }); });"
+                ] }
+              }],
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "url": "{{base_url}}/notificaciones/leidas"
+              },
+              "response": [{
+                "name": "Ninguna pendiente",
+                "status": "OK",
+                "code": 200,
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 0 }\n}"
+              }]
+            },
+            {
+              "name": "06 - Comprobar aislamiento de B",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('B conserva sus registros y estados', () => {",
+                  "  pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
+                  "  const captura = pm.collectionVariables.get('f09_notificaciones_b_antes'); pm.expect(captura).to.be.a('string');",
+                  "  pm.expect(lista.sort((a, b) => a.id - b.id)).to.deep.eql(JSON.parse(captura));",
+                  "});"
+                ] }
+              }],
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+                "url": "{{base_url}}/notificaciones"
+              }
+            },
+            {
+              "name": "07 - Marcado masivo sin autenticacion",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('401 uniforme sin token', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
+                ] }
+              }],
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "PATCH",
+                "header": [],
+                "url": "{{base_url}}/notificaciones/leidas"
+              }
+            },
+            {
+              "name": "08 - Marcado masivo con token invalido",
+              "event": [{
+                "listen": "test",
+                "script": { "type": "text/javascript", "exec": [
+                  "pm.test('401 uniforme con token invalido', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
+                ] }
+              }],
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Authorization", "value": "Bearer token-invalido" }],
+                "url": "{{base_url}}/notificaciones/leidas"
+              }
+            }
+          ]
         }
       ]
     },

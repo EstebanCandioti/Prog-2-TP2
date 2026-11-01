@@ -1,0 +1,16 @@
+:host { display: block; }
+.new-appointment-page { width: min(100% - 48px, 1180px); margin: 0 auto; padding: 32px 0 56px; }
+.page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.eyebrow { margin: 0 0 8px; color: var(--green-700); font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+h1 { margin: 0; color: var(--ink); font-size: clamp(30px, 3vw, 38px); }
+.subtitle { margin: 8px 0 0; color: var(--ink-soft); line-height: 1.5; }
+.page-heading > mat-icon { width: 50px; height: 50px; flex-shrink: 0; color: var(--green-700); font-size: 50px; }
+.status-card { border-radius: 10px; }
+.status { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; min-height: 240px; padding: 24px; text-align: center; color: var(--ink-soft); }
+.status p { margin: 0; overflow-wrap: anywhere; line-height: 1.5; }
+.error-message { color: #8c1d18; }
+.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+@media (max-width: 760px) {
+  .new-appointment-page { width: min(100% - 28px, 680px); padding: 28px 0 44px; }
+  .page-heading > mat-icon { display: none; }
+}

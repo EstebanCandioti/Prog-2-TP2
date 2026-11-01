@@ -848,6 +848,26 @@
     },
     {
       "name": "35 - Mis turnos paciente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const datos = pm.response.json().datos;",
+              "pm.test('Mis turnos: formato paginado B11', () => {",
+              "  pm.expect(datos).to.be.an('object');",
+              "  pm.expect(datos.items).to.be.an('array');",
+              "  pm.expect(datos.items.length).to.be.at.most(20);",
+              "  pm.expect(Number.isSafeInteger(datos.total)).to.eql(true);",
+              "  pm.expect(datos.total).to.be.at.least(datos.items.length);",
+              "  pm.expect(datos.pagina).to.eql(1);",
+              "  pm.expect(datos.limite).to.eql(20);",
+              "});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [

@@ -24,6 +24,15 @@ export const listarNotificaciones = async (req: AuthRequest, res: Response): Pro
   responder(res, 200, 'ok', notificaciones);
 };
 
+export const marcarTodasLasNotificacionesComoLeidas = async (req: AuthRequest, res: Response): Promise<void> => {
+  const [resultado] = await pool.query<ResultSetHeader>(
+    'UPDATE notificacion SET leida = 1 WHERE id_usuario = ? AND leida = 0',
+    [req.usuario?.id]
+  );
+
+  responder(res, 200, 'ok', { cantidad_actualizada: resultado.affectedRows });
+};
+
 export const marcarNotificacionComoLeida = async (req: AuthRequest, res: Response): Promise<void> => {
   const id = obtenerIdParam(req, res);
 

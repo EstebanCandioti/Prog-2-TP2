@@ -1,0 +1,184 @@
+@if (confirmada(); as reserva) {
+  <mat-card class="confirmation-card">
+    <mat-card-content>
+      <div class="success-heading" role="status" aria-live="polite">
+        <mat-icon>check_circle</mat-icon>
+        <div><h2>Tu turno está confirmado</h2><p>La reserva se registró correctamente.</p></div>
+      </div>
+      @if (reserva.turno) { <p class="appointment-id">Turno n.º {{ reserva.turno.id }}</p> }
+      <dl class="summary">
+        <div><dt>Especialidad</dt><dd>{{ reserva.resumen.especialidad }}</dd></div>
+        <div><dt>Sede</dt><dd>{{ reserva.resumen.sede }}</dd></div>
+        <div><dt>Médico</dt><dd>{{ reserva.resumen.medico }}</dd></div>
+        <div><dt>Fecha</dt><dd>{{ fechaLegible(reserva.resumen.fecha) | date:'dd/MM/yyyy' }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ reserva.resumen.hora }}</dd></div>
+        <div><dt>Cobertura</dt><dd>{{ reserva.resumen.cobertura }}</dd></div>
+        <div class="full-width"><dt>Nota</dt><dd>{{ reserva.resumen.nota }}</dd></div>
+      </dl>
+      <div class="actions success-actions">
+        <button mat-stroked-button type="button" (click)="reservarOtro()">Reservar otro turno</button>
+        <button mat-flat-button class="primary-action" type="button" (click)="verTurnos.emit()">Ver mis turnos</button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <div class="patient-information">
+    <div><mat-icon aria-hidden="true">person</mat-icon><span>{{ paciente.apellido }}, {{ paciente.nombre }}</span></div>
+    <div><mat-icon aria-hidden="true">health_and_safety</mat-icon><span>Cobertura: <strong>{{ paciente.cobertura.id }}. {{ paciente.cobertura.nombre }}</strong></span></div>
+    <p>Usaremos la cobertura registrada en tu perfil.</p>
+  </div>
+
+  @if (errorReserva()) { <p class="request-error" role="alert">{{ errorReserva() }}</p> }
+  @if (reservando()) { <div class="step-status" role="status" aria-live="polite"><mat-spinner diameter="28"></mat-spinner><span>Confirmando tu reserva…</span></div> }
+
+  <form [formGroup]="formulario" (ngSubmit)="confirmar()" [attr.aria-busy]="reservando()">
+    <mat-stepper class="reservation-stepper" [attr.inert]="reservando() ? '' : null" [orientation]="orientacion()" [linear]="true" [selectedIndex]="pasoActual()" (selectionChange)="pasoActual.set($event.selectedIndex)">
+      <!-- completed incluye pertenencia a las opciones y fin de carga.
+           No se usa stepControl: un control deshabilitado no debe habilitar el avance. -->
+      <mat-step label="Especialidad" [completed]="pasoListo(0)">
+        <section class="step-body">
+          <h2>¿Qué especialidad necesitás?</h2>
+          <p class="step-intro">Elegí la especialidad para tu consulta.</p>
+          @if (cargando().especialidades) {
+            <div class="step-status" role="status"><mat-spinner diameter="28"></mat-spinner><span>Cargando especialidades…</span></div>
+          } @else if (errores().especialidades) {
+            <div class="step-error" role="alert"><p>{{ errores().especialidades }}</p><button mat-stroked-button type="button" (click)="reintentar('especialidades')">Reintentar</button></div>
+          } @else if (especialidades().length === 0) {
+            <div class="step-empty"><p>No hay especialidades disponibles para reservar.</p><button mat-button type="button" (click)="reintentar('especialidades')">Consultar nuevamente</button></div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Especialidad</mat-label>
+            <mat-select formControlName="id_especialidad">
+              @for (especialidad of especialidades(); track especialidad.id) {
+                <mat-option [value]="especialidad.id">{{ especialidad.id }}. {{ especialidad.descripcion }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>Seleccioná una especialidad del listado.</mat-error>
+          </mat-form-field>
+          <div class="actions"><button mat-flat-button class="primary-action" type="button" (click)="avanzar(0)" [disabled]="!pasoListo(0) || reservando()">Continuar</button></div>
+        </section>
+      </mat-step>
+
+      <mat-step label="Sede" [completed]="pasoListo(1)">
+        <section class="step-body">
+          <h2>¿Dónde querés atenderte?</h2>
+          <p class="step-intro">Consultá las sedes de la clínica.</p>
+          @if (cargando().sedes) {
+            <div class="step-status" role="status"><mat-spinner diameter="28"></mat-spinner><span>Cargando sedes…</span></div>
+          } @else if (errores().sedes) {
+            <div class="step-error" role="alert"><p>{{ errores().sedes }}</p><button mat-stroked-button type="button" (click)="reintentar('sedes')">Reintentar</button></div>
+          } @else if (sedes().length === 0) {
+            <div class="step-empty"><p>No hay sedes disponibles.</p><button mat-button type="button" (click)="reintentar('sedes')">Consultar nuevamente</button></div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Sede</mat-label>
+            <mat-select formControlName="id_sede">
+              @for (sede of sedes(); track sede.id) {
+                <mat-option [value]="sede.id">{{ sede.id }}. {{ sede.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (idSedeFija !== null) { <mat-hint>Sede fijada para esta reserva.</mat-hint> }
+            <mat-error>Seleccioná una sede del listado.</mat-error>
+          </mat-form-field>
+          <div class="actions"><button mat-button type="button" (click)="volver()" [disabled]="reservando()">Volver</button><button mat-flat-button class="primary-action" type="button" (click)="avanzar(1)" [disabled]="!pasoListo(1) || reservando()">Continuar</button></div>
+        </section>
+      </mat-step>
+
+      <mat-step label="Médico" [completed]="pasoListo(2)">
+        <section class="step-body">
+          <h2>Elegí un profesional</h2>
+          <p class="step-intro">Estos médicos tienen agenda para la especialidad y sede elegidas.</p>
+          @if (cargando().medicos) {
+            <div class="step-status" role="status"><mat-spinner diameter="28"></mat-spinner><span>Cargando médicos…</span></div>
+          } @else if (errores().medicos) {
+            <div class="step-error" role="alert"><p>{{ errores().medicos }}</p><button mat-stroked-button type="button" (click)="reintentar('medicos')">Reintentar</button></div>
+          } @else if (medicos().length === 0) {
+            <div class="step-empty"><p>No hay médicos con agenda para esta combinación. Volvé y elegí otra sede o especialidad.</p><button mat-button type="button" (click)="reintentar('medicos')">Consultar nuevamente</button></div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Médico</mat-label>
+            <mat-select formControlName="id_medico">
+              @for (medico of medicos(); track medico.id) {
+                <mat-option [value]="medico.id">{{ medico.id }}. {{ medico.apellido }}, {{ medico.nombre }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>Seleccioná un médico del listado.</mat-error>
+          </mat-form-field>
+          <div class="actions"><button mat-button type="button" (click)="volver()" [disabled]="reservando()">Volver</button><button mat-flat-button class="primary-action" type="button" (click)="avanzar(2)" [disabled]="!pasoListo(2) || reservando()">Continuar</button></div>
+        </section>
+      </mat-step>
+
+      <mat-step label="Fecha" [completed]="pasoListo(3)">
+        <section class="step-body">
+          <h2>Elegí el día de la consulta</h2>
+          <p class="step-intro">Solo se habilitan las fechas con agenda del profesional.</p>
+          @if (cargando().fechas) {
+            <div class="step-status" role="status"><mat-spinner diameter="28"></mat-spinner><span>Cargando fechas…</span></div>
+          } @else if (errores().fechas) {
+            <div class="step-error" role="alert"><p>{{ errores().fechas }}</p><button mat-stroked-button type="button" (click)="reintentar('fechas')">Reintentar</button></div>
+          } @else if (fechas().length === 0) {
+            <div class="step-empty"><p>No hay fechas con agenda para esta selección. Podés elegir otro médico.</p><button mat-button type="button" (click)="reintentar('fechas')">Consultar nuevamente</button></div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de atención</mat-label>
+            <input matInput formControlName="fecha" [matDatepicker]="calendario" [matDatepickerFilter]="filtroFecha" [min]="primeraFecha()" [max]="ultimaFecha()" readonly (click)="calendario.open()" />
+            <mat-datepicker-toggle matIconSuffix [for]="calendario"></mat-datepicker-toggle>
+            <mat-datepicker #calendario [startAt]="primeraFecha()"></mat-datepicker>
+            <mat-hint>Elegí una fecha habilitada en el calendario.</mat-hint>
+            <mat-error>Seleccioná una fecha disponible para este médico.</mat-error>
+          </mat-form-field>
+          <div class="actions"><button mat-button type="button" (click)="volver()" [disabled]="reservando()">Volver</button><button mat-flat-button class="primary-action" type="button" (click)="avanzar(3)" [disabled]="!pasoListo(3) || reservando()">Continuar</button></div>
+        </section>
+      </mat-step>
+
+      <mat-step label="Horario" [completed]="pasoListo(4)">
+        <section class="step-body">
+          <h2>Elegí un horario disponible</h2>
+          <p class="step-intro">La disponibilidad puede cambiar hasta que confirmes el turno.</p>
+          @if (cargando().horarios) {
+            <div class="step-status" role="status"><mat-spinner diameter="28"></mat-spinner><span>Cargando horarios…</span></div>
+          } @else if (errores().horarios) {
+            <div class="step-error" role="alert"><p>{{ errores().horarios }}</p><button mat-stroked-button type="button" (click)="reintentar('horarios')">Reintentar</button></div>
+          } @else if (horarios().length === 0) {
+            <div class="step-empty"><p>No quedan horarios disponibles para ese día.</p><div class="actions"><button mat-stroked-button type="button" (click)="pasoActual.set(3)" [disabled]="reservando()">Elegir otra fecha</button><button mat-button type="button" (click)="reintentar('horarios')">Consultar nuevamente</button></div></div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>Horario</mat-label>
+            <mat-select formControlName="hora">
+              @for (hora of horarios(); track hora) { <mat-option [value]="hora">{{ hora }}</mat-option> }
+            </mat-select>
+            <mat-error>Seleccioná un horario disponible.</mat-error>
+          </mat-form-field>
+          <div class="actions"><button mat-button type="button" (click)="volver()" [disabled]="reservando()">Volver</button><button mat-flat-button class="primary-action" type="button" (click)="avanzar(4)" [disabled]="!pasoListo(4) || reservando()">Continuar</button></div>
+        </section>
+      </mat-step>
+
+      <mat-step label="Confirmación" [completed]="false">
+        <section class="step-body">
+          <h2>Revisá y confirmá tu turno</h2>
+          <p class="step-intro">Completá una nota para la consulta y verificá los datos de la reserva.</p>
+          <mat-form-field appearance="outline" class="note-field">
+            <mat-label>Nota para la consulta</mat-label>
+            <textarea matInput formControlName="nota" maxlength="40" rows="2" placeholder="Por ejemplo, control anual"></textarea>
+            <mat-hint align="end">{{ valores().nota.length }}/40</mat-hint>
+            @if (controles.nota.hasError('required') || controles.nota.hasError('pattern')) {
+              <mat-error>La nota es obligatoria y no puede contener solo espacios.</mat-error>
+            } @else if (controles.nota.hasError('maxlength')) {
+              <mat-error>La nota admite hasta 40 caracteres.</mat-error>
+            }
+          </mat-form-field>
+          <dl class="summary">
+            <div><dt>Especialidad</dt><dd>{{ resumen().especialidad }}</dd></div>
+            <div><dt>Sede</dt><dd>{{ resumen().sede }}</dd></div>
+            <div><dt>Médico</dt><dd>{{ resumen().medico }}</dd></div>
+            <div><dt>Fecha</dt><dd>{{ valores().fecha | date:'dd/MM/yyyy' }}</dd></div>
+            <div><dt>Horario</dt><dd>{{ resumen().hora }}</dd></div>
+            <div><dt>Cobertura</dt><dd>{{ resumen().cobertura }}</dd></div>
+            <div class="full-width"><dt>Nota</dt><dd>{{ resumen().nota || 'Completá la nota para confirmar.' }}</dd></div>
+          </dl>
+          <div class="actions"><button mat-button type="button" (click)="volver()" [disabled]="reservando()">Volver</button><button mat-flat-button class="primary-action" type="submit" [disabled]="reservando() || !pasoListo(4)">{{ reservando() ? 'Confirmando…' : 'Confirmar turno' }}</button></div>
+        </section>
+      </mat-step>
+    </mat-stepper>
+  </form>
+}

@@ -1,0 +1,31 @@
+<main class="new-appointment-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Área de paciente</p>
+      <h1>Nuevo turno</h1>
+      <p class="subtitle">Elegí dónde y con quién atenderte, y revisá los datos antes de confirmar.</p>
+    </div>
+    <mat-icon aria-hidden="true">event_available</mat-icon>
+  </header>
+
+  @if (cargando()) {
+    <mat-card class="status-card">
+      <div class="status" role="status" aria-live="polite">
+        <mat-spinner diameter="36"></mat-spinner><p>Cargando tu perfil y cobertura…</p>
+      </div>
+    </mat-card>
+  } @else if (error()) {
+    <mat-card class="status-card">
+      <div class="status error-message" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ error() }}</p>
+        <div class="actions">
+          <button mat-stroked-button type="button" (click)="reintentar()">Reintentar</button>
+          <a mat-button routerLink="/perfil">Ver mi perfil</a>
+        </div>
+      </div>
+    </mat-card>
+  } @else if (paciente(); as datosPaciente) {
+    <app-reserva-turno [paciente]="datosPaciente" [reservar]="reservarTurno" (verTurnos)="verMisTurnos()"></app-reserva-turno>
+  }
+</main>

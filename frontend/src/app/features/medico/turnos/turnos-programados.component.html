@@ -1,0 +1,122 @@
+<main class="turnos-page">
+  <header class="page-heading">
+    <p class="eyebrow">Área médica</p>
+    <h1>Turnos programados</h1>
+    <p class="subtitle">Consultá tus turnos en todas las sedes y registrá la atención de tus pacientes.</p>
+  </header>
+
+  <mat-card class="turnos-card">
+    <mat-card-content>
+      <div class="filters">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de atención</mat-label>
+          <input matInput [formControl]="fecha" [matDatepicker]="calendario" [min]="fechaMinima" [max]="fechaMaxima" readonly (click)="calendario.open()" />
+          <mat-datepicker-toggle matIconSuffix [for]="calendario"></mat-datepicker-toggle>
+          <mat-datepicker #calendario></mat-datepicker>
+          @if (fecha.hasError('required')) {
+            <mat-error>Seleccioná una fecha.</mat-error>
+          } @else if (fecha.invalid) {
+            <mat-error>Elegí una fecha válida.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select [formControl]="idSede" [canSelectNullableOptions]="true">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (sede of sedes(); track sede.id) {
+              <mat-option [value]="sede.id">{{ sede.id }}. {{ sede.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (cargandoSedes()) {
+        <div class="catalog-status" role="status"><mat-spinner diameter="20"></mat-spinner><span>Cargando sedes…</span></div>
+      } @else if (errorSedes()) {
+        <div class="catalog-error" role="alert">
+          <p>{{ errorSedes() }}</p>
+          <button mat-stroked-button type="button" (click)="cargarSedes()">Reintentar sedes</button>
+        </div>
+      } @else if (sedes().length === 0) {
+        <p class="catalog-status">No hay sedes disponibles para filtrar. Se muestran todas.</p>
+      }
+
+      @if (fecha.invalid) {
+        <div class="state-message"><mat-icon>calendar_month</mat-icon><p>Elegí una fecha válida para consultar tus turnos.</p></div>
+      } @else if (cargando()) {
+        <div class="state-message" role="status" aria-live="polite">
+          <mat-spinner diameter="36"></mat-spinner><p>Cargando turnos…</p>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon><p>{{ error() }}</p>
+          <button mat-stroked-button type="button" (click)="recargar()">Reintentar</button>
+        </div>
+      } @else if (turnos().length === 0) {
+        <div class="state-message">
+          <mat-icon>event_available</mat-icon><p>No tenés turnos para la fecha y sede seleccionadas.</p>
+        </div>
+      } @else {
+        <p class="list-summary">{{ turnos().length }} {{ turnos().length === 1 ? 'turno' : 'turnos' }} · Pulsá una fila para ver la nota del paciente.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Turnos del día seleccionado">
+          <table mat-table [dataSource]="turnos()" multiTemplateDataRows aria-label="Turnos programados">
+            <ng-container matColumnDef="hora">
+              <th mat-header-cell *matHeaderCellDef>Hora</th>
+              <td mat-cell *matCellDef="let turno">
+                <div class="time-cell">
+                  <button mat-icon-button type="button" (click)="$event.stopPropagation(); alternarNota(turno)"
+                    [attr.aria-expanded]="expandido() === turno.id" [attr.aria-controls]="'nota-turno-' + turno.id"
+                    [attr.aria-label]="(expandido() === turno.id ? 'Ocultar' : 'Mostrar') + ' nota de ' + turno.paciente_nombre + ' ' + turno.paciente_apellido">
+                    <mat-icon>{{ expandido() === turno.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  </button>
+                  <span>{{ turno.hora.slice(0, 5) }}</span>
+                </div>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="paciente">
+              <th mat-header-cell *matHeaderCellDef>Paciente</th>
+              <td mat-cell *matCellDef="let turno">{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="edad">
+              <th mat-header-cell *matHeaderCellDef>Edad</th>
+              <td mat-cell *matCellDef="let turno">{{ edadActual(turno.paciente_fecha_nacimiento) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sede">
+              <th mat-header-cell *matHeaderCellDef>Sede</th>
+              <td mat-cell *matCellDef="let turno">{{ turno.id_sede }}. {{ turno.sede_nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let turno">
+                <span class="status-badge" [class.confirmado]="turno.estado === 'confirmado'" [class.atendido]="turno.estado === 'atendido'" [class.cancelado]="turno.estado === 'cancelado'">{{ estados[turno.estado] }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="actions">Acciones</th>
+              <td mat-cell *matCellDef="let turno" class="actions" (click)="$event.stopPropagation()">
+                @if (turno.estado === 'confirmado') {
+                  <button mat-button class="attend-action" type="button" (click)="$event.stopPropagation(); atender(turno)" [disabled]="dialogoAbierto()">Atender</button>
+                  <button mat-button class="cancel-action" type="button" (click)="$event.stopPropagation(); cancelar(turno)" [disabled]="dialogoAbierto()">Cancelar</button>
+                } @else { <span class="no-actions">Sin acciones</span> }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="nota">
+              <td mat-cell *matCellDef="let turno" [attr.colspan]="columnas.length">
+                <div class="patient-note" [id]="'nota-turno-' + turno.id">
+                  @if (expandido() === turno.id) {
+                    <strong>Nota del paciente</strong>
+                    <p>{{ turno.nota?.trim() || 'Sin nota registrada' }}</p>
+                  }
+                </div>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let turno; columns: columnas;" class="appointment-row" [class.expanded]="expandido() === turno.id" (click)="alternarNota(turno)"></tr>
+            <tr mat-row *matRowDef="let turno; columns: ['nota'];" class="detail-row" [class.detail-row-open]="expandido() === turno.id"></tr>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

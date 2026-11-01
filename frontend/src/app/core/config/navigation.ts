@@ -26,6 +26,7 @@ export const navigationByRole: Record<RolUsuario, NavigationItem[]> = {
     { label: 'Turnos', path: '/operador/turnos', icon: 'event' }
   ],
   paciente: [
+    { label: 'Nuevo turno', path: '/paciente/nuevo-turno', icon: 'event_available' },
     { label: 'Mis turnos', path: '/paciente/turnos', icon: 'event' },
     { label: 'Mi perfil', path: '/perfil', icon: 'account_circle' }
   ]
