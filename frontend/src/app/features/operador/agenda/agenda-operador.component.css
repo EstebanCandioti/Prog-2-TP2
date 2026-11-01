@@ -1,0 +1,171 @@
+:host {
+  display: block;
+}
+
+.operator-agenda-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-primary, #315c78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+.subtitle {
+  margin: 0.45rem 0 0;
+  color: #64748b;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+}
+
+.filters mat-form-field {
+  width: 220px;
+}
+
+.agenda-card,
+.form-card {
+  border-radius: 14px;
+}
+
+.agenda-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.5rem 1rem;
+  padding-top: 0.5rem;
+}
+
+.agenda-form mat-form-field {
+  width: 100%;
+}
+
+.sede-fixed,
+.form-warning,
+.form-error {
+  grid-column: 1 / -1;
+}
+
+.sede-fixed {
+  margin: 0 0 0.5rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.form-warning {
+  margin: 0 0 0.75rem;
+  color: #854d0e;
+}
+
+.form-error,
+.inline-error,
+.error-message {
+  color: #b42318;
+}
+
+.inline-error {
+  margin: 0;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.state-message {
+  display: flex;
+  min-height: 170px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.85rem 0.7rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.row-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .operator-agenda-page {
+    padding: 1rem;
+  }
+
+  .page-header,
+  .filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filters mat-form-field {
+    width: 100%;
+  }
+
+  .agenda-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sede-fixed,
+  .form-warning,
+  .form-error,
+  .form-actions {
+    grid-column: auto;
+  }
+}

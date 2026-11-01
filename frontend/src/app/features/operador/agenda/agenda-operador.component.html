@@ -1,0 +1,161 @@
+<main class="operator-agenda-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Área de operaciones</p>
+      <h1>Agenda médica</h1>
+      <p class="subtitle">Consultá las agendas y gestioná los rangos de tu sede.</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="nuevaAgenda()"
+      [disabled]="!tieneSedeAsignada() || cargando() || cargandoSedes() || errorSedes().length > 0"
+    >
+      <mat-icon>add</mat-icon>
+      Nueva agenda
+    </button>
+  </header>
+
+  <section class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha</mat-label>
+      <input matInput type="date" [value]="fechaSeleccionada()" (change)="cambiarFecha($event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Sede</mat-label>
+      <mat-select [value]="sedeSeleccionada()" (selectionChange)="cambiarSede($event.value)">
+        <mat-option [value]="null">Todas las sedes</mat-option>
+        @for (sede of sedes(); track sede.id) {
+          <mat-option [value]="sede.id">{{ sede.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </section>
+
+  @if (!tieneSedeAsignada()) {
+    <p class="inline-error" role="alert">Tu usuario no tiene una sede asignada; las acciones de gestión no están disponibles.</p>
+  }
+  @if (errorSedes()) {
+    <p class="inline-error" role="alert">{{ errorSedes() }}</p>
+  }
+
+  @if (formularioVisible()) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ agendaEnEdicion() ? 'Editar rango horario' : 'Nueva agenda' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (medicos().length === 0) {
+          <p class="form-warning" role="status">
+            La API no ofrece un listado de médicos. Para elegirlos, esta pantalla usa médicos encontrados
+            en agendas existentes; no se puede seleccionar un médico que nunca tuvo agenda.
+          </p>
+        }
+        <p class="sede-fixed">La agenda se carga en tu sede: {{ nombreSede(sedePropiaId() ?? 0) }}</p>
+        <form [formGroup]="formulario" (ngSubmit)="guardarAgenda()" class="agenda-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Médico</mat-label>
+            <mat-select formControlName="idMedico" (selectionChange)="cambiarMedico($event.value)">
+              @for (medico of medicos(); track medico.id) {
+                <mat-option [value]="medico.id">{{ medico.apellido }}, {{ medico.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (formulario.controls.idMedico.invalid && formulario.controls.idMedico.touched) {
+              <mat-error>Seleccioná un médico.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Especialidad</mat-label>
+            <mat-select formControlName="idEspecialidad">
+              @for (especialidad of especialidadesMedico(); track especialidad.id) {
+                <mat-option [value]="especialidad.id">{{ especialidad.descripcion }}</mat-option>
+              }
+            </mat-select>
+            @if (formulario.controls.idEspecialidad.invalid && formulario.controls.idEspecialidad.touched) {
+              <mat-error>Seleccioná una especialidad.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha</mat-label>
+            <input matInput type="date" formControlName="fecha" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Hora de entrada</mat-label>
+            <input matInput type="time" formControlName="horaEntrada" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Hora de salida</mat-label>
+            <input matInput type="time" formControlName="horaSalida" />
+          </mat-form-field>
+          @if (errorFormulario()) {
+            <p class="form-error" role="alert">{{ errorFormulario() }}</p>
+          }
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarFormulario()" [disabled]="guardando()">Cancelar</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="guardando() || medicos().length === 0 || !tieneSedeAsignada()"
+            >
+              @if (guardando()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                Guardar agenda
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="agenda-card">
+    <mat-card-content>
+      @if (cargando()) {
+        <div class="state-message" role="status"><mat-spinner diameter="34"></mat-spinner><span>Cargando agendas…</span></div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon><span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarAgendas()">Reintentar</button>
+        </div>
+      } @else if (agendasVisibles().length === 0) {
+        <div class="state-message">
+          <mat-icon>event_busy</mat-icon>
+          <span>No hay agendas para el {{ formatearFecha(fechaSeleccionada()) }} en esta selección.</span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Médico</th><th>Especialidad</th><th>Horario</th><th>Sede</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+              @for (agenda of agendasVisibles(); track agenda.id) {
+                <tr>
+                  <td>{{ agenda.medico_apellido }}, {{ agenda.medico_nombre }}</td>
+                  <td>{{ agenda.especialidad_descripcion ?? ('Especialidad #' + agenda.id_especialidad) }}</td>
+                  <td>{{ agenda.hora_entrada.slice(0, 5) }}–{{ agenda.hora_salida.slice(0, 5) }}</td>
+                  <td>{{ agenda.sede_nombre ?? nombreSede(agenda.id_sede) }}</td>
+                  <td class="row-actions">
+                    @if (esSedePropia(agenda)) {
+                      <button mat-icon-button type="button" aria-label="Editar agenda" (click)="editarAgenda(agenda)" [disabled]="guardando() || eliminandoId() !== null">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" type="button" aria-label="Eliminar rango horario" (click)="eliminarAgenda(agenda)" [disabled]="guardando() || eliminandoId() !== null">
+                        @if (eliminandoId() === agenda.id) { <mat-spinner diameter="18"></mat-spinner> } @else { <mat-icon>delete</mat-icon> }
+                      </button>
+                    } @else {
+                      <span class="muted">Solo consulta</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

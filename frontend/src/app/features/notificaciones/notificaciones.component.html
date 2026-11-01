@@ -1,0 +1,76 @@
+<main class="notifications-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Tu cuenta</p>
+      <h1>Notificaciones</h1>
+      <p class="subtitle">Tus avisos más recientes, ordenados por fecha.</p>
+    </div>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="notificacionService.actualizarLista()"
+      [disabled]="notificacionService.cargando()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </header>
+
+  <mat-card class="notifications-card">
+    <mat-card-content>
+      @if (notificacionService.cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando notificaciones…</span>
+        </div>
+      } @else if (notificacionService.error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ notificacionService.error() }}</span>
+          <button mat-button type="button" (click)="notificacionService.actualizarLista()">
+            Reintentar
+          </button>
+        </div>
+      } @else if (notificacionService.notificaciones().length === 0) {
+        <div class="state-message">
+          <mat-icon>notifications_none</mat-icon>
+          <span>No tenés notificaciones.</span>
+        </div>
+      } @else {
+        <ul class="notification-list">
+          @for (notificacion of notificacionService.notificaciones(); track notificacion.id) {
+            <li
+              class="notification-item"
+              [class.unread]="!notificacionService.estaLeida(notificacion)"
+            >
+              <mat-icon class="notification-icon">
+                {{ notificacionService.estaLeida(notificacion) ? 'notifications' : 'notifications_active' }}
+              </mat-icon>
+              <div class="notification-content">
+                <p>{{ notificacion.mensaje }}</p>
+                <time>{{ notificacion.fecha | date: 'dd/MM/yyyy HH:mm' }}</time>
+              </div>
+              @if (!notificacionService.estaLeida(notificacion)) {
+                <button
+                  mat-button
+                  type="button"
+                  (click)="notificacionService.marcarComoLeida(notificacion.id)"
+                  [disabled]="notificacionService.marcandoId() !== null"
+                  [attr.aria-label]="'Marcar como leída: ' + notificacion.mensaje"
+                >
+                  @if (notificacionService.marcandoId() === notificacion.id) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                    Marcar leída
+                  }
+                </button>
+              } @else {
+                <span class="read-label">Leída</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

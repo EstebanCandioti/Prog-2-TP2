@@ -38,9 +38,57 @@
             <span>Tipo de usuario: {{ displayRole() }}</span>
           </button>
         </mat-menu>
-        <button mat-icon-button matTooltip="Notificaciones" aria-label="Notificaciones" routerLink="/en-construccion">
+        <button
+          mat-icon-button
+          matTooltip="Notificaciones"
+          [matMenuTriggerFor]="notificationsMenu"
+          [attr.aria-label]="'Notificaciones, ' + notificacionService.cantidadNoLeidas() + ' sin leer'"
+        >
           <mat-icon>notifications</mat-icon>
+          @if (notificacionService.cantidadNoLeidas() > 0) {
+            <span class="notification-count">{{ notificacionService.cantidadNoLeidas() }}</span>
+          }
         </button>
+        <mat-menu #notificationsMenu="matMenu">
+          @if (notificacionService.cargando()) {
+            <button mat-menu-item disabled>
+              <mat-icon>hourglass_empty</mat-icon>
+              <span>Cargando notificaciones…</span>
+            </button>
+          } @else if (notificacionService.error()) {
+            <button mat-menu-item disabled>
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ notificacionService.error() }}</span>
+            </button>
+            <button mat-menu-item (click)="notificacionService.actualizarLista()">
+              <mat-icon>refresh</mat-icon>
+              <span>Reintentar</span>
+            </button>
+          } @else if (notificacionService.notificaciones().length === 0) {
+            <button mat-menu-item disabled>
+              <mat-icon>notifications_none</mat-icon>
+              <span>No tenés notificaciones</span>
+            </button>
+          } @else {
+            @for (notificacion of notificacionService.notificaciones(); track notificacion.id) {
+              @if (notificacionService.estaLeida(notificacion)) {
+                <button mat-menu-item routerLink="/notificaciones">
+                  <mat-icon>notifications</mat-icon>
+                  <span>{{ notificacion.mensaje }}</span>
+                </button>
+              } @else {
+                <button mat-menu-item (click)="notificacionService.marcarComoLeida(notificacion.id)">
+                  <mat-icon>notifications_active</mat-icon>
+                  <span>{{ notificacion.mensaje }}</span>
+                </button>
+              }
+            }
+          }
+          <button mat-menu-item routerLink="/notificaciones">
+            <mat-icon>open_in_new</mat-icon>
+            <span>Ver todas</span>
+          </button>
+        </mat-menu>
         <a mat-icon-button routerLink="/perfil" matTooltip="Mi perfil" aria-label="Mi perfil">
           <mat-icon>account_circle</mat-icon>
         </a>
@@ -58,6 +106,9 @@
   </mat-toolbar>
 
   <main class="main-content">
+    @if (profileError()) {
+      <p class="app-error-banner" role="alert">{{ profileError() }}</p>
+    }
     <router-outlet />
   </main>
 

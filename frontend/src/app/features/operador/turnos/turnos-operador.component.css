@@ -1,0 +1,302 @@
+:host {
+  display: block;
+}
+
+.operator-appointments-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-primary, #315c78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+.subtitle {
+  margin: 0.45rem 0 0;
+  color: #64748b;
+}
+
+.filters {
+  display: flex;
+  gap: 1rem;
+}
+
+.filters mat-form-field {
+  width: 220px;
+}
+
+.appointments-card,
+.assignment-card {
+  border-radius: 14px;
+}
+
+.assignment-card mat-card-header {
+  margin-bottom: 1rem;
+}
+
+.patient-search,
+.booking-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.patient-search h2,
+.booking-form h2 {
+  font-size: 1.05rem;
+}
+
+.patient-search-form {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.patient-search-form mat-form-field {
+  width: min(100%, 450px);
+}
+
+.patient-search-form button {
+  margin-top: 0.25rem;
+}
+
+.patient-select {
+  width: min(100%, 600px);
+}
+
+.patient-pagination,
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.patient-pagination {
+  justify-content: space-between;
+  max-width: 600px;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.pagination-controls {
+  justify-content: flex-end;
+}
+
+.selected-patient {
+  margin: 0;
+  color: #475569;
+}
+
+.booking-form {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.booking-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.5rem 1rem;
+}
+
+.booking-fields mat-form-field {
+  width: 100%;
+}
+
+.note-field {
+  grid-column: 1 / -1;
+}
+
+.booking-summary {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+}
+
+.booking-summary h3 {
+  font-size: 0.95rem;
+}
+
+.booking-summary p {
+  margin: 0.4rem 0 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.inline-error,
+.error-message {
+  color: #b42318;
+}
+
+.inline-error {
+  margin: 0;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.state-message {
+  display: flex;
+  min-height: 170px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.8rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.action-cell {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.cancel-appointment-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 0.75rem;
+  margin: 0 auto;
+  border-color: #b42318;
+  color: #b42318;
+  white-space: nowrap;
+}
+
+.cancel-appointment-button:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.time-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-confirmado {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-cancelado {
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.status-atendido {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.notes summary {
+  color: var(--color-primary, #315c78);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.notes p {
+  min-width: 160px;
+  max-width: 260px;
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .operator-appointments-page {
+    padding: 1rem;
+  }
+
+  .page-header,
+  .filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filters mat-form-field {
+    width: 100%;
+  }
+
+  .booking-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .booking-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .note-field {
+    grid-column: auto;
+  }
+
+  .patient-search-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

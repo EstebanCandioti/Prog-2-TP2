@@ -15,6 +15,7 @@ export class AuditoriaService {
     let params = new HttpParams();
 
     if (filtro.idUsuario !== undefined) params = params.set('id_usuario', filtro.idUsuario);
+    if (filtro.idEntidad !== undefined) params = params.set('id_entidad', filtro.idEntidad);
     if (filtro.entidad) params = params.set('entidad', filtro.entidad);
     if (filtro.fechaDesde) params = params.set('fecha_desde', filtro.fechaDesde);
     if (filtro.fechaHasta) params = params.set('fecha_hasta', `${filtro.fechaHasta} 23:59:59`);

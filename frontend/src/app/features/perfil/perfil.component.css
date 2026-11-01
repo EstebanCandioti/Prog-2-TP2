@@ -13,12 +13,18 @@
 .profile-details div { min-width: 0; }
 .profile-details dt { margin-bottom: 6px; color: var(--ink-soft); font-size: 13px; }
 .profile-details dd { margin: 0; overflow-wrap: anywhere; color: var(--ink); font-weight: 600; }
+.profile-actions { display: flex; justify-content: flex-end; margin-top: 20px; }
+.profile-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin-top: 24px; }
+.profile-form mat-form-field { width: 100%; }
+.form-error { grid-column: 1 / -1; margin: 0; color: #b42318; }
+.form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
 .loading-state { display: grid; min-height: 240px; place-items: center; }
 .error-card { display: flex; align-items: center; gap: 12px; }
 .error-card p { flex: 1; }
 
 @media (max-width: 600px) {
   .profile-page { width: min(100% - 28px, 540px); padding: 32px 0 44px; }
-  .profile-details { grid-template-columns: 1fr; gap: 16px; }
+  .profile-details, .profile-form { grid-template-columns: 1fr; gap: 16px; }
+  .form-error, .form-actions { grid-column: auto; }
   .profile-card { padding: 20px; }
 }

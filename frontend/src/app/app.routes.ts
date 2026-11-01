@@ -27,10 +27,9 @@ export const routes: Routes = [
 		title: 'Mi perfil | Clínica Virtual'
 	},
 	{
-		path: 'en-construccion',
-		loadComponent: () => import('./features/shared/estado-page.component').then((module) => module.EstadoPageComponent),
+		path: 'notificaciones',
+		loadComponent: () => import('./features/notificaciones/notificaciones.component').then((module) => module.NotificacionesComponent),
 		canActivate: [authGuard],
-		data: { title: 'Notificaciones', description: 'Las notificaciones estarán disponibles próximamente.', icon: 'notifications' },
 		title: 'Notificaciones | Clínica Virtual'
 	},
 	{

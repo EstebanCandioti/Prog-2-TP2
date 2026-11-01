@@ -7,12 +7,20 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 
 import { RegistroAuditoria } from '../../../core/models/auditoria.model';
 import { AuditoriaService } from '../../../core/services/auditoria.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
 
 const TAMANO_PAGINA = 10;
+const ENTIDADES_AUDITORIA = [
+  { valor: '', nombre: 'Todas' },
+  { valor: 'sede', nombre: 'Sede' },
+  { valor: 'usuario', nombre: 'Usuario' },
+  { valor: 'cobertura', nombre: 'Cobertura' },
+  { valor: 'especialidad', nombre: 'Especialidad' }
+] as const;
 
 @Component({
   selector: 'app-auditoria',
@@ -25,6 +33,7 @@ const TAMANO_PAGINA = 10;
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
     ReactiveFormsModule
   ],
   templateUrl: './auditoria.component.html',
@@ -34,6 +43,7 @@ export class AuditoriaComponent implements OnInit {
   private readonly auditoriaApi = inject(AuditoriaService);
   private readonly formBuilder = inject(FormBuilder);
 
+  readonly entidades = ENTIDADES_AUDITORIA;
   readonly registros = signal<RegistroAuditoria[]>([]);
   readonly cargando = signal(true);
   readonly error = signal('');
@@ -46,7 +56,8 @@ export class AuditoriaComponent implements OnInit {
   });
   readonly formulario = this.formBuilder.nonNullable.group({
     idUsuario: ['', [Validators.pattern(/^[1-9]\d*$/)]],
-    entidad: ['', [Validators.maxLength(30)]],
+    idEntidad: ['', [Validators.pattern(/^[1-9]\d*$/)]],
+    entidad: [''],
     fechaDesde: [''],
     fechaHasta: ['']
   });
@@ -61,12 +72,13 @@ export class AuditoriaComponent implements OnInit {
 
     const valores = this.formulario.getRawValue();
     const idUsuario = valores.idUsuario ? Number(valores.idUsuario) : undefined;
-    const entidad = valores.entidad.trim();
+    const idEntidad = valores.idEntidad ? Number(valores.idEntidad) : undefined;
 
     this.auditoriaApi
       .listar({
         idUsuario,
-        entidad: entidad || undefined,
+        idEntidad,
+        entidad: valores.entidad || undefined,
         fechaDesde: valores.fechaDesde || undefined,
         fechaHasta: valores.fechaHasta || undefined
       })
@@ -94,7 +106,7 @@ export class AuditoriaComponent implements OnInit {
     this.formulario.markAllAsTouched();
 
     if (this.formulario.invalid) {
-      this.errorFiltros.set('Ingresá un ID de usuario válido.');
+      this.errorFiltros.set('Ingresá IDs de usuario y entidad válidos.');
       return;
     }
 
@@ -108,7 +120,7 @@ export class AuditoriaComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.formulario.reset({ idUsuario: '', entidad: '', fechaDesde: '', fechaHasta: '' });
+    this.formulario.reset({ idUsuario: '', idEntidad: '', entidad: '', fechaDesde: '', fechaHasta: '' });
     this.errorFiltros.set('');
     this.cargarAuditoria();
   }

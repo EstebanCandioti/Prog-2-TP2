@@ -7,6 +7,7 @@ import {
   LoginRequest,
   LoginResponse,
   PerfilResponse,
+  ActualizarPerfilPacienteRequest,
   RegistroRequest,
   RegistroResponse
 } from '../models/auth.model';
@@ -27,5 +28,12 @@ export class AuthService {
 
   obtenerPerfil(): Observable<ApiResponse<PerfilResponse>> {
     return this.http.get<ApiResponse<PerfilResponse>>(`${this.baseUrl}/perfil`);
+  }
+
+  actualizarPerfilPaciente(datos: ActualizarPerfilPacienteRequest): Observable<ApiResponse<PerfilResponse>> {
+    return this.http.patch<ApiResponse<PerfilResponse>>(
+      `${environment.apiUrl}/usuarios/mi-perfil`,
+      datos
+    );
   }
 }

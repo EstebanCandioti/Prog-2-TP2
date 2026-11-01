@@ -1,0 +1,212 @@
+:host {
+  display: block;
+}
+
+.doctor-appointments-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-primary, #315c78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+.subtitle {
+  margin: 0.45rem 0 0;
+  color: #64748b;
+}
+
+.filters {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.filters mat-form-field {
+  width: 210px;
+}
+
+.appointments-card {
+  border-radius: 14px;
+}
+
+.state-message {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.error-message,
+.inline-error {
+  color: #b42318;
+}
+
+.inline-error {
+  margin: 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.85rem 0.65rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.time-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-confirmado {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-cancelado {
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.status-atendido {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.actions-cell {
+  min-width: 230px;
+  white-space: nowrap;
+}
+
+.actions-cell button + button {
+  margin-left: 0.35rem;
+}
+
+.actions-cell mat-icon {
+  margin-right: 0.25rem;
+}
+
+.muted {
+  color: #64748b;
+}
+
+.notes summary {
+  color: var(--color-primary, #315c78);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.notes p {
+  min-width: 180px;
+  max-width: 280px;
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+}
+
+.form-row td {
+  padding: 0;
+  background: #f8fafc;
+}
+
+.clinical-form {
+  padding: 1.25rem;
+}
+
+.clinical-form h2 {
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+.clinical-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.clinical-fields mat-form-field {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 850px) {
+  .doctor-appointments-page {
+    padding: 1rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .clinical-fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

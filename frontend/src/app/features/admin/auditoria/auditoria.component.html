@@ -10,26 +10,60 @@
   <mat-card class="filter-card">
     <mat-card-content>
       <form [formGroup]="formulario" (ngSubmit)="aplicarFiltros()" class="filter-form">
-        <mat-form-field appearance="outline">
-          <mat-label>ID de usuario</mat-label>
-          <input matInput type="number" min="1" step="1" formControlName="idUsuario" />
-          <mat-hint>El registro de auditoría ofrece el ID del usuario.</mat-hint>
-          @if (formulario.controls.idUsuario.invalid && formulario.controls.idUsuario.touched) {
-            <mat-error>Ingresá un ID de usuario válido.</mat-error>
-          }
-        </mat-form-field>
+        <div class="filter-field user-filter">
+          <label class="filter-field-title" for="audit-user-id">ID de usuario</label>
+          <mat-form-field appearance="outline">
+            <input
+              id="audit-user-id"
+              matInput
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ingresá un ID"
+              formControlName="idUsuario"
+            />
+            @if (formulario.controls.idUsuario.invalid && formulario.controls.idUsuario.touched) {
+              <mat-error>Ingresá un ID de usuario válido.</mat-error>
+            }
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Entidad</mat-label>
-          <input matInput formControlName="entidad" maxlength="30" />
-        </mat-form-field>
+        <div class="filter-field entity-filter">
+          <label class="filter-field-title" id="audit-entity-label">Entidad</label>
+          <mat-form-field appearance="outline">
+            <mat-select aria-labelledby="audit-entity-label" formControlName="entidad">
+              @for (entidad of entidades; track entidad.valor) {
+                <mat-option [value]="entidad.valor">{{ entidad.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline">
+        <div class="filter-field entity-id-filter">
+          <label class="filter-field-title" for="audit-entity-id">ID de entidad</label>
+          <mat-form-field appearance="outline">
+            <input
+              id="audit-entity-id"
+              matInput
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Ingresá un ID"
+              formControlName="idEntidad"
+            />
+            <mat-hint>Se puede combinar con el filtro de entidad.</mat-hint>
+            @if (formulario.controls.idEntidad.invalid && formulario.controls.idEntidad.touched) {
+              <mat-error>Ingresá un ID de entidad válido.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <mat-form-field class="date-from-filter" appearance="outline">
           <mat-label>Fecha desde</mat-label>
           <input matInput type="date" formControlName="fechaDesde" />
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
+        <mat-form-field class="date-to-filter" appearance="outline">
           <mat-label>Fecha hasta</mat-label>
           <input matInput type="date" formControlName="fechaHasta" />
         </mat-form-field>
