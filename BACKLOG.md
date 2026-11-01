@@ -16,15 +16,15 @@ Estado actualizado al 01/11/2026 según los acuerdos del chat y la revisión de 
 | ID | Tarea | Alcance | Responsable | Estado |
 | --- | --- | --- | --- | --- |
 | F01 | Sesión vencida y fallos de API | Ante `401` de una petición protegida, limpiar sesión y redirigir al login; distinguir errores de conexión. | Esteban | **Hecha** |
-| F02 | Administrador / Sedes | Tabla con búsqueda, alta, edición, confirmación de baja y actualización de la lista. | Santiago | Sin verificar |
-| F03 | Administrador / Especialidades | CRUD con mensajes del backend cuando se rechaza una baja. | Santiago | Sin verificar |
-| F04 | Administrador / Coberturas | CRUD y manejo de dependencias. | Santiago | Sin verificar |
-| F05 | Administrador / Auditoría | Filtros por usuario, entidad y fechas; paginación en el frontend sobre el listado actual. | Santiago | Actualización integrada; pendiente de revisión final |
+| F02 | Administrador / Sedes | Tabla con búsqueda, alta, edición, confirmación de baja y actualización de la lista. | Santiago | **Hecha; funcionamiento verificado por Esteban** |
+| F03 | Administrador / Especialidades | CRUD con mensajes del backend cuando se rechaza una baja. | Santiago | **Hecha; funcionamiento verificado por Esteban** |
+| F04 | Administrador / Coberturas | CRUD y manejo de dependencias. | Santiago | **Hecha; funcionamiento verificado por Esteban** |
+| F05 | Administrador / Auditoría | Filtros por usuario, entidad y fechas; paginación en el frontend sobre el listado actual. | Santiago | **Hecha; funcionamiento verificado por Esteban** |
 | F06 | Administrador / Reportes | Cuatro indicadores, período común y gráficos; servicio para consultar los reportes. | Esteban | **Hecha** |
 | F08 | Operador / Alta de pacientes | Reutilizar el registro público bajo la ruta protegida del operador y mostrar los datos del alta sin cerrar su sesión. | Esteban | **Hecha** |
 | F09 | Campana y listado de notificaciones | Panel con hasta 10 pendientes, listado completo, contador, marcado individual y masivo con sincronización coordinada y estados vacío/error. Consultar al iniciar sesión, abrir la campana y volver a la pestaña; refrescar cada dos minutos solo con sesión y pestaña visibles. | Esteban | **Hecha; funcionamiento y cierre confirmados por Esteban** |
 
-**F07 — Paciente / Mis turnos** salió de este backlog y pasó a **D10**. La paginación y el detalle clínico por turno requieren primero **B11**. F03 y F04 pueden desarrollarse con la API actual; los rechazos controlados de B09 ya están implementados y verificados.
+**F07 — Paciente / Mis turnos** salió de este backlog y pasó a **D10**. La paginación y el detalle clínico por turno requieren primero **B11**. Los rechazos controlados de B09 ya están implementados y verificados. Esteban confirmó que revisó las pantallas de Santiago de esta tanda F y funcionaban correctamente; se da por cerrado este backlog.
 
 ## Backlog 2 — Cambios del backend
 
@@ -53,7 +53,7 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 - B10 se prepara ejecutando `npm run seed:demo` para las cuentas e importando después `backend/src/database/seed-b10.sql`; la repetición con la misma fecha base no duplica datos.
 - B01 quedó verificada en Windows: build y 381 comprobaciones contra MySQL en una base temporal, incluidos cuatro roles, médicos sin agenda, filtros combinados, campos devueltos y conservación de los permisos de usuarios y disponibilidad.
 - B11 quedó verificada en Windows: build y 419 comprobaciones con MySQL en una base temporal. Se probaron 49 turnos propios, 27 próximos, orden, paginación, reloj de MySQL, permisos clínicos y actualización tras cancelar. `GET /turnos/mis-turnos` devuelve `{ items, total, pagina, limite }` y `GET /turnos/:id/historial` consulta el registro clínico de un turno propio atendido.
-- Mantenimiento documental pendiente: fase 03 de Postman y su runner todavía tienen pasos de atención anteriores a B08; requieren cuerpo clínico y adaptación del alta separada de historial. Los runners completos no se ejecutaron en esta revisión; se validaron los ocho JSON y la sintaxis de sus scripts.
+- Mantenimiento de Postman cerrado en Windows el 01/11/2026: fase 03 adaptada a B08 y bloques de 20 minutos; última regresión de cinco runners con 578 peticiones y 816 aserciones sin fallos, incluidos los casos posteriores del detalle de médicos. Matriz de las 54 rutas y limitaciones en `backend/postman/COBERTURA.md`.
 
 ## Backlog 3 — Frontend dependiente del backend
 
@@ -61,7 +61,7 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 
 | ID | Tarea | Responsable | Depende de | Estado actual |
 | --- | --- | --- | --- | --- |
-| D01 | Administrador / Usuarios: listado filtrado y paginado, alta y edición con sede y especialidades. | Santiago | B01 (lecturas de catálogos ya disponibles), B02, B03 | **Parcial: integrada; edición de médicos pendiente** |
+| D01 | Administrador / Usuarios: listado filtrado y paginado, alta y edición con sede y especialidades. | Santiago | B01 (lecturas de catálogos ya disponibles), B02, B03 | **Integrada; edición de médicos corregida y verificada en Windows** |
 | D02 | Médico / Mi agenda: consulta por día y CRUD de rangos. | Esteban | B01, B05 | **Hecha; cierre confirmado por Esteban** |
 | D03 | Médico / Turnos programados: paciente, edad, filtro de sede, atención con historial y cancelación. | Esteban | B07, B08 | **Hecha; cierre confirmado por Esteban** |
 | D04 | Médico / Historial clínico: búsqueda del paciente y visualización de sus registros. | Santiago | B03, B08 | **Integrada; verificación funcional inicial en Windows** |
@@ -69,16 +69,18 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 | D06 | Paciente / Nuevo turno: flujo reutilizable por pasos, opciones filtradas, resumen y recuperación si se ocupa el horario. | Esteban | B01, B06, B08 | **Hecha; prueba funcional y cierre confirmados por Esteban** |
 | D07 | Operador / Asignar turno desde un rango de agenda: diálogo propio con búsqueda paginada de pacientes, horario libre y nota; sede tomada de la sesión. | Esteban | B03, B06, D05 | **Implementada y verificada en Windows; limitaciones documentadas** |
 | D08 | Paciente / Mis datos editables: campos permitidos y confirmación de cambio de contraseña. | Santiago | B04 | **Integrada; verificación funcional inicial en Windows** |
-| D09 | README y recorrido de defensa: arranque desde cero, versiones, datos de prueba, librería de gráficos y recorrido de los cuatro roles. | Esteban, con aportes de Santiago | B10 y pantallas terminadas | Dependiente: cierre de las pantallas y recorrido final |
+| D09 | README final según el PDF: versiones de Node/Angular, arranque de backend/frontend y base de datos, variables de entorno, librería de gráficos y cuentas de los cuatro roles. | Esteban, con aportes de Santiago | B10 y configuración del proyecto | **Documentación actualizada; pendiente validar arranque en una instalación limpia** |
 | D10 | Paciente / Mis turnos: pestañas Próximos y Todos los turnos, consultas paginadas, estados visibles, detalle, resumen clínico de atendidos y cancelación confirmada. | Santiago | B11 | **Integrada y adaptada a B11; verificada en Windows** |
 
 ### Orden y coordinación de la tanda D
 
-- **Santiago:** D01, D04, D08 y D10 integradas desde su entrega. Completar edición de médicos en D01 y realizar el recorrido conjunto de sus pantallas.
-- **Esteban:** D02, D03, D05, D06 y F09 cerradas por Esteban. D07 implementada y verificada en Windows; quedan la advertencia menor de tipado y la limitación conocida de agendas superpuestas. Restan D09 y el recorrido conjunto de las pantallas integradas.
+- **Revisión de Esteban:** probó parte de las pantallas de esta tanda y todo lo revisado funcionó correctamente. No confirmó haber probado todos los casos; se mantiene la revisión final pendiente, sin reabrir las tareas ya cerradas. El faltante de edición de médicos de D01 se corrigió posteriormente en Windows.
+- **Santiago:** D01, D04, D08 y D10 integradas desde su entrega; edición de médicos de D01 completada en Windows. Resta el recorrido conjunto de sus pantallas.
+- **Esteban:** D02, D03, D05, D06 y F09 cerradas por Esteban. D07 implementada y verificada en Windows; la advertencia de tipado quedó corregida y se conserva la limitación conocida de agendas superpuestas. Restan D09 y el recorrido conjunto de las pantallas integradas.
 - **Reutilización:** evaluar formularios de agenda compartidos entre D02 y D05; D07 usa un diálogo propio y reutiliza servicios HTTP y utilidades, sin modificar el stepper de D06.
 - **Archivos compartidos:** antes de trabajar en paralelo, acordar quién crea cada servicio y modelo compartido. Coordinar los cambios en rutas y navegación para evitar editar el mismo archivo simultáneamente.
 - **Notificaciones:** F09 y su ampliación cerradas por Esteban después de corregir las queries de los botones; conserva su responsable Esteban.
+- **Alcance de D09 confirmado por Esteban:** documentar los puntos exigidos por el PDF, sin guion de demostración ni sección de problemas frecuentes. El recorrido funcional conjunto es una verificación interna, no un entregable adicional del README.
 
 ### Verificación de D02 en Windows
 
@@ -108,7 +110,7 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 
 ### Verificación de D07 en Windows
 
-- Build del frontend correcta. Conserva las advertencias de tamaño y agrega NG8102 en la expresión `versionesTurnos()[medico.id] ?? 0`: el registro está tipado como si todas sus claves existieran. Ajuste menor pendiente: expresar las claves opcionales, por ejemplo con `Partial<Record<number, number>>`, conservando el valor por defecto.
+- En la revisión inicial la build agregó NG8102 en `versionesTurnos()[medico.id] ?? 0`. Corregido en Windows el 01/11/2026 por pedido explícito de Esteban: `versionesTurnos` usa `Partial<Record<number, number>>`, expresando las claves opcionales y conservando el valor por defecto. `npm.cmd run build` pasó y la advertencia desapareció; solo quedan las advertencias de tamaño del bundle y del CSS de Reportes. Avisar al agente de Ubuntu en el siguiente prompt que preserve este ajuste en `agenda-operador.component.ts`.
 - Pasaron 59 comprobaciones de integración, con 29 peticiones a la API, usando componentes y servicios reales contra una base temporal de MySQL eliminada al terminar. Se confirmó que no quedan bases temporales D07; la base habitual no se modificó.
 - Se comprobaron búsqueda por nombre, nombre completo y DNI, paginación de 20, selección y cobertura del paciente, validaciones de nota y horario, reserva con el contexto correcto, notificación del backend, bloqueo de envíos repetidos, recuperación ante `409`, errores y reintentos, cancelación de consultas antiguas y permisos por sede y rol.
 - Se verificaron conservación de filtros y de la sección desplegada, actualización del listado de confirmados y del horario al reabrir, y conservación del contrato de reserva de D06.
@@ -149,9 +151,9 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 - Se combinaron los contratos de los servicios de turnos/agenda, se actualizaron llamadas al refresco de notificaciones y se admitió fecha de nacimiento nula en los componentes recibidos. El filtro nuevo por ID de entidad de Auditoría se aplica en el frontend porque el endpoint actual no lo admite.
 - Build del frontend correcta con las advertencias conocidas. Pasaron 43 comprobaciones de integración con 34 peticiones a la API real y MySQL en una base temporal, eliminada al terminar: paginación y cancelación del paciente, historial por turno y reintentos, búsqueda e historial del médico, usuarios paginados, alta/edición de operador y edición del perfil con rechazo de email duplicado. No se cambió la contraseña en estas pruebas.
 - Revisión visual sin escrituras en la base habitual: Mis turnos en ambas pestañas, resumen clínico al desplegar un atendido, campana que abre y cierra con Escape y lista administrativa de 28 usuarios en dos páginas. No se detectaron errores de consola en esas pantallas.
-- Limitación recibida de D01: Usuarios bloquea explícitamente la edición de médicos. El detalle administrativo del backend no devuelve sus especialidades; queda completar la precarga, por ejemplo aprovechando el catálogo `GET /medicos`, antes de dar D01 por cerrada. No se amplió el backend para resolverlo durante este merge.
+- Limitación recibida de D01 durante el merge: Usuarios bloqueaba la edición de médicos porque el detalle administrativo no devolvía sus especialidades. No se amplió el backend durante la integración; posteriormente se resolvió por pedido de Esteban agregando las especialidades a `GET /usuarios/:id` y precargándolas en el formulario.
 - Los cambios de compatibilidad indicados arriba se realizaron en Windows para integrar la entrega. Antes de la próxima tarea en Ubuntu, releer esos archivos y conservar esta resolución; no reemplazarlos por las versiones previas del commit remoto.
-- La integración se realiza localmente; no incluye push ni instalación de dependencias. Se conserva pendiente el mantenimiento de Postman fase 03 indicado en el backlog del backend.
+- La integración se realiza localmente; no incluye push ni instalación de dependencias. El mantenimiento de Postman fase 03 se completó después de esta integración; ver la verificación integral indicada más abajo.
 
 ### Criterios ya acordados para D10
 
@@ -160,3 +162,20 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 - Sin filtros adicionales ni buscador. Cada pestaña envía `tipo=proximos` o `tipo=todos`, con páginas de 20 registros. Al cambiar de pestaña, volver a la página 1.
 - Pedir el resumen clínico mediante `GET /turnos/:id/historial` solo al abrir el detalle de un turno atendido.
 - Tras cancelar, actualizar los listados y totales: el turno deja Próximos y permanece en Todos los turnos con estado cancelado.
+
+### Actualización integral de Postman en Windows — 01/11/2026
+
+- Se actualizaron credenciales configurables, captura de IDs, contrato de atención/historial de fase 03 y ejemplos de edición sin DNI ni contraseña. Los logins de fases 02–04 usan las cuentas demo configurables.
+- Se agregó `coleccion-contrato-actual-runner.json`, el verificador `verificar-colecciones.cjs` y la matriz `COBERTURA.md`. El verificador detecta JSON/scripts inválidos o rutas sin casos, prepara fixtures y ejecuta Newman en una base nueva por runner.
+- Build del backend correcta. Los cinco runners pasaron: **572 peticiones y 804 aserciones**, nueve JSON válidos, 559 scripts válidos y casos para las 54 rutas actuales. Bases temporales y servidores eliminados al finalizar; base habitual y esquema intactos.
+- Se detectó y documentó que borrar un usuario con asociaciones devuelve **500** por clave foránea. El caso de regresión está identificado como limitación existente; no se cambió el controlador ni se lo declara corregido.
+- Se mantienen fuera del alcance las reservas simultáneas, superposición de agendas, cambios de esquema y fallos de infraestructura; el detalle de cobertura evita confundir pruebas HTTP con cobertura exhaustiva de código o UI.
+- No se hicieron commits ni pushes ni hubo conflictos. En el siguiente prompt de Ubuntu, avisar que preserve los cambios de Postman/documentación realizados en Windows y el ajuste previo de `versionesTurnos`.
+
+### Edición administrativa de médicos D01 — ajuste en Windows
+
+- Por pedido explícito de Esteban se amplió GET /usuarios/:id: devuelve especialidades [{ id, descripcion }] para médicos, ordenadas por ID y sin duplicados, o [] para otros roles. Conserva permisos de administrador, campos públicos y errores existentes. No se modificaron rutas, esquema ni datos de la base habitual.
+- El frontend retiró el bloqueo de médicos y precarga los IDs de especialidades devueltos. Se incorporó DetalleUsuarioAdmin con especialidades obligatorias, manteniendo el modelo del listado. El PUT conserva sus validaciones y restricciones.
+- Builds del backend y frontend correctas; se conservan solo las advertencias conocidas de tamaño del bundle inicial y CSS de Reportes. Pasaron 54 comprobaciones de integración con 39 peticiones en una base temporal: precarga, edición, conservación de asignaciones y DNI, reapertura, validación de especialidad obligatoria y rechazo 409 sin perder el formulario. No se realizó una nueva revisión visual en navegador.
+- Postman agrega seis casos del detalle/edición; pasaron los cinco runners actualizados: 578 peticiones y 816 aserciones. Nueve JSON y 565 scripts válidos. Documentación y matriz actualizadas.
+- Bases temporales eliminadas y cambios previos preservados. Sin conflictos, commits ni pushes. En el próximo prompt de Ubuntu avisar que preserve estos cambios en usuarioController.ts, usuario-admin.model.ts, usuario-admin.service.ts, usuarios.component.ts, Postman y documentación, además del ajuste previo de versionesTurnos.

@@ -393,7 +393,20 @@ export const obtenerUsuarioPorId = async (req: Request, res: Response): Promise<
     return;
   }
 
-  responder(res, 200, 'ok', usuarios[0]);
+  const usuario = usuarios[0];
+  let especialidades: EspecialidadRow[] = [];
+  if (usuario.rol === 'medico') {
+    [especialidades] = await pool.query<EspecialidadRow[]>(
+      `SELECT DISTINCT especialidad.id, especialidad.descripcion
+       FROM medico_especialidad
+       INNER JOIN especialidad ON especialidad.id = medico_especialidad.id_especialidad
+       WHERE medico_especialidad.id_medico = ?
+       ORDER BY especialidad.id`,
+      [id]
+    );
+  }
+
+  responder(res, 200, 'ok', { ...usuario, especialidades });
 };
 
 export const actualizarUsuario = async (req: AuthRequest, res: Response): Promise<void> => {

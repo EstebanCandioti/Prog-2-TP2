@@ -24,7 +24,7 @@
           "  '10 - Turnos medico por fecha': 200,",
           "  '11 - Turnos sede por fecha': 200,",
           "  '12 - Atender turno': 200,",
-          "  '13 - Crear historial clinico': 201,",
+          "  '13 - Crear historial clinico': 409,",
           "  '14 - Historial duplicado esperado': 409,",
           "  '15 - Historial como paciente': 200,",
           "  '16 - Historial como medico': 200,",
@@ -80,6 +80,30 @@
     {
       "key": "id_sede",
       "value": "1"
+    },
+    {
+      "key": "paciente_dni",
+      "value": "90000010"
+    },
+    {
+      "key": "paciente_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "operador_dni",
+      "value": "90000007"
+    },
+    {
+      "key": "operador_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "medico_dni",
+      "value": "90000004"
+    },
+    {
+      "key": "medico_password",
+      "value": "Demo2026!"
     }
   ],
   "item": [
@@ -112,8 +136,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('paciente_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('paciente_token', login.token);",
+              "  pm.collectionVariables.set('id_paciente', login.usuario.id);",
+              "}"
             ]
           }
         }
@@ -128,7 +155,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{paciente_dni}}\",\n  \"password\": \"{{paciente_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -141,8 +168,12 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('operador_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('operador_token', login.token);",
+              "  pm.collectionVariables.set('id_operador', login.usuario.id);",
+              "  pm.collectionVariables.set('id_sede', login.usuario.id_sede);",
+              "}"
             ]
           }
         }
@@ -157,7 +188,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{operador_dni}}\",\n  \"password\": \"{{operador_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -170,8 +201,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('medico_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('medico_token', login.token);",
+              "  pm.collectionVariables.set('id_medico', login.usuario.id);",
+              "}"
             ]
           }
         }
@@ -186,7 +220,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{medico_dni}}\",\n  \"password\": \"{{medico_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -308,7 +342,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Turno para atender\"\n}"
+          "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"{{run_fecha}}\",\n  \"hora\": \"16:20\",\n  \"nota\": \"Turno para atender\"\n}"
         },
         "url": "{{base_url}}/turnos"
       }
@@ -380,9 +414,22 @@
           {
             "key": "Authorization",
             "value": "Bearer {{medico_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
-        "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
+        "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"diagnostico\": \"Control de prueba\",\n  \"tratamiento\": \"Reposo y control\",\n  \"observaciones\": \"Generado desde Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
       }
     },
     {
@@ -404,7 +451,8 @@
           "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Diagnostico semana 3 {{run_suffix}}\",\n  \"tratamiento\": \"Reposo y control\",\n  \"observaciones\": \"Generado desde Runner\"\n}"
         },
         "url": "{{base_url}}/historial-clinico"
-      }
+      },
+      "description": "Esperado 409: atender ya creó el historial. POST se conserva para turnos atendidos sin historial."
     },
     {
       "name": "14 - Historial duplicado esperado",

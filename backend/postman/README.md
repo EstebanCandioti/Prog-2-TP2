@@ -1,87 +1,72 @@
 # Colecciones de Postman
 
-Esta carpeta tiene dos tipos de colecciones:
+Las colecciones reflejan el contrato actual del backend. Los ejemplos por fase se conservan como documentación; los runners ejecutan escenarios ordenados y verifican sus respuestas.
 
-- `coleccion-fase-01.json`, `coleccion-fase-02.json`, `coleccion-fase-03.json` y `coleccion-fase-04.json`: sirven como documentacion de los endpoints de cada semana.
-- `coleccion-fase-01-runner.json`, `coleccion-fase-02-runner.json`, `coleccion-fase-03-runner.json` y `coleccion-fase-04-runner.json`: sirven para ejecutar las pruebas en orden con la opcion **Run** de Postman.
+| Archivo | Uso |
+| --- | --- |
+| `coleccion-fase-01.json` a `coleccion-fase-04.json` | Ejemplos manuales de cada entrega; algunos requieren configurar IDs existentes. |
+| `coleccion-fase-01-runner.json` a `coleccion-fase-04-runner.json` | Flujos de registro, autenticación, CRUD, reservas, atención, historial, notificaciones, auditoría y reportes. |
+| `coleccion-contrato-actual-runner.json` | Regresión ampliada: permisos de las 54 rutas, B01–B11, F09, validaciones, privacidad, paginación y coherencia de datos. Requiere los fixtures del verificador. |
+| `verificar-colecciones.cjs` | Prepara bases temporales independientes y ejecuta los cinco runners con Newman. |
+| [COBERTURA.md](COBERTURA.md) | Matriz de rutas, escenarios cubiertos, resultado de la ejecución y limitaciones conocidas. |
 
-## Como usar los runners
+## Ejecutar toda la regresión en Windows
 
-1. Importar la coleccion runner en Postman.
-2. Seleccionar la coleccion.
-3. Presionar **Run**.
-4. Ejecutar todas las requests en el orden en el que aparecen.
+Desde `backend/`, con las dependencias instaladas, MySQL encendido y `.env` configurado:
 
-Los runners ya tienen variables y scripts internos para guardar tokens e ids generados durante la ejecucion. Por eso no hace falta copiar manualmente el token del login ni los ids de los registros creados.
-
-## Permisos de catálogos
-
-| Rutas | Token requerido | Rol permitido |
-| --- | --- | --- |
-| `GET /coberturas-disponibles` | No | Público |
-| `GET /sedes`, `GET /especialidades`, `GET /coberturas` | Sí | Cualquier rol autenticado |
-| `GET /medicos` | Sí | Administrador, médico, operador o paciente |
-| `GET /sedes/:id`, `GET /especialidades/:id`, `GET /coberturas/:id` | Sí | Administrador |
-| `POST`, `PUT`, `DELETE` de esos tres catálogos | Sí | Administrador |
-
-Las colecciones documentales muestran ejemplos de listados con token de operador y de operaciones restringidas con token de administrador.
-
-## Listado de médicos (B01)
-
-La carpeta **Médicos para selección (B01)** de `coleccion-fase-04.json` documenta el listado completo, los filtros por especialidad y sede, y la combinación de ambos. Usa ejemplos con los cuatro roles. El operador puede consultar otra sede; cuando se combinan filtros, debe existir una agenda en esa sede para esa misma especialidad. La respuesta conserva todas las especialidades asignadas y solo incluye ID, nombre y apellido del médico, además de esas especialidades.
-
-El caso de médico sin agenda usa el listado sin `id_sede` y requiere un médico existente en esa condición; no carga datos. También se incluyen un resultado vacío `200`, filtros inválidos, repetidos o estructurados `400`, y token ausente o inválido `401`. Los ejemplos son de lectura y no forman parte de los runners que crean datos temporales. La verificación funcional queda pendiente en Windows.
-
-## Turnos del paciente e historial por turno (B11)
-
-La carpeta **Paciente: turnos e historial (B11)** de `coleccion-fase-04.json` incluye `tipo=proximos`, `tipo=todos`, valores por defecto, segunda página, página sin resultados, errores de consulta y ejemplos de historial propio, ajeno, inexistente, no atendido y atendido sin historial. Los casos clínicos requieren configurar IDs de turnos existentes del paciente autenticado o de otro paciente según el ejemplo; no preparan ni cargan datos.
-
-`GET /turnos/mis-turnos` devuelve ahora `datos.items` y los metadatos `total`, `pagina` y `limite` (20). Las consultas existentes de fases 03 y 04, incluidos ambos runners, conservan sus casos y agregan comprobaciones del nuevo formato. El total corresponde al tipo solicitado; sin coincidencias o en una página posterior se espera `items: []`. El momento de corte de los próximos proviene de MySQL.
-
-El futuro frontend enviará `tipo` y `pagina` por pestaña: `proximos` para los confirmados vigentes y `todos` para el listado completo, que también incluye próximos. El historial se consulta aparte con `GET /turnos/:id/historial`, exclusivo de pacientes. Los demás roles reciben `403`; sin token válido, `401`. El backend se verificó en Windows mediante build y pruebas HTTP con MySQL en una base temporal. Se validaron los ocho JSON de Postman y la sintaxis de sus scripts; no se ejecutaron los runners completos.
-
-Limitación preexistente: la fase 03 todavía contiene atención sin cuerpo clínico y una creación separada de historial esperada como `201`, anteriores al contrato de B08. Se conservaron esos casos en esta entrega; la adaptación de `mis-turnos` a B11 no corrige esos pasos y el runner completo de fase 03 requiere revisarlos antes de ejecutarlo con la API actual.
-
-## Notificaciones: marcado masivo (F09)
-
-La carpeta **Notificaciones / Marcado masivo (F09)** de `coleccion-fase-04.json` documenta `PATCH /notificaciones/leidas`. Requiere `Authorization: Bearer <token>` de cualquier rol autenticado, sin cuerpo ni ID de usuario del cliente. Responde `200` con `datos: { "cantidad_actualizada": N }`, donde N es la cantidad de pendientes propias actualizadas; sin pendientes devuelve 0. Se conserva el endpoint individual.
-
-Los ejemplos están numerados para verificar pendientes propias, consulta posterior sin pendientes, repetición con cantidad 0, aislamiento de otro usuario y rechazo `401` sin token o con token inválido. Usan `paciente_token` como cuenta A y `medico_token` como cuenta B; deben pertenecer a usuarios distintos. A debe tener pendientes antes de empezar. Para comprobar que las pendientes de B también se conservan, usar una cuenta B que las tenga. Las consultas guardan las capturas y el recuento esperado en variables de colección. Se pueden cambiar ambos tokens por los de otros roles autenticados.
-
-Ejecutar únicamente en Windows sobre una base de prueba controlada, sin operaciones concurrentes que generen notificaciones entre las capturas. Estos ejemplos **sí marcan registros existentes**, no crean ni eliminan datos y no se añadieron a los runners generales para evitar marcar en masa sus notificaciones históricas. Si se repite toda la carpeta, el primer caso vuelve a requerir pendientes propias. Los scripts se entregan sin ejecutar desde Ubuntu.
-
-## Verificacion de pruebas
-
-Cada runner incluye codigo de verificacion en la seccion **Tests** de Postman.
-
-Ese codigo revisa principalmente:
-
-- que cada request devuelva el codigo HTTP esperado;
-- que la respuesta tenga el formato definido para el proyecto:
-
-```json
-{
-  "codigo": 200,
-  "estado": "ok",
-  "datos": {}
-}
+```powershell
+npm.cmd run build
+npm.cmd exec --yes --package=newman@6.2.1 -- node postman/verificar-colecciones.cjs
 ```
 
-Si una prueba negativa devuelve el error esperado, Postman la marca como correcta. Por ejemplo:
+Newman se obtiene de la caché de npm: no se agrega a `package.json`, al lockfile ni al `node_modules` del proyecto. El usuario MySQL de `.env` necesita poder consultar la estructura y crear/eliminar las bases temporales.
 
-- registro duplicado: `409`;
-- token ausente o invalido: `401`;
-- rol no permitido: `403`;
-- recurso inexistente: `404`.
+El verificador:
 
-En la colección de fase 04, la atención de un turno incluye los campos clínicos en el cuerpo de `PATCH /turnos/:id/atender`. También se documentan los rechazos por datos clínicos inválidos, turno ajeno, estado incompatible e historial duplicado. El runner comprueba que `POST /historial-clinico` responda `409` al intentar volver a cargar el historial creado durante la atención.
+1. Valida los nueve JSON y la sintaxis de todos sus scripts. Compara los runners con las rutas actuales para detectar endpoints sin casos.
+2. Lee **solo la estructura** de la base configurada en `DB_NAME`; no copia sus datos ni ejecuta el seed habitual.
+3. Crea una base `codex_postman_<marca_temporal>_<n>` para cada runner, con cuentas y datos controlados. Los escenarios ampliados incluyen más de 20 pacientes/turnos, dos sedes, agendas, historiales y más de 10 notificaciones pendientes.
+4. Inicia una instancia temporal de la API en un puerto libre, sin usar ni detener el servidor habitual del puerto 3000.
+5. Ejecuta Newman y muestra requests, aserciones y fallos por colección. Devuelve código de salida 1 si hay fallos.
+6. Detiene esa instancia y elimina su base temporal en `finally`, también si falla una prueba. La base habitual, su esquema y sus datos permanecen intactos. Un cierre forzado del proceso o la caída de MySQL puede impedir esa limpieza.
 
-La misma colección incluye los rechazos `409` al eliminar una especialidad usada por agendas y una cobertura conservada por turnos aunque ya no esté asignada a ningún usuario. Esos ejemplos usan variables configurables para apuntar a registros que cumplan cada condición sin alterar relaciones desde Postman.
+Opcionalmente, guardar el resumen de la ejecución, sin tokens ni contraseñas:
 
-De esta forma, al terminar el **Run**, Postman muestra cuales pruebas pasaron y cuales fallaron.
+```powershell
+$env:POSTMAN_REPORT = Join-Path $env:TEMP 'resultado-postman.json'
+npm.cmd exec --yes --package=newman@6.2.1 -- node postman/verificar-colecciones.cjs
+```
 
-## Importante
+No es necesario cargar `seed-b10.sql`, iniciar el frontend ni cambiar `.env` para esta verificación.
 
-Los runners crean datos temporales en la base de datos para poder probar altas, modificaciones, turnos, historiales, auditoria y reportes.
+## Usar Postman manualmente
 
-Algunos datos se eliminan durante el mismo runner, pero otros pueden quedar guardados porque son necesarios para mantener relaciones con auditoria, turnos o historiales clinicos.
+Importar un runner, seleccionar **Run** y ejecutar sus requests en orden. Los runners por fase crean registros y conservan algunos por sus asociaciones; usarlos sobre una base de pruebas.
+
+Las fases 02–04 usan variables `admin_dni`, `medico_dni`, `operador_dni`, `paciente_dni` y sus respectivas `*_password`. Los valores iniciales son las cuentas demo de `seed:demo`, con contraseña `Demo2026!`. Los logins guardan tokens, IDs de usuario y la sede del operador; configurar `id_especialidad` si el médico elegido tiene otra. La fase 01 registra su propio paciente y conserva su flujo independiente.
+
+Las colecciones documentales no son una secuencia automática: sus fechas e IDs son ejemplos y las carpetas de errores necesitan datos con las asociaciones indicadas. El runner de contrato actual usa IDs conocidos, JWT de prueba y fechas preparados por el verificador; importarlo solo no prepara esos datos. Para la regresión completa, usar el comando anterior.
+
+## Contratos comprobados
+
+- Respuesta uniforme: `{ codigo, estado, datos }`, con `codigo` igual al estado HTTP. En un error, `estado` contiene el mensaje.
+- Catálogos: `GET /coberturas-disponibles` es público. Los listados generales requieren cualquier rol autenticado. Obtener por ID y escribir requiere admin.
+- B01: `GET /medicos` admite los cuatro roles, no pagina y solo devuelve `id`, `nombre`, `apellido`, `especialidades`. Sus filtros son `id_especialidad` e `id_sede`; la sede selecciona agendas, no la sede principal del médico. La combinación exige una agenda de esa especialidad en esa sede.
+- B02: alta y edición administrativas por `/usuarios`, relaciones según rol, duplicados, especialidades y cambios de rol con asociaciones. `GET /usuarios/:id` incluye las especialidades médicas asignadas y devuelve `[]` para otros roles; se comprueba que editar otros datos preserve las asignaciones. El rol y la sede usados para autorizar provienen de la base, incluso con un JWT anterior.
+- B03: `/usuarios` para admin y `/pacientes` para admin, médico u operador; ambos devuelven `{ items, total, pagina, limite }`, con límite fijo 20. Búsqueda por nombre, apellido o nombre completo; DNI exacto en pacientes y rol/sede en usuarios.
+- B04: `PATCH /usuarios/mi-perfil` solo para pacientes, con campos parciales `email`, `telefono`, `password`, `id_cobertura`. Conserva lo omitido y rechaza campos ajenos al contrato.
+- B05: médico gestiona agendas propias en distintas sedes; operador consulta cualquier sede y escribe solo en la propia. Se validan fechas, horas `HH:mm`, especialidad asignada y protección de agendas con turnos.
+- B06: bloques completos de 20 minutos, disponibilidad y reserva coherentes, rechazo de bloque ocupado, liberación al cancelar y paciente tomado del token. No se prueba exclusión mutua entre reservas simultáneas: quedó postergada.
+- B07: `/turnos/medico` y `/turnos/sede` requieren fecha; devuelven arreglos y datos identificatorios del paciente, sin historial clínico. Respetan médico/sede y filtros acordados.
+- B08: atender incluye datos clínicos y crea el historial; repetir el alta de ese historial devuelve `409`. `POST /historial-clinico` sigue disponible para atendidos sin historial. Fase 03 corregida: `16:20`, cuerpo clínico al atender y `409` al intentar duplicarlo.
+- B09: eliminación de especialidad/cobertura con dependencias devuelve `409`, incluidas agendas y turnos históricos.
+- B10: las pruebas generan fixtures propios; no evalúan ni modifican el seed de demostración.
+- B11: `tipo=proximos|todos`, página de 20 y valores por defecto; Todos incluye próximos. Historial por turno exclusivo del paciente dueño, con `400`, `403`, `404` y `409` según el caso.
+- F09: notificaciones propias, marcado individual y `PATCH /notificaciones/leidas`, con `{ cantidad_actualizada }`. Se comprueba repetición con 0 y conservación de pendientes ajenas.
+- Auditoría y reportes: permisos admin, filtros y formas de respuesta actuales; totales por sede/especialidad y tasa de cancelación coherentes con los turnos de la base de prueba. `id_entidad` no es un filtro del endpoint de auditoría: el frontend lo aplica localmente.
+
+## Alcance de los resultados
+
+Las pruebas cubren las rutas y los principales contratos positivos/negativos acordados. No prueban todas las combinaciones posibles de entradas ni reemplazan la verificación visual del frontend. La matriz detalla lo ejecutado y lo pendiente.
+
+**Limitación detectada:** `DELETE /usuarios/:id` con asociaciones devuelve actualmente `500` porque ese controlador no traduce el error de clave foránea a `409`. La regresión tiene un caso identificado como `LIMITACION actual` que registra ese comportamiento; que pase no significa que el problema esté corregido. El método de eliminación no se modificó.

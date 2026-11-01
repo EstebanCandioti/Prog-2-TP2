@@ -2,18 +2,36 @@
 
 Backend del Sistema de Gestión de Turnos Médicos con Node.js, Express, TypeScript, MySQL/MariaDB, bcrypt y JWT.
 
+La preparación completa del sistema está en el [README general](../README.md). El entorno verificado en Windows utiliza Node.js `22.19.0` y npm `11.16.0`.
+
+## Variables de entorno
+
+Copiar `.env.example` a `.env` y configurar las siguientes variables antes de cargar las cuentas o iniciar la API:
+
+| Variable | Valor inicial | Uso |
+| --- | --- | --- |
+| `PORT` | `3000` | Puerto HTTP del backend |
+| `DB_HOST` | `localhost` | Servidor MySQL |
+| `DB_PORT` | `3306` | Puerto MySQL |
+| `DB_USER` | `root` | Usuario MySQL |
+| `DB_PASSWORD` | Vacío | Contraseña del usuario MySQL; ajustar al entorno local |
+| `DB_NAME` | `clinica` | Nombre de la base creada al importar el esquema |
+| `JWT_SECRET` | Clave de desarrollo del archivo de ejemplo | Clave para firmar y validar sesiones; definirla para el entorno local |
+
+La URL configurada en `frontend/src/environments/environment.ts` debe coincidir con el puerto HTTP elegido.
+
 ## Setup
 
 1. Instalar dependencias:
 
 ```powershell
-npx -y npm@11.16.0 ci
+npm install
 ```
 
 2. Copiar `.env.example` a `.env` y ajustar credenciales si tu MySQL usa otra clave o usuario:
 
 ```powershell
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+Copy-Item .env.example .env
 ```
 
 3. Levantar MySQL y configurar host, puerto, usuario, contraseña, nombre de base y `JWT_SECRET` en `.env`. Si todavía no existe la base, importar `src/database/clinica.sql`, que crea `clinica`. Si la base ya existe, conservarla y no reimportar el esquema para cargar datos de prueba.
@@ -50,7 +68,7 @@ La pantalla de ingreso muestra estas cuentas y permite completar el formulario c
 Los datos cargados en la PC de un desarrollador no viajan con Git. Para reproducirlos en otra PC:
 
 1. Preparar la base y `.env` según Setup; MySQL debe estar encendido.
-2. Instalar las dependencias con `npx -y npm@11.16.0 ci` desde `backend` si todavía no están instaladas.
+2. Instalar las dependencias con `npm install` desde `backend` si todavía no están instaladas.
 3. Ejecutar `npm run seed:demo`. Crea o actualiza las 12 cuentas demo y restablece su contraseña común; no modifica otras cuentas. Es necesario porque el SQL no genera hashes bcrypt.
 4. Seleccionar esa misma base en phpMyAdmin o en el cliente SQL e importar **`src/database/seed-b10.sql` completo, en una sola conexión**. Detener la ejecución ante el primer error; no usar una opción que ignore errores. Como alternativa, desde `backend` en PowerShell, si el cliente `mysql` está disponible:
 
@@ -103,7 +121,7 @@ Ejemplo de respuesta del marcado masivo (`cantidad_actualizada` proviene de `aff
 {"codigo":200,"estado":"ok","datos":{"cantidad_actualizada":3}}
 ```
 
-Sin pendientes, incluso al repetir la operación, devuelve `200` con `cantidad_actualizada: 0`. Sin token o con token inválido/vencido devuelve `401` en el formato uniforme; los demás errores conservan el manejo global. Para verificar el aislamiento, guardar el listado de un segundo usuario, marcar las pendientes del primero y volver a consultar ambos: solo el primero debe cambiar. Los ejemplos ordenados están en **Notificaciones / Marcado masivo (F09)** de Postman; no preparan datos ni forman parte de los runners generales.
+Sin pendientes, incluso al repetir la operación, devuelve `200` con `cantidad_actualizada: 0`. Sin token o con token inválido/vencido devuelve `401` en el formato uniforme; los demás errores conservan el manejo global. Para verificar el aislamiento, guardar el listado de un segundo usuario, marcar las pendientes del primero y volver a consultar ambos: solo el primero debe cambiar. Los ejemplos manuales están en **Notificaciones / Marcado masivo (F09)** de Postman. La regresión integral también prepara pendientes controladas y ejecuta estos casos en una base temporal.
 
 ### Permisos de catálogos
 
@@ -155,6 +173,8 @@ Ejemplos de cuerpos (usar DNI y email no registrados):
 El administrador no puede tener sede ni especialidades. Operador y médico requieren una sede existente; el médico requiere una o más especialidades existentes, con IDs enteros positivos y sin repetir. Para admin y operador, `ids_especialidades` puede omitirse o enviarse como `[]`. La respuesta `201` usa el formato uniforme y `datos` contiene `id`, nombre, apellido, DNI, email, teléfono, fecha de nacimiento, rol, `id_sede`, `id_cobertura: null` y `especialidades: [{ id, descripcion }]` (arreglo vacío para admin y operador). Nunca incluye la password ni un token. Errores principales: `400` por datos o relaciones inválidas, `401` sin token, `403` con rol no administrador y `409` por DNI o email ya registrados. El alta y las relaciones médicas se guardan en una misma transacción. La auditoría se registra después del commit y de liberar la conexión; si falla, el alta permanece guardada aunque la petición devuelva un error.
 
 ### Edición administrativa de usuarios (B02)
+
+`GET /usuarios/:id`, exclusivo de administradores, devuelve los datos públicos del usuario y `especialidades: [{ id, descripcion }]` para médicos, ordenadas por ID y sin duplicados; para otros roles devuelve `especialidades: []`. No expone password, hash ni token. Conserva `400` para ID no numérico y `404` si no existe. El formulario administrativo utiliza este detalle para precargar la sede y las especialidades antes de editar.
 
 `PUT /usuarios/:id` requiere token de administrador. El cuerpo completo incluye `nombre`, `apellido` (texto no vacío, hasta 30 caracteres), `fecha_nacimiento` (`AAAA-MM-DD` válida y no futura), `rol` (`admin`, `operador`, `medico` o `paciente`), `email` (formato válido, hasta 30 caracteres), `telefono` (7 a 10 dígitos), `id_sede`, `id_cobertura` e `ids_especialidades`. No edita DNI ni contraseña. La sede y cobertura deben existir cuando corresponden; para los demás roles pueden omitirse o enviarse como `null`. Las especialidades pueden omitirse o enviarse como `[]` para roles no médicos; para médico se exige al menos un ID entero positivo, existente y sin repetir.
 
@@ -266,7 +286,7 @@ Ejemplo de respuesta exitosa de `/turnos/12/historial` (IDs y textos ilustrativo
 {"codigo":200,"estado":"ok","datos":{"id":5,"id_turno":12,"id_medico":3,"id_paciente":2,"diagnostico":"Control clínico","tratamiento":"Seguimiento","observaciones":null,"fecha_registro":"2026-11-01T12:00:00.000Z"}}
 ```
 
-Los endpoints `POST /historial-clinico` y `GET /historial-clinico/paciente/:id_paciente` mantienen sus contratos y permisos. Las futuras pestañas del frontend enviarán `tipo=proximos` y `tipo=todos`, con su propia página, y pedirán el historial por ID solo al abrir un turno atendido. `todos` incluye también próximos; no hay un filtro de solo pasados ni un `tipo=historial`. Esta entrega implementa únicamente el backend. B11 se verificó en Windows mediante build y 419 comprobaciones con MySQL en una base temporal, incluyendo paginación, corte temporal, permisos clínicos y actualización tras cancelar; la pantalla frontend sigue pendiente.
+Los endpoints `POST /historial-clinico` y `GET /historial-clinico/paciente/:id_paciente` mantienen sus contratos y permisos. Las pestañas del frontend envían `tipo=proximos` y `tipo=todos`, con su propia página, y pedirán el historial por ID solo al abrir un turno atendido. `todos` incluye también próximos; no hay un filtro de solo pasados ni un `tipo=historial`. B11 se verificó en Windows mediante build y 419 comprobaciones con MySQL en una base temporal, incluyendo paginación, corte temporal, permisos clínicos y actualización tras cancelar. La pantalla del paciente ya está integrada y usa este contrato.
 
 Todas las respuestas usan el formato:
 
@@ -277,3 +297,16 @@ Todas las respuestas usan el formato:
   "datos": null
 }
 ```
+
+## Regresión HTTP con Postman
+
+Desde Windows, en `backend/`, con MySQL y `.env` configurados:
+
+```powershell
+npm.cmd run build
+npm.cmd exec --yes --package=newman@6.2.1 -- node postman/verificar-colecciones.cjs
+```
+
+El comando usa Newman desde la caché de npm, clona solo la estructura a bases temporales, crea sus propios datos y ejecuta los cinco runners. No modifica el esquema ni los datos de la base habitual y no requiere levantar el frontend ni reiniciar la API habitual. El usuario MySQL necesita permiso para crear/eliminar bases temporales. Los servidores de prueba y las bases se eliminan al finalizar.
+
+Ver [instrucciones de Postman](postman/README.md) y [matriz de cobertura y resultados](postman/COBERTURA.md). Última verificación: 01/11/2026, **578 peticiones, 816 aserciones, sin fallos**, con casos para las 54 rutas. Se registra como limitación existente el `500` al borrar usuarios asociados; esta actualización no corrige ese controlador.

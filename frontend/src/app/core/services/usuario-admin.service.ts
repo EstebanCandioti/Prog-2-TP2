@@ -7,6 +7,7 @@ import { ApiResponse } from '../models/api-response.model';
 import {
   ActualizarUsuarioAdmin,
   CrearUsuarioAdmin,
+  DetalleUsuarioAdmin,
   ListadoPacientes,
   ListadoUsuarios,
   PacienteBusqueda,
@@ -41,8 +42,8 @@ export class UsuarioAdminService {
     return this.http.get<ApiResponse<ListadoPacientes>>(`${environment.apiUrl}/pacientes`, { params });
   }
 
-  obtener(id: number): Observable<ApiResponse<UsuarioAdmin>> {
-    return this.http.get<ApiResponse<UsuarioAdmin>>(`${this.url}/${id}`);
+  obtener(id: number): Observable<ApiResponse<DetalleUsuarioAdmin>> {
+    return this.http.get<ApiResponse<DetalleUsuarioAdmin>>(`${this.url}/${id}`);
   }
 
   crear(usuario: CrearUsuarioAdmin): Observable<ApiResponse<UsuarioAdmin>> {

@@ -119,6 +119,38 @@
     {
       "key": "id_especialidad",
       "value": "1"
+    },
+    {
+      "key": "admin_dni",
+      "value": "90000001"
+    },
+    {
+      "key": "admin_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "paciente_dni",
+      "value": "90000010"
+    },
+    {
+      "key": "paciente_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "operador_dni",
+      "value": "90000007"
+    },
+    {
+      "key": "operador_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "medico_dni",
+      "value": "90000004"
+    },
+    {
+      "key": "medico_password",
+      "value": "Demo2026!"
     }
   ],
   "item": [
@@ -154,8 +186,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('admin_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('admin_token', login.token);",
+              "  pm.collectionVariables.set('id_admin', login.usuario.id);",
+              "}"
             ]
           }
         }
@@ -170,7 +205,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"Admin1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{admin_dni}}\",\n  \"password\": \"{{admin_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -183,8 +218,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('paciente_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('paciente_token', login.token);",
+              "  pm.collectionVariables.set('id_paciente', login.usuario.id);",
+              "}"
             ]
           }
         }
@@ -199,7 +237,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{paciente_dni}}\",\n  \"password\": \"{{paciente_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -212,8 +250,12 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('operador_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('operador_token', login.token);",
+              "  pm.collectionVariables.set('id_operador', login.usuario.id);",
+              "  pm.collectionVariables.set('id_sede', login.usuario.id_sede);",
+              "}"
             ]
           }
         }
@@ -228,7 +270,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{operador_dni}}\",\n  \"password\": \"{{operador_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -241,8 +283,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos?.token) pm.collectionVariables.set('medico_token', json.datos.token);"
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('medico_token', login.token);",
+              "  pm.collectionVariables.set('id_medico', login.usuario.id);",
+              "}"
             ]
           }
         }
@@ -257,7 +302,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+          "raw": "{\n  \"dni\": \"{{medico_dni}}\",\n  \"password\": \"{{medico_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -595,18 +640,23 @@
     },
     {
       "name": "23 - Listar usuarios",
-      "event": [{
-        "listen": "test",
-        "script": { "type": "text/javascript", "exec": [
-          "const datos = pm.response.json().datos;",
-          "pm.test('Listado de usuarios paginado', () => {",
-          "  pm.expect(datos.items).to.be.an('array');",
-          "  pm.expect(datos.total).to.be.a('number');",
-          "  pm.expect(datos.pagina).to.eql(1);",
-          "  pm.expect(datos.limite).to.eql(20);",
-          "});"
-        ] }
-      }],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const datos = pm.response.json().datos;",
+              "pm.test('Listado de usuarios paginado', () => {",
+              "  pm.expect(datos.items).to.be.an('array');",
+              "  pm.expect(datos.total).to.be.a('number');",
+              "  pm.expect(datos.pagina).to.eql(1);",
+              "  pm.expect(datos.limite).to.eql(20);",
+              "});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [

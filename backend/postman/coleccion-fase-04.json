@@ -116,6 +116,38 @@
     {
       "key": "notificacion_id",
       "value": ""
+    },
+    {
+      "key": "admin_dni",
+      "value": "90000001"
+    },
+    {
+      "key": "admin_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "paciente_dni",
+      "value": "90000010"
+    },
+    {
+      "key": "paciente_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "operador_dni",
+      "value": "90000007"
+    },
+    {
+      "key": "operador_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "medico_dni",
+      "value": "90000004"
+    },
+    {
+      "key": "medico_password",
+      "value": "Demo2026!"
     }
   ],
   "item": [
@@ -148,9 +180,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.datos && json.datos.token) {",
-                  "  pm.collectionVariables.set('admin_token', json.datos.token);",
+                  "const login = pm.response.json().datos;",
+                  "if (login?.token) {",
+                  "  pm.collectionVariables.set('admin_token', login.token);",
+                  "  pm.collectionVariables.set('id_admin', login.usuario.id);",
                   "}"
                 ]
               }
@@ -167,7 +200,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"Admin1.\"\n}"
+              "raw": "{\n  \"dni\": \"{{admin_dni}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
             "url": "{{base_url}}/auth/login"
           }
@@ -180,9 +213,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.datos && json.datos.token) {",
-                  "  pm.collectionVariables.set('paciente_token', json.datos.token);",
+                  "const login = pm.response.json().datos;",
+                  "if (login?.token) {",
+                  "  pm.collectionVariables.set('paciente_token', login.token);",
+                  "  pm.collectionVariables.set('id_paciente', login.usuario.id);",
                   "}"
                 ]
               }
@@ -199,7 +233,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dni\": \"36000960\",\n  \"password\": \"Paciente1.\"\n}"
+              "raw": "{\n  \"dni\": \"{{paciente_dni}}\",\n  \"password\": \"{{paciente_password}}\"\n}"
             },
             "url": "{{base_url}}/auth/login"
           }
@@ -212,9 +246,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.datos && json.datos.token) {",
-                  "  pm.collectionVariables.set('operador_token', json.datos.token);",
+                  "const login = pm.response.json().datos;",
+                  "if (login?.token) {",
+                  "  pm.collectionVariables.set('operador_token', login.token);",
+                  "  pm.collectionVariables.set('id_operador', login.usuario.id);",
+                  "  pm.collectionVariables.set('id_sede', login.usuario.id_sede);",
                   "}"
                 ]
               }
@@ -231,7 +267,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"Operador1.\"\n}"
+              "raw": "{\n  \"dni\": \"{{operador_dni}}\",\n  \"password\": \"{{operador_password}}\"\n}"
             },
             "url": "{{base_url}}/auth/login"
           }
@@ -244,9 +280,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.datos && json.datos.token) {",
-                  "  pm.collectionVariables.set('medico_token', json.datos.token);",
+                  "const login = pm.response.json().datos;",
+                  "if (login?.token) {",
+                  "  pm.collectionVariables.set('medico_token', login.token);",
+                  "  pm.collectionVariables.set('id_medico', login.usuario.id);",
                   "}"
                 ]
               }
@@ -263,7 +300,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"Medico1.\"\n}"
+              "raw": "{\n  \"dni\": \"{{medico_dni}}\",\n  \"password\": \"{{medico_password}}\"\n}"
             },
             "url": "{{base_url}}/auth/login"
           }
@@ -414,7 +451,12 @@
           "request": {
             "description": "Configurar id_cobertura_con_turnos_sin_usuarios con una cobertura que ningun usuario conserve pero que figure en al menos un turno, de cualquier estado. Responde 409: No se puede eliminar la cobertura porque tiene turnos asociados. No elimina ni registra auditoria.",
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/coberturas/{{id_cobertura_con_turnos_sin_usuarios}}"
           }
         }
@@ -605,7 +647,12 @@
           "request": {
             "description": "Configurar id_especialidad_con_agenda con una especialidad sin medicos asociados que figure en al menos una agenda. Responde 409: No se puede eliminar la especialidad porque tiene agendas asociadas. No elimina ni registra auditoria.",
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/especialidades/{{id_especialidad_con_agenda}}"
           }
         }
@@ -620,8 +667,14 @@
             "description": "POST /usuarios. Solo admin autenticado. Admin sin sede ni especialidades; id_cobertura ausente o null. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400 datos invalidos, 401 sin token, 403 otro rol, 409 DNI o email duplicado. Registra auditoria ALTA despues del commit; si falla, el alta permanece guardada.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -636,8 +689,14 @@
             "description": "POST /usuarios. Solo admin autenticado. Operador requiere id_sede existente y no admite especialidades. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400 datos, sede o relaciones invalidas, 401, 403, 409. Registra auditoria ALTA despues del commit; si falla, el alta permanece guardada.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -652,8 +711,14 @@
             "description": "POST /usuarios. Solo admin autenticado. Medico requiere id_sede y uno o mas ids_especialidades existentes, enteros positivos y sin duplicados. Exito: 201 con usuario y especialidades [{id, descripcion}]; sin password ni token. Errores: 400 datos o relaciones invalidas, 401, 403, 409. Registra auditoria ALTA despues del commit; si falla, el alta permanece guardada.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -668,8 +733,14 @@
             "description": "Error esperado: 400. POST /usuarios no crea pacientes; usar POST /auth/registro.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -683,8 +754,16 @@
           "request": {
             "description": "Error esperado: 401. No se envia Authorization.",
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{}" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
             "url": "{{base_url}}/usuarios"
           }
         },
@@ -694,10 +773,19 @@
             "description": "Error esperado: 403. El token de operador no autoriza altas administrativas.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{operador_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
             "url": "{{base_url}}/usuarios"
           }
         },
@@ -707,8 +795,14 @@
             "description": "Error esperado: 409. Ejecutar despues del ejemplo Crear admin; reutiliza el mismo DNI y email.",
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -736,7 +830,12 @@
           "request": {
             "description": "busqueda parcial por nombre, apellido o nombre completo (por ejemplo Ana, Lopez o Ana Lopez). rol e id_sede se combinan con AND. pagina=2 pide la pagina siguiente; total cuenta todas las coincidencias.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/usuarios?busqueda=Ana%20Lopez&rol=medico&id_sede={{id_sede}}&pagina=2"
           }
         },
@@ -745,7 +844,12 @@
           "request": {
             "description": "Pagina valida sin items: 200 con datos.items=[] y total del filtro, no 404.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/usuarios?pagina=999"
           }
         },
@@ -754,28 +858,41 @@
           "request": {
             "description": "400: pagina debe ser entero positivo seguro. Tambien se rechazan rol invalido, id_sede parcial y filtros repetidos que lleguen como arreglos.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/usuarios?pagina=2abc"
           }
         },
         {
           "name": "Listar usuarios - sin token",
           "request": {
-            "description": "401 sin token.", "method": "GET", "url": "{{base_url}}/usuarios"
+            "description": "401 sin token.",
+            "method": "GET",
+            "url": "{{base_url}}/usuarios"
           }
         },
         {
           "name": "Listar usuarios - rol no permitido",
           "request": {
-            "description": "403 para operador, medico o paciente.", "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "description": "403 para operador, medico o paciente.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/usuarios"
           }
         },
         {
           "name": "Obtener por id",
           "request": {
-            "description": "Rol: admin. Parametro: id. Exito: 200. Errores: 400, 404.",
+            "description": "Rol: admin. Parametro: id. Exito: 200. Errores: 400, 404. Detalle administrativo: incluye especialidades [{ id, descripcion }] para médicos y [] para otros roles; conserva los demás campos públicos, sin password, hash ni token.",
             "method": "GET",
             "header": [
               {
@@ -813,8 +930,20 @@
           "request": {
             "description": "Edicion valida de admin sin sede, cobertura ni especialidades. Usar el ID de un admin. Respuesta 200 con especialidades: [].",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Admin\",\n  \"fecha_nacimiento\": \"1985-03-10\",\n  \"rol\": \"admin\",\n  \"email\": \"ana.admin@ejemplo.com\",\n  \"telefono\": \"3424000001\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Admin\",\n  \"fecha_nacimiento\": \"1985-03-10\",\n  \"rol\": \"admin\",\n  \"email\": \"ana.admin@ejemplo.com\",\n  \"telefono\": \"3424000001\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -823,8 +952,20 @@
           "request": {
             "description": "Edicion valida de operador con sede existente. Usar el ID de un operador. El id_sede actual de la base se aplica incluso con un JWT anterior al cambio.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Olga\",\n  \"apellido\": \"Operadora\",\n  \"fecha_nacimiento\": \"1990-05-20\",\n  \"rol\": \"operador\",\n  \"email\": \"olga.operador@ejemplo.com\",\n  \"telefono\": \"3424000002\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Olga\",\n  \"apellido\": \"Operadora\",\n  \"fecha_nacimiento\": \"1990-05-20\",\n  \"rol\": \"operador\",\n  \"email\": \"olga.operador@ejemplo.com\",\n  \"telefono\": \"3424000002\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -833,8 +974,20 @@
           "request": {
             "description": "Usar el ID de un medico. Conservar especialidades solicitadas, agregar nuevas y quitar solo las no usadas en agendas. Si una a quitar tiene agendas propias, 409 sin cambios.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Mario\",\n  \"apellido\": \"Medico\",\n  \"fecha_nacimiento\": \"1988-07-15\",\n  \"rol\": \"medico\",\n  \"email\": \"mario.medico@ejemplo.com\",\n  \"telefono\": \"3424000003\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": [{{id_especialidad}}]\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mario\",\n  \"apellido\": \"Medico\",\n  \"fecha_nacimiento\": \"1988-07-15\",\n  \"rol\": \"medico\",\n  \"email\": \"mario.medico@ejemplo.com\",\n  \"telefono\": \"3424000003\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": [{{id_especialidad}}]\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -843,8 +996,20 @@
           "request": {
             "description": "Ejemplo operador a admin sin asociaciones operativas. Usar el ID y email de ese operador. Rol y sede nuevos afectan inmediatamente las proximas peticiones, incluso con el JWT viejo.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Olga\",\n  \"apellido\": \"Operadora\",\n  \"fecha_nacimiento\": \"1990-05-20\",\n  \"rol\": \"admin\",\n  \"email\": \"olga.operador@ejemplo.com\",\n  \"telefono\": \"3424000002\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Olga\",\n  \"apellido\": \"Operadora\",\n  \"fecha_nacimiento\": \"1990-05-20\",\n  \"rol\": \"admin\",\n  \"email\": \"olga.operador@ejemplo.com\",\n  \"telefono\": \"3424000002\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -853,8 +1018,20 @@
           "request": {
             "description": "Ejemplo paciente con turnos a admin. Usar el ID y email de ese paciente. Esperado: 409; no modifica usuario ni asociaciones. Tambien bloquean especialidades medicas, agendas e historiales clinicos.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Franco\",\n  \"apellido\": \"Friggeri\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"rol\": \"admin\",\n  \"email\": \"asdas@gaasds.com\",\n  \"telefono\": \"342545555\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Franco\",\n  \"apellido\": \"Friggeri\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"rol\": \"admin\",\n  \"email\": \"asdas@gaasds.com\",\n  \"telefono\": \"342545555\",\n  \"id_sede\": null,\n  \"id_cobertura\": null,\n  \"ids_especialidades\": []\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -863,8 +1040,20 @@
           "request": {
             "description": "Usar el ID de un paciente y un email perteneciente a otro usuario. Esperado: 409 sin cambios.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Franco\",\n  \"apellido\": \"Friggeri\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"rol\": \"paciente\",\n  \"email\": \"mgomez@clinica.com\",\n  \"telefono\": \"342545555\",\n  \"id_sede\": null,\n  \"id_cobertura\": {{id_cobertura}},\n  \"ids_especialidades\": []\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Franco\",\n  \"apellido\": \"Friggeri\",\n  \"fecha_nacimiento\": \"1998-03-14\",\n  \"rol\": \"paciente\",\n  \"email\": \"mgomez@clinica.com\",\n  \"telefono\": \"342545555\",\n  \"id_sede\": null,\n  \"id_cobertura\": {{id_cobertura}},\n  \"ids_especialidades\": []\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -873,8 +1062,20 @@
           "request": {
             "description": "Usar el ID de un medico. Especialidad inexistente: 400. Tambien se rechazan sede o cobertura inexistentes y combinaciones incompatibles con el rol.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Mario\",\n  \"apellido\": \"Medico\",\n  \"fecha_nacimiento\": \"1988-07-15\",\n  \"rol\": \"medico\",\n  \"email\": \"mario.medico@ejemplo.com\",\n  \"telefono\": \"3424000003\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": [127]\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mario\",\n  \"apellido\": \"Medico\",\n  \"fecha_nacimiento\": \"1988-07-15\",\n  \"rol\": \"medico\",\n  \"email\": \"mario.medico@ejemplo.com\",\n  \"telefono\": \"3424000003\",\n  \"id_sede\": {{id_sede}},\n  \"id_cobertura\": null,\n  \"ids_especialidades\": [127]\n}"
+            },
             "url": "{{base_url}}/usuarios/{{id_usuario}}"
           }
         },
@@ -902,7 +1103,12 @@
           "request": {
             "description": "GET /pacientes. Admin, operador o medico. Sin filtros: primera pagina de pacientes, 20 por pagina, orden apellido/nombre/id ASC. Respuesta 200: datos {items, total, pagina: 1, limite: 20}. Cada item contiene solo id, nombre, apellido, dni, fecha_nacimiento, id_cobertura y cobertura_nombre.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes"
           }
         },
@@ -911,7 +1117,12 @@
           "request": {
             "description": "busqueda parcial por nombre, apellido o nombre completo; dni es exacto y texto de 7 u 8 digitos. Ambos filtros se combinan con AND. Tambien se puede usar solo busqueda o solo dni.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes?busqueda=Franco%20Friggeri&dni=36000960"
           }
         },
@@ -920,7 +1131,12 @@
           "request": {
             "description": "Segunda pagina. total sigue contando todas las coincidencias, no solo los items de esta pagina.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes?pagina=2"
           }
         },
@@ -929,7 +1145,12 @@
           "request": {
             "description": "200 con items=[] y total=0; no es 404.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes?dni=99999999"
           }
         },
@@ -938,19 +1159,34 @@
           "request": {
             "description": "400 por DNI no numerico o de longitud incorrecta; tambien por pagina invalida y parametros repetidos que lleguen como arreglos.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes?dni=12abc"
           }
         },
         {
           "name": "Sin token",
-          "request": { "description": "401 sin token.", "method": "GET", "url": "{{base_url}}/pacientes" }
+          "request": {
+            "description": "401 sin token.",
+            "method": "GET",
+            "url": "{{base_url}}/pacientes"
+          }
         },
         {
           "name": "Rol paciente no permitido",
           "request": {
-            "description": "403 con token de paciente.", "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+            "description": "403 con token de paciente.",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
             "url": "{{base_url}}/pacientes"
           }
         }
@@ -964,8 +1200,20 @@
           "request": {
             "description": "PATCH /usuarios/mi-perfil. Solo el paciente autenticado; no se envia ID. 200 con datos publicos actualizados. Email, password y cobertura omitidos conservan su valor. Enviar el mismo telefono actual tambien responde 200.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"telefono\": \"3424111222\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"3424111222\"\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -974,8 +1222,20 @@
           "request": {
             "description": "Email normalizado sin espacios exteriores, telefono de 7 a 10 digitos y cobertura existente. El campo password omitido se conserva. 200 sin password, hash ni token.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"paciente.nuevo@ejemplo.com\",\n  \"telefono\": \"3424111222\",\n  \"id_cobertura\": {{id_cobertura}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"paciente.nuevo@ejemplo.com\",\n  \"telefono\": \"3424111222\",\n  \"id_cobertura\": {{id_cobertura}}\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -984,8 +1244,20 @@
           "request": {
             "description": "Password de 8 a 72 bytes, no vacia ni solo espacios. Se hashea sin recortar. La respuesta y la auditoria no contienen la password ni su hash.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"password\": \"NuevaClave2026!\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NuevaClave2026!\"\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -994,8 +1266,20 @@
           "request": {
             "description": "400: debe enviarse al menos un campo permitido; tambien se rechazan cuerpos que no sean objetos.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -1004,8 +1288,20 @@
           "request": {
             "description": "400: no permite seleccionar otro usuario por ID ni editar rol, sede, DNI, nombre, apellido, fecha de nacimiento o especialidades.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id\": 3,\n  \"telefono\": \"3424111222\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 3,\n  \"telefono\": \"3424111222\"\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -1014,8 +1310,20 @@
           "request": {
             "description": "400: campo presente e invalido no se trata como omitido. Aplica tambien a email, password e id_cobertura:null.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"telefono\": \"abc\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"abc\"\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -1024,8 +1332,20 @@
           "request": {
             "description": "409 si el email pertenece a otro usuario; el email propio actual es valido.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"email\": \"mgomez@clinica.com\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mgomez@clinica.com\"\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
@@ -1034,26 +1354,60 @@
           "request": {
             "description": "400 si el ID de cobertura no existe. No se permite null ni quedar sin cobertura.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id_cobertura\": 127\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_cobertura\": 127\n}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
         {
           "name": "Sin token",
           "request": {
-            "description": "401 sin token valido o si el usuario del token ya no existe.", "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\"telefono\":\"3424111222\"}" },
+            "description": "401 sin token valido o si el usuario del token ya no existe.",
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"telefono\":\"3424111222\"}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         },
         {
           "name": "Rol no permitido",
           "request": {
-            "description": "403 para admin, operador y medico.", "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{admin_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\"telefono\":\"3424111222\"}" },
+            "description": "403 para admin, operador y medico.",
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"telefono\":\"3424111222\"}"
+            },
             "url": "{{base_url}}/usuarios/mi-perfil"
           }
         }
@@ -1153,7 +1507,12 @@
           "request": {
             "description": "Permitido: GET /agendas con filtro de otra sede, y GET /agendas/:id de una agenda ajena. Configurar otra_sede_id e id_agenda_otra_sede antes de usar ambos ejemplos.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/agendas?id_sede={{otra_sede_id}}"
           }
         },
@@ -1162,7 +1521,12 @@
           "request": {
             "description": "Permitido: el operador puede consultar una agenda de otra sede por ID. Configurar id_agenda_otra_sede.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/agendas/{{id_agenda_otra_sede}}"
           }
         },
@@ -1171,8 +1535,20 @@
           "request": {
             "description": "403 antes de insertar. Configurar otra_sede_id con una sede diferente a la actual. Mensaje: Solo podés realizar esta operación en tu sede asignada. Si tu asignación cambió recientemente, cerrá sesión y volvé a ingresar para actualizarla.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:00\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:00\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}"
+            },
             "url": "{{base_url}}/agendas"
           }
         },
@@ -1181,8 +1557,20 @@
           "request": {
             "description": "403 sin modificar: la agenda existente pertenece a otra sede. Configurar id_agenda_otra_sede. Devuelve el mensaje de sede asignada.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:30\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:30\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_otra_sede}}"
           }
         },
@@ -1191,8 +1579,20 @@
           "request": {
             "description": "403 sin modificar: la agenda existente es propia pero la sede enviada es otra. Configurar id_agenda con una agenda de la sede del operador. Devuelve el mensaje de sede asignada.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:30\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"16:00\",\n  \"hora_salida\": \"18:30\",\n  \"fecha\": \"2025-10-20\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda}}"
           }
         },
@@ -1201,7 +1601,12 @@
           "request": {
             "description": "403 sin eliminar una agenda de otra sede. Configurar id_agenda_otra_sede. Devuelve el mensaje de sede asignada.",
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/agendas/{{id_agenda_otra_sede}}"
           }
         },
@@ -1210,8 +1615,20 @@
           "request": {
             "description": "Ejemplo valido: 2028-02-29, 09:00-21:00. Tambien es valido 09:00-12:00. No se rechazan fechas pasadas por ese solo motivo.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"21:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"21:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas"
           }
         },
@@ -1220,8 +1637,20 @@
           "request": {
             "description": "400: 2027-02-29 no existe. Tambien son invalidos 0999-01-01 y años fuera de 1000-9999.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2027-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2027-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas"
           }
         },
@@ -1230,8 +1659,20 @@
           "request": {
             "description": "400: 21:00-09:00 cruza medianoche. Tambien son invalidos 09:00-09:00, 9:00, 24:00 y 12:60. Configurar id_agenda con una agenda de la sede del operador.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"21:00\",\n  \"hora_salida\": \"09:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"21:00\",\n  \"hora_salida\": \"09:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda}}"
           }
         },
@@ -1240,8 +1681,20 @@
           "request": {
             "description": "Configurar id_especialidad_no_asignada con una especialidad existente que no figure en medico_especialidad para id_medico. Respuesta 400: La especialidad indicada no está asignada al médico.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad_no_asignada}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad_no_asignada}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas"
           }
         },
@@ -1250,7 +1703,12 @@
           "request": {
             "description": "Configurar id_agenda_con_confirmados con una agenda de la sede del operador que tenga turnos confirmados. Respuesta 409; no se elimina.",
             "method": "DELETE",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         },
@@ -1259,8 +1717,20 @@
           "request": {
             "description": "Usar una agenda de la sede del operador con turno confirmado a las 10:30 en la fecha indicada, y completar su ID. Reducir a 09:00-10:00 excluye ese turno: 409 sin editar.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"10:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"10:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         },
@@ -1269,8 +1739,20 @@
           "request": {
             "description": "Usar la misma agenda con turno confirmado a las 10:30 del 2028-02-29. Ampliar a 08:00-13:00 mantiene todos los confirmados incluidos: 200.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"08:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"08:00\",\n  \"hora_salida\": \"13:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         },
@@ -1279,8 +1761,20 @@
           "request": {
             "description": "Configurar una agenda con confirmados de la sede del operador. Cambiar id_medico a otro ID positivo se rechaza con 409, sin reasignar turnos. Ajustar el ID de ejemplo si corresponde.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": 127,\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": 127,\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         },
@@ -1289,8 +1783,20 @@
           "request": {
             "description": "Cambiar id_especialidad de una agenda con confirmados se rechaza con 409, sin reasignar turnos. Ajustar el ID de ejemplo si corresponde.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": 127,\n  \"id_sede\": {{id_sede}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": 127,\n  \"id_sede\": {{id_sede}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         },
@@ -1299,8 +1805,20 @@
           "request": {
             "description": "Usar token del medico dueño de la agenda con confirmados. Cambiar sede responde 409; un operador recibiria antes 403 por intentar escribir fuera de su sede.",
             "method": "PUT",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hora_entrada\": \"09:00\",\n  \"hora_salida\": \"12:00\",\n  \"fecha\": \"2028-02-29\",\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}}\n}"
+            },
             "url": "{{base_url}}/agendas/{{id_agenda_con_confirmados}}"
           }
         }
@@ -1512,7 +2030,12 @@
           "request": {
             "description": "200: datos [\"2026-11-10\",\"2026-11-12\"], fechas YYYY-MM-DD distintas y ordenadas; sin agenda: []. Medico inexistente o sin rol medico: 404. IDs invalidos o no simples: 400.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/{{id_medico}}/fechas-disponibles?id_especialidad={{id_especialidad}}&id_sede={{id_sede}}"
           }
         },
@@ -1521,7 +2044,12 @@
           "request": {
             "description": "200: datos [{\"id_agenda\":12,\"hora\":\"09:00\"},{\"id_agenda\":15,\"hora\":\"15:00\"}] ordenados por hora e id_agenda. Varios rangos el mismo dia se combinan; solo bloques completos de 20 minutos. Sin agenda o agenda completa: []. Cancelados no bloquean; confirmados del mismo medico/fecha si, por superposicion incluso con reservas anteriores fuera de la division. No expone pacientes.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/{{id_medico}}/turnos-disponibles?id_especialidad={{id_especialidad}}&id_sede={{id_sede}}&fecha=2025-10-20"
           }
         },
@@ -1530,7 +2058,12 @@
           "request": {
             "description": "200 con token de operador y sede solicitada igual a su id_sede actual. Con otra sede: 403 y aviso de sede asignada; sin sede valida: 403 especifico.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/{{id_medico}}/turnos-disponibles?id_especialidad={{id_especialidad}}&id_sede={{id_sede}}&fecha=2025-10-20"
           }
         },
@@ -1539,7 +2072,12 @@
           "request": {
             "description": "403: Solo podés realizar esta operación en tu sede asignada. Si tu asignación cambió recientemente, cerrá sesión y volvé a ingresar para actualizarla.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/{{id_medico}}/fechas-disponibles?id_especialidad={{id_especialidad}}&id_sede={{otra_sede_id}}"
           }
         },
@@ -1548,7 +2086,12 @@
           "request": {
             "description": "400 por fecha no real; tambien se rechazan valores faltantes, repetidos y IDs invalidos. Un medico inexistente con parametros validos devuelve 404.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/{{id_medico}}/turnos-disponibles?id_especialidad={{id_especialidad}}&id_sede={{id_sede}}&fecha=2027-02-29"
           }
         },
@@ -1557,7 +2100,12 @@
           "request": {
             "description": "404 si el ID no existe o pertenece a otro rol; un medico existente sin agenda para la combinacion responde 200 con datos [].",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              }
+            ],
             "url": "{{base_url}}/medicos/999999/fechas-disponibles?id_especialidad={{id_especialidad}}&id_sede={{id_sede}}"
           }
         }
@@ -1643,8 +2191,20 @@
           "request": {
             "description": "Con agenda 16:00-18:00, 16:30 no es inicio de bloque de 20 minutos: 400. Fecha/hora mal formadas tambien responden 400.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Fuera de division\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Fuera de division\"\n}"
+            },
             "url": "{{base_url}}/turnos"
           }
         },
@@ -1653,8 +2213,20 @@
           "request": {
             "description": "Si existe un confirmado del mismo medico y fecha que se superpone con el bloque 16:00-16:20, responde 409 aun si la reserva anterior pertenece a otra agenda. Ejecutar tras crear un turno confirmado a las 16:00.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Horario ocupado\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{paciente_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{id_sede}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:00\",\n  \"nota\": \"Horario ocupado\"\n}"
+            },
             "url": "{{base_url}}/turnos"
           }
         },
@@ -1699,8 +2271,20 @@
           "request": {
             "description": "Responde 400 y no cambia estado, no crea historial ni notifica. Tambien se rechazan diagnostico vacio/no textual y campos clinicos no textuales o mayores a 255 caracteres.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"tratamiento\": \"Falta diagnostico\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tratamiento\": \"Falta diagnostico\"\n}"
+            },
             "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
           }
         },
@@ -1709,8 +2293,20 @@
           "request": {
             "description": "Ejecutar despues de una atencion exitosa. Responde 409 sin crear otro historial ni otra notificacion.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Intento duplicado\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diagnostico\": \"Intento duplicado\"\n}"
+            },
             "url": "{{base_url}}/turnos/{{turno_atender_id}}/atender"
           }
         },
@@ -1781,7 +2377,12 @@
           "request": {
             "description": "200 datos [] si en esa sede no tiene turnos. El ID del medico siempre es el autenticado; id_medico enviado se ignora. Puede listar una sede distinta de su sede principal.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/medico?fecha=2025-10-20&id_sede={{otra_sede_id}}&id_medico=999999"
           }
         },
@@ -1790,7 +2391,12 @@
           "request": {
             "description": "200 datos [] si no coinciden. Combina fecha, id_medico y estado=confirmado con AND; la sede siempre es la del operador.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/sede?fecha=2025-10-20&id_medico={{id_medico}}&estado=confirmado"
           }
         },
@@ -1799,7 +2405,12 @@
           "request": {
             "description": "400 por fecha inexistente. Tambien se rechazan fecha faltante, id_sede no entero positivo seguro y parametros repetidos o estructurados.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/medico?fecha=2027-02-29"
           }
         },
@@ -1808,7 +2419,12 @@
           "request": {
             "description": "400: solo confirmado, cancelado o atendido. id_medico invalido tambien responde 400.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/sede?fecha=2025-10-20&estado=pendiente"
           }
         },
@@ -1826,7 +2442,12 @@
           "request": {
             "description": "Token de medico en listado exclusivo de operador: 403.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/sede?fecha=2025-10-20"
           }
         },
@@ -1835,7 +2456,12 @@
           "request": {
             "description": "La consulta sigue limitada a req.usuario.id_sede aunque el cliente envie id_sede de otra sede; fecha se conserva como filtro.",
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/sede?fecha=2025-10-20&id_sede={{otra_sede_id}}"
           }
         },
@@ -1844,8 +2470,20 @@
           "request": {
             "description": "403 antes de insertar o notificar. El operador puede asignar a distintos pacientes, pero solo en su sede. Devuelve el mensaje de sede asignada.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Intento fuera de sede\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_paciente\": {{id_paciente}},\n  \"id_medico\": {{id_medico}},\n  \"id_especialidad\": {{id_especialidad}},\n  \"id_sede\": {{otra_sede_id}},\n  \"fecha\": \"2025-10-20\",\n  \"hora\": \"16:30\",\n  \"nota\": \"Intento fuera de sede\"\n}"
+            },
             "url": "{{base_url}}/turnos"
           }
         },
@@ -1854,7 +2492,12 @@
           "request": {
             "description": "403 sin cambiar estado ni crear notificacion. Configurar id_turno_otra_sede con un turno cuya agenda pertenezca a otra sede. Devuelve el mensaje de sede asignada.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{operador_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operador_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/{{id_turno_otra_sede}}/cancelar"
           }
         },
@@ -1863,7 +2506,12 @@
           "request": {
             "description": "Configurar id_turno_propio_otra_sede con un confirmado del medico autenticado en otra sede. Responde 200 y notifica al paciente. Ejecutar sobre un turno distinto del ejemplo de atencion.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/{{id_turno_propio_otra_sede}}/cancelar"
           }
         },
@@ -1872,8 +2520,20 @@
           "request": {
             "description": "Configurar id_turno_propio_otra_sede_para_atender con otro confirmado del medico autenticado en una sede distinta de la principal. Responde 200, crea historial y notifica al paciente.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Diagnostico en otra sede\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diagnostico\": \"Diagnostico en otra sede\"\n}"
+            },
             "url": "{{base_url}}/turnos/{{id_turno_propio_otra_sede_para_atender}}/atender"
           }
         },
@@ -1882,7 +2542,12 @@
           "request": {
             "description": "Configurar id_turno_otro_medico con un turno asignado a otro medico; responde 403 sin cambiar estado ni notificar.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              }
+            ],
             "url": "{{base_url}}/turnos/{{id_turno_otro_medico}}/cancelar"
           }
         },
@@ -1891,8 +2556,20 @@
           "request": {
             "description": "Configurar id_turno_otro_medico con un turno asignado a otro medico; responde 403 sin cambiar estado ni notificar.",
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"diagnostico\": \"Intento sobre turno ajeno\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diagnostico\": \"Intento sobre turno ajeno\"\n}"
+            },
             "url": "{{base_url}}/turnos/{{id_turno_otro_medico}}/atender"
           }
         }
@@ -2713,8 +3390,20 @@
           "request": {
             "description": "Usa el turno cuyo historial se creo en PATCH /turnos/:id/atender. Responde 409 y no cambia nuevamente el estado ni genera otra notificacion.",
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }, { "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Intento duplicado\"\n}" },
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{medico_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_turno\": {{turno_atender_id}},\n  \"diagnostico\": \"Intento duplicado\"\n}"
+            },
             "url": "{{base_url}}/historial-clinico"
           }
         },
@@ -2785,134 +3474,215 @@
           "item": [
             {
               "name": "01 - Capturar notificaciones de B antes",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.collectionVariables.unset('f09_notificaciones_b_antes');",
-                  "pm.test('B autenticado: listado propio', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });",
-                  "const lista = pm.response.json().datos;",
-                  "if (Array.isArray(lista)) pm.collectionVariables.set('f09_notificaciones_b_antes', JSON.stringify(lista.sort((a, b) => a.id - b.id)));"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('f09_notificaciones_b_antes');",
+                      "pm.test('B autenticado: listado propio', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().datos).to.be.an('array'); });",
+                      "const lista = pm.response.json().datos;",
+                      "if (Array.isArray(lista)) pm.collectionVariables.set('f09_notificaciones_b_antes', JSON.stringify(lista.sort((a, b) => a.id - b.id)));"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{medico_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones"
               }
             },
             {
               "name": "02 - Capturar pendientes propias de A",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.collectionVariables.unset('f09_pendientes_a_antes');",
-                  "pm.test('A tiene pendientes para el caso positivo', () => {",
-                  "  pm.response.to.have.status(200);",
-                  "  const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
-                  "  const pendientes = lista.filter(n => n.leida === 0).length;",
-                  "  pm.collectionVariables.set('f09_pendientes_a_antes', pendientes);",
-                  "  pm.expect(pendientes).to.be.above(0);",
-                  "});"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.unset('f09_pendientes_a_antes');",
+                      "pm.test('A tiene pendientes para el caso positivo', () => {",
+                      "  pm.response.to.have.status(200);",
+                      "  const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
+                      "  const pendientes = lista.filter(n => n.leida === 0).length;",
+                      "  pm.collectionVariables.set('f09_pendientes_a_antes', pendientes);",
+                      "  pm.expect(pendientes).to.be.above(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{paciente_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones"
               }
             },
             {
               "name": "03 - Marcar todas las pendientes propias de A",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('200 uniforme y cantidad igual a las pendientes propias', () => {",
-                  "  pm.response.to.have.status(200); const json = pm.response.json();",
-                  "  pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok');",
-                  "  const cantidad = json.datos.cantidad_actualizada;",
-                  "  pm.expect(Number.isSafeInteger(cantidad)).to.eql(true); pm.expect(cantidad).to.be.above(0);",
-                  "  pm.expect(pm.collectionVariables.get('f09_pendientes_a_antes')).to.not.eql(undefined);",
-                  "  pm.expect(cantidad).to.eql(Number(pm.collectionVariables.get('f09_pendientes_a_antes')));",
-                  "});"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('200 uniforme y cantidad igual a las pendientes propias', () => {",
+                      "  pm.response.to.have.status(200); const json = pm.response.json();",
+                      "  pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok');",
+                      "  const cantidad = json.datos.cantidad_actualizada;",
+                      "  pm.expect(Number.isSafeInteger(cantidad)).to.eql(true); pm.expect(cantidad).to.be.above(0);",
+                      "  pm.expect(pm.collectionVariables.get('f09_pendientes_a_antes')).to.not.eql(undefined);",
+                      "  pm.expect(cantidad).to.eql(Number(pm.collectionVariables.get('f09_pendientes_a_antes')));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "description": "Cualquier rol autenticado. Sin cuerpo ni parametros de usuario. Ejemplo: { codigo: 200, estado: 'ok', datos: { cantidad_actualizada: 3 } }. La cantidad proviene de affectedRows; afecta todas las pendientes propias, no solo diez.",
                 "method": "PATCH",
-                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{paciente_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones/leidas"
               },
-              "response": [{
-                "name": "Pendientes propias actualizadas",
-                "status": "OK",
-                "code": 200,
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 3 }\n}"
-              }]
+              "response": [
+                {
+                  "name": "Pendientes propias actualizadas",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 3 }\n}"
+                }
+              ]
             },
             {
               "name": "04 - Confirmar A sin pendientes",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('Todas las notificaciones de A estan leidas', () => { pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array'); pm.expect(lista.every(n => n.leida === 1)).to.eql(true); });"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Todas las notificaciones de A estan leidas', () => { pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array'); pm.expect(lista.every(n => n.leida === 1)).to.eql(true); });"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{paciente_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones"
               }
             },
             {
               "name": "05 - Marcar sin pendientes devuelve cero",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('Repeticion idempotente: 200 y cantidad 0', () => { pm.response.to.have.status(200); const json = pm.response.json(); pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok'); pm.expect(json.datos).to.eql({ cantidad_actualizada: 0 }); });"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Repeticion idempotente: 200 y cantidad 0', () => { pm.response.to.have.status(200); const json = pm.response.json(); pm.expect(json.codigo).to.eql(200); pm.expect(json.estado).to.eql('ok'); pm.expect(json.datos).to.eql({ cantidad_actualizada: 0 }); });"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "PATCH",
-                "header": [{ "key": "Authorization", "value": "Bearer {{paciente_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{paciente_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones/leidas"
               },
-              "response": [{
-                "name": "Ninguna pendiente",
-                "status": "OK",
-                "code": 200,
-                "header": [{ "key": "Content-Type", "value": "application/json" }],
-                "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 0 }\n}"
-              }]
+              "response": [
+                {
+                  "name": "Ninguna pendiente",
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"codigo\": 200,\n  \"estado\": \"ok\",\n  \"datos\": { \"cantidad_actualizada\": 0 }\n}"
+                }
+              ]
             },
             {
               "name": "06 - Comprobar aislamiento de B",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('B conserva sus registros y estados', () => {",
-                  "  pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
-                  "  const captura = pm.collectionVariables.get('f09_notificaciones_b_antes'); pm.expect(captura).to.be.a('string');",
-                  "  pm.expect(lista.sort((a, b) => a.id - b.id)).to.deep.eql(JSON.parse(captura));",
-                  "});"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('B conserva sus registros y estados', () => {",
+                      "  pm.response.to.have.status(200); const lista = pm.response.json().datos; pm.expect(lista).to.be.an('array');",
+                      "  const captura = pm.collectionVariables.get('f09_notificaciones_b_antes'); pm.expect(captura).to.be.a('string');",
+                      "  pm.expect(lista.sort((a, b) => a.id - b.id)).to.deep.eql(JSON.parse(captura));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
-                "header": [{ "key": "Authorization", "value": "Bearer {{medico_token}}" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{medico_token}}"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones"
               }
             },
             {
               "name": "07 - Marcado masivo sin autenticacion",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('401 uniforme sin token', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('401 uniforme sin token', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
+                    ]
+                  }
+                }
+              ],
               "request": {
-                "auth": { "type": "noauth" },
+                "auth": {
+                  "type": "noauth"
+                },
                 "method": "PATCH",
                 "header": [],
                 "url": "{{base_url}}/notificaciones/leidas"
@@ -2920,15 +3690,25 @@
             },
             {
               "name": "08 - Marcado masivo con token invalido",
-              "event": [{
-                "listen": "test",
-                "script": { "type": "text/javascript", "exec": [
-                  "pm.test('401 uniforme con token invalido', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
-                ] }
-              }],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('401 uniforme con token invalido', () => { pm.response.to.have.status(401); const json = pm.response.json(); pm.expect(json.codigo).to.eql(401); pm.expect(json.estado).to.be.a('string'); pm.expect(json).to.have.property('datos', null); });"
+                    ]
+                  }
+                }
+              ],
               "request": {
                 "method": "PATCH",
-                "header": [{ "key": "Authorization", "value": "Bearer token-invalido" }],
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer token-invalido"
+                  }
+                ],
                 "url": "{{base_url}}/notificaciones/leidas"
               }
             }

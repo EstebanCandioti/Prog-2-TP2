@@ -80,7 +80,7 @@ export class AgendaOperadorComponent implements OnInit, OnDestroy {
   readonly fechaConsulta = signal<string | null>(null);
   readonly medicos = signal<AgendaPorMedico[]>([]);
   readonly abiertos = signal<ReadonlySet<number>>(new Set());
-  readonly versionesTurnos = signal<Record<number, number>>({});
+  readonly versionesTurnos = signal<Partial<Record<number, number>>>({});
   readonly cargando = signal(false);
   readonly cargandoSedes = signal(true);
   readonly error = signal('');

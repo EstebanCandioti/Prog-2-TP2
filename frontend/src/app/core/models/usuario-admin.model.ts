@@ -11,6 +11,10 @@ export interface UsuarioAdmin extends Usuario {
   especialidades?: EspecialidadAsignada[];
 }
 
+export interface DetalleUsuarioAdmin extends UsuarioAdmin {
+  especialidades: EspecialidadAsignada[];
+}
+
 export interface ListadoUsuarios {
   items: UsuarioAdmin[];
   total: number;

@@ -251,15 +251,6 @@ export class UsuariosComponent implements OnInit {
   }
 
   editarUsuario(usuario: UsuarioAdmin): void {
-    if (usuario.rol === 'medico') {
-      this.snackBar.open(
-        'No se puede editar un médico de forma segura: el backend no devuelve sus especialidades asignadas.',
-        'Cerrar',
-        { duration: 7000 }
-      );
-      return;
-    }
-
     this.cargandoDetalleId.set(usuario.id);
     this.usuariosApi.obtener(usuario.id).subscribe({
       next: (respuesta) => {
@@ -282,7 +273,7 @@ export class UsuariosComponent implements OnInit {
           rol: detalle.rol,
           idSede: detalle.id_sede,
           idCobertura: detalle.id_cobertura,
-          idsEspecialidades: [],
+          idsEspecialidades: detalle.especialidades.map((especialidad) => especialidad.id),
           password: ''
         });
         this.configurarValidadores('edicion');

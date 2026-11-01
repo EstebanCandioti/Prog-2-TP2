@@ -43,6 +43,30 @@
     {
       "key": "id_medico",
       "value": "3"
+    },
+    {
+      "key": "admin_dni",
+      "value": "90000001"
+    },
+    {
+      "key": "admin_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "operador_dni",
+      "value": "90000007"
+    },
+    {
+      "key": "operador_password",
+      "value": "Demo2026!"
+    },
+    {
+      "key": "medico_dni",
+      "value": "90000004"
+    },
+    {
+      "key": "medico_password",
+      "value": "Demo2026!"
     }
   ],
   "item": [
@@ -54,9 +78,10 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos && json.datos.token) {",
-              "  pm.collectionVariables.set('admin_token', json.datos.token);",
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('admin_token', login.token);",
+              "  pm.collectionVariables.set('id_admin', login.usuario.id);",
               "}"
             ]
           }
@@ -72,7 +97,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"18222333\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+          "raw": "{\n  \"dni\": \"{{admin_dni}}\",\n  \"password\": \"{{admin_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -85,9 +110,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos && json.datos.token) {",
-              "  pm.collectionVariables.set('operador_token', json.datos.token);",
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('operador_token', login.token);",
+              "  pm.collectionVariables.set('id_operador', login.usuario.id);",
+              "  pm.collectionVariables.set('id_sede', login.usuario.id_sede);",
               "}"
             ]
           }
@@ -103,7 +130,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"15200548\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+          "raw": "{\n  \"dni\": \"{{operador_dni}}\",\n  \"password\": \"{{operador_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -116,9 +143,10 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const json = pm.response.json();",
-              "if (json.datos && json.datos.token) {",
-              "  pm.collectionVariables.set('medico_token', json.datos.token);",
+              "const login = pm.response.json().datos;",
+              "if (login?.token) {",
+              "  pm.collectionVariables.set('medico_token', login.token);",
+              "  pm.collectionVariables.set('id_medico', login.usuario.id);",
               "}"
             ]
           }
@@ -134,7 +162,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"dni\": \"20111222\",\n  \"password\": \"cambiar_por_password_real\"\n}"
+          "raw": "{\n  \"dni\": \"{{medico_dni}}\",\n  \"password\": \"{{medico_password}}\"\n}"
         },
         "url": "{{base_url}}/auth/login"
       }
@@ -408,8 +436,14 @@
         "description": "POST /usuarios. Solo admin autenticado. Admin sin sede ni especialidades. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400 datos invalidos, 401 sin token, 403 otro rol, 409 DNI o email duplicado. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -424,8 +458,14 @@
         "description": "POST /usuarios. Solo admin autenticado. Operador requiere sede existente y no admite especialidades. Exito: 201 con usuario y especialidades: []; sin password ni token. Errores: 400, 401, 403, 409. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
@@ -440,8 +480,14 @@
         "description": "POST /usuarios. Solo admin autenticado. Medico requiere sede y una o mas especialidades existentes, sin duplicados. Exito: 201 con usuario y especialidades [{id, descripcion}]; sin password ni token. Errores: 400, 401, 403, 409. Audita el ALTA despues del commit; si falla la auditoria, el alta permanece guardada.",
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{admin_token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
