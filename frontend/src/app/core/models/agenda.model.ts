@@ -9,7 +9,13 @@ export interface AgendaPayload {
 
 export interface Agenda extends AgendaPayload {
   id: number;
+  medico_nombre?: string;
+  medico_apellido?: string;
+  especialidad_descripcion?: string;
+  sede_nombre?: string;
 }
+
+export type AgendaRequest = AgendaPayload;
 
 export interface AgendaListado extends Agenda {
   medico_nombre: string;

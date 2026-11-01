@@ -1,0 +1,321 @@
+<main class="usuarios-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h1>Usuarios</h1>
+      <p class="subtitle">Buscá, filtrá y administrá las cuentas de la clínica.</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="nuevoUsuario()"
+      [disabled]="formularioVisible() || cargandoCatalogos()"
+    >
+      <mat-icon>person_add</mat-icon>
+      Nuevo usuario
+    </button>
+  </header>
+
+  @if (errorCatalogos()) {
+    <div class="catalog-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorCatalogos() }}</span>
+      <button mat-button type="button" (click)="cargarCatalogos()">Reintentar</button>
+    </div>
+  }
+
+  @if (formularioVisible()) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ usuarioEnEdicion() ? 'Editar usuario' : 'Nuevo usuario' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="formulario" (ngSubmit)="guardarUsuario()" class="usuario-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" maxlength="30" autocomplete="given-name" />
+            @if (formulario.controls.nombre.invalid && formulario.controls.nombre.touched) {
+              <mat-error>Ingresá un nombre de hasta 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Apellido</mat-label>
+            <input matInput formControlName="apellido" maxlength="30" autocomplete="family-name" />
+            @if (formulario.controls.apellido.invalid && formulario.controls.apellido.touched) {
+              <mat-error>Ingresá un apellido de hasta 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>DNI</mat-label>
+            <input
+              matInput
+              formControlName="dni"
+              maxlength="8"
+              inputmode="numeric"
+              [readonly]="usuarioEnEdicion() !== null"
+            />
+            @if (formulario.controls.dni.invalid && formulario.controls.dni.touched) {
+              <mat-error>El DNI debe tener 7 u 8 dígitos.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de nacimiento</mat-label>
+            <input matInput type="date" [max]="fechaMaxima" formControlName="fechaNacimiento" />
+            @if (formulario.controls.fechaNacimiento.invalid && formulario.controls.fechaNacimiento.touched) {
+              <mat-error>Ingresá una fecha válida que no sea futura.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" maxlength="30" autocomplete="email" />
+            @if (formulario.controls.email.invalid && formulario.controls.email.touched) {
+              <mat-error>Ingresá un email válido de hasta 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input
+              matInput
+              type="tel"
+              formControlName="telefono"
+              maxlength="10"
+              inputmode="numeric"
+              autocomplete="tel"
+            />
+            @if (formulario.controls.telefono.invalid && formulario.controls.telefono.touched) {
+              <mat-error>El teléfono debe tener entre 7 y 10 dígitos.</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de usuario</mat-label>
+            <mat-select formControlName="rol" (selectionChange)="cambiarRol()">
+              @for (rol of usuarioEnEdicion() ? roles : rolesDeAlta; track rol.valor) {
+                <mat-option [value]="rol.valor">{{ rol.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (formulario.controls.rol.value === 'operador' || formulario.controls.rol.value === 'medico') {
+            <mat-form-field appearance="outline">
+              <mat-label>Sede</mat-label>
+              <mat-select formControlName="idSede">
+                @for (sede of sedes(); track sede.id) {
+                  <mat-option [value]="sede.id">{{ sede.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.idSede.invalid && formulario.controls.idSede.touched) {
+                <mat-error>Seleccioná una sede.</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          @if (formulario.controls.rol.value === 'medico') {
+            <mat-form-field appearance="outline" class="wide-field">
+              <mat-label>Especialidades</mat-label>
+              <mat-select formControlName="idsEspecialidades" multiple>
+                @for (especialidad of especialidades(); track especialidad.id) {
+                  <mat-option [value]="especialidad.id">{{ especialidad.descripcion }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.idsEspecialidades.invalid && formulario.controls.idsEspecialidades.touched) {
+                <mat-error>Seleccioná al menos una especialidad.</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          @if (formulario.controls.rol.value === 'paciente') {
+            <mat-form-field appearance="outline">
+              <mat-label>Cobertura</mat-label>
+              <mat-select formControlName="idCobertura">
+                @for (cobertura of coberturas(); track cobertura.id) {
+                  <mat-option [value]="cobertura.id">{{ cobertura.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (formulario.controls.idCobertura.invalid && formulario.controls.idCobertura.touched) {
+                <mat-error>Seleccioná una cobertura.</mat-error>
+              }
+            </mat-form-field>
+          }
+
+          @if (!usuarioEnEdicion()) {
+            <mat-form-field appearance="outline">
+              <mat-label>Contraseña inicial</mat-label>
+              <input matInput type="password" formControlName="password" autocomplete="new-password" />
+              @if (formulario.controls.password.invalid && formulario.controls.password.touched) {
+                <mat-error>La contraseña debe tener entre 8 y 72 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          } @else {
+            <p class="form-hint">El DNI y la contraseña no se pueden modificar desde esta pantalla.</p>
+          }
+
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarFormulario()" [disabled]="guardando()">
+              Cancelar
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="guardando() || cargandoCatalogos()"
+            >
+              @if (guardando()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                {{ usuarioEnEdicion() ? 'Guardar cambios' : 'Crear usuario' }}
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="list-card">
+    <mat-card-content>
+      <form [formGroup]="filtros" (ngSubmit)="aplicarFiltros()" class="filter-form">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar por nombre o apellido</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput formControlName="busqueda" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de usuario</mat-label>
+          <mat-select formControlName="rol">
+            <mat-option value="">Todos</mat-option>
+            @for (rol of roles; track rol.valor) {
+              <mat-option [value]="rol.valor">{{ rol.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Sede</mat-label>
+          <mat-select formControlName="idSede">
+            <mat-option [value]="null">Todas</mat-option>
+            @for (sede of sedes(); track sede.id) {
+              <mat-option [value]="sede.id">{{ sede.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="filter-actions">
+          <button mat-button type="button" (click)="limpiarFiltros()" [disabled]="cargando()">
+            Limpiar
+          </button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="cargando()">
+            <mat-icon>filter_list</mat-icon>
+            Filtrar
+          </button>
+        </div>
+      </form>
+
+      @if (cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando usuarios…</span>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarUsuarios()">Reintentar</button>
+        </div>
+      } @else if (usuarios().length === 0) {
+        <div class="state-message">
+          <mat-icon>group_off</mat-icon>
+          <span>No se encontraron usuarios con esos filtros.</span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Tipo</th>
+                <th>Sede / Cobertura</th>
+                <th class="actions-heading">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (usuario of usuarios(); track usuario.id) {
+                <tr>
+                  <td data-label="Usuario">{{ usuario.apellido }}, {{ usuario.nombre }}</td>
+                  <td data-label="DNI">{{ usuario.dni }}</td>
+                  <td data-label="Email">{{ usuario.email }}</td>
+                  <td data-label="Tipo">{{ nombreRol(usuario.rol) }}</td>
+                  <td data-label="Sede / Cobertura">
+                    @if (usuario.rol === 'paciente') {
+                      {{ nombreCobertura(usuario.id_cobertura) }}
+                    } @else if (usuario.rol === 'medico' || usuario.rol === 'operador') {
+                      {{ nombreSede(usuario.id_sede) }}
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td class="row-actions" data-label="Acciones">
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Editar usuario"
+                      (click)="editarUsuario(usuario)"
+                      [disabled]="formularioVisible() || cargandoDetalleId() !== null || eliminandoId() !== null || cargandoCatalogos()"
+                    >
+                      @if (cargandoDetalleId() === usuario.id) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                      } @else {
+                        <mat-icon>edit</mat-icon>
+                      }
+                    </button>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      aria-label="Eliminar usuario"
+                      (click)="eliminarUsuario(usuario)"
+                      [disabled]="formularioVisible() || cargandoDetalleId() !== null || eliminandoId() !== null"
+                    >
+                      @if (eliminandoId() === usuario.id) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                      } @else {
+                        <mat-icon>delete</mat-icon>
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <nav class="pagination" aria-label="Paginación de usuarios">
+          <span>Página {{ pagina() }} de {{ totalPaginas() }} · {{ totalUsuarios() }} usuarios</span>
+          <div>
+            <button mat-button type="button" (click)="paginaAnterior()" [disabled]="pagina() <= 1 || cargando()">
+              <mat-icon>chevron_left</mat-icon>
+              Anterior
+            </button>
+            <button
+              mat-button
+              type="button"
+              (click)="paginaSiguiente()"
+              [disabled]="pagina() >= totalPaginas() || cargando()"
+            >
+              Siguiente
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </nav>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

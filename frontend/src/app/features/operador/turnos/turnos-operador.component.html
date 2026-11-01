@@ -1,0 +1,254 @@
+<main class="operator-appointments-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Área de operaciones</p>
+      <h1>Turnos de la sede</h1>
+      <p class="subtitle">Consultá y gestioná los turnos de {{ nombreSedePropia() }}.</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      (click)="abrirAsignacion()"
+      [disabled]="!tieneSedeAsignada() || cargandoAgendas() || medicos().length === 0"
+    >
+      <mat-icon>add</mat-icon>
+      Asignar turno
+    </button>
+  </header>
+
+  @if (errorAgendas()) {
+    <p class="inline-error" role="alert">{{ errorAgendas() }}</p>
+  }
+  @if (errorSedes()) {
+    <p class="inline-error" role="alert">{{ errorSedes() }}</p>
+  }
+
+  <section class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha</mat-label>
+      <input matInput type="date" [value]="fechaSeleccionada()" (change)="cambiarFecha($event)" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Médico</mat-label>
+      <mat-select [value]="idMedicoSeleccionado()" (selectionChange)="cambiarMedicoFiltro($event.value)">
+        <mat-option [value]="null">Todos los médicos</mat-option>
+        @for (medico of medicos(); track medico.id) {
+          <mat-option [value]="medico.id">{{ medico.apellido }}, {{ medico.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="estadoSeleccionado()" (selectionChange)="cambiarEstado($event.value)">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="confirmado">Confirmados</mat-option>
+        <mat-option value="cancelado">Cancelados</mat-option>
+        <mat-option value="atendido">Atendidos</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </section>
+
+  @if (mostrarFormulario()) {
+    <mat-card class="assignment-card">
+      <mat-card-header>
+        <mat-card-title>Asignar turno</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <section class="patient-search">
+          <h2>1. Buscar paciente</h2>
+          <form [formGroup]="formularioPaciente" (ngSubmit)="buscarPacientes()" class="patient-search-form">
+            <mat-form-field appearance="outline">
+              <mat-label>DNI o apellido</mat-label>
+              <input matInput formControlName="busqueda" maxlength="80" [disabled]="cargandoPacientes()" />
+              @if (formularioPaciente.controls.busqueda.invalid && formularioPaciente.controls.busqueda.touched) {
+                <mat-error>Ingresá un DNI o apellido.</mat-error>
+              }
+            </mat-form-field>
+            <button mat-stroked-button type="submit" [disabled]="cargandoPacientes()">
+              @if (cargandoPacientes()) { <mat-spinner diameter="18"></mat-spinner> } @else { Buscar }
+            </button>
+          </form>
+          @if (errorPacientes()) {
+            <p class="inline-error" role="alert">{{ errorPacientes() }}</p>
+          }
+          @if (pacientesEncontrados().length > 0) {
+            <mat-form-field appearance="outline" class="patient-select">
+              <mat-label>Paciente</mat-label>
+              <mat-select [value]="pacienteSeleccionado()?.id ?? null" (selectionChange)="seleccionarPacientePorId($event.value)">
+                @for (paciente of pacientesEncontrados(); track paciente.id) {
+                  <mat-option [value]="paciente.id">
+                    {{ paciente.apellido }}, {{ paciente.nombre }} · DNI {{ paciente.dni }}
+                    · {{ paciente.cobertura_nombre ?? 'Sin cobertura' }}
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <div class="patient-pagination" aria-label="Paginación de pacientes">
+              <span>{{ rangoPacientes() }}</span>
+              @if (totalPaginasPacientes() > 1) {
+                <div class="pagination-controls">
+                  <button
+                    mat-button
+                    type="button"
+                    (click)="cambiarPaginaPacientes(paginaPacientes() - 1)"
+                    [disabled]="paginaPacientes() === 1 || cargandoPacientes()"
+                  >
+                    Anterior
+                  </button>
+                  <span>Página {{ paginaPacientes() }} de {{ totalPaginasPacientes() }}</span>
+                  <button
+                    mat-button
+                    type="button"
+                    (click)="cambiarPaginaPacientes(paginaPacientes() + 1)"
+                    [disabled]="paginaPacientes() >= totalPaginasPacientes() || cargandoPacientes()"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              }
+            </div>
+          }
+          @if (pacienteSeleccionado(); as paciente) {
+            <p class="selected-patient">
+              Seleccionado: <strong>{{ paciente.nombre }} {{ paciente.apellido }}</strong>
+              · Cobertura: {{ paciente.cobertura_nombre ?? 'Sin cobertura' }}
+            </p>
+          }
+        </section>
+
+        <form [formGroup]="formularioTurno" (ngSubmit)="guardarTurno()" class="booking-form">
+          <h2>2. Elegir turno · Sede fija: {{ nombreSedePropia() }}</h2>
+          <div class="booking-fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Médico</mat-label>
+              <mat-select formControlName="idMedico" (selectionChange)="cambiarMedico($event.value)">
+                @for (medico of medicos(); track medico.id) {
+                  <mat-option [value]="medico.id">{{ medico.apellido }}, {{ medico.nombre }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Especialidad</mat-label>
+              <mat-select formControlName="idEspecialidad" (selectionChange)="cambiarEspecialidad($event.value)">
+                @for (especialidad of especialidadesDisponibles(); track especialidad.id) {
+                  <mat-option [value]="especialidad.id">{{ especialidad.descripcion }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha disponible</mat-label>
+              <mat-select formControlName="fecha" (selectionChange)="cambiarFechaTurno($event.value)" [disabled]="cargandoFechas()">
+                @for (fecha of fechasDisponibles(); track fecha) {
+                  <mat-option [value]="fecha">{{ formatearFecha(fecha) }}</mat-option>
+                }
+              </mat-select>
+              @if (cargandoFechas()) { <mat-hint>Cargando fechas…</mat-hint> }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Horario disponible</mat-label>
+              <mat-select formControlName="hora" [disabled]="cargandoHorarios()">
+                @for (horario of horariosDisponibles(); track horario.id_agenda + '-' + horario.hora) {
+                  <mat-option [value]="horario.hora">{{ horario.hora }}</mat-option>
+                }
+              </mat-select>
+              @if (cargandoHorarios()) { <mat-hint>Cargando horarios…</mat-hint> }
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="note-field">
+              <mat-label>Nota para la consulta</mat-label>
+              <textarea matInput rows="2" maxlength="255" formControlName="nota"></textarea>
+              @if (formularioTurno.controls.nota.invalid && formularioTurno.controls.nota.touched) {
+                <mat-error>La nota es obligatoria y admite hasta 255 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          @if (errorDisponibilidad()) {
+            <p class="inline-error" role="alert">{{ errorDisponibilidad() }}</p>
+          } @else if (formularioTurno.controls.idEspecialidad.value !== null && !cargandoFechas() && fechasDisponibles().length === 0) {
+            <p class="muted">El médico no tiene fechas disponibles para esta especialidad en tu sede.</p>
+          } @else if (formularioTurno.controls.fecha.value && !cargandoHorarios() && horariosDisponibles().length === 0) {
+            <p class="muted">No hay horarios libres para esa fecha.</p>
+          }
+          @if (errorFormulario()) {
+            <p class="inline-error" role="alert">{{ errorFormulario() }}</p>
+          }
+          @if (pacienteSeleccionado() && formularioTurno.controls.fecha.value && formularioTurno.controls.hora.value) {
+            <section class="booking-summary">
+              <h3>Resumen</h3>
+              <p>
+                {{ pacienteSeleccionado()?.nombre }} {{ pacienteSeleccionado()?.apellido }}
+                · {{ medicoSeleccionadoNombre() }}
+                · {{ especialidadSeleccionadaNombre() }}
+                · {{ formatearFecha(formularioTurno.controls.fecha.value!) }}
+                · {{ formularioTurno.controls.hora.value }}
+                · Cobertura: {{ pacienteSeleccionado()?.cobertura_nombre ?? 'Sin cobertura' }}
+              </p>
+            </section>
+          }
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cerrarAsignacion()" [disabled]="guardandoTurno()">Cancelar</button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="submit"
+              [disabled]="guardandoTurno() || !pacienteSeleccionado() || formularioTurno.invalid"
+            >
+              @if (guardandoTurno()) { <mat-spinner diameter="18"></mat-spinner> } @else { Confirmar turno }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <mat-card class="appointments-card">
+    <mat-card-content>
+      @if (cargando()) {
+        <div class="state-message" role="status"><mat-spinner diameter="34"></mat-spinner><span>Cargando turnos…</span></div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon><span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarTurnos()">Reintentar</button>
+        </div>
+      } @else if (turnos().length === 0) {
+        <div class="state-message"><mat-icon>event_busy</mat-icon><span>No hay turnos para esta selección.</span></div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Hora</th><th>Paciente</th><th>Edad</th><th>Médico</th><th>Especialidad</th><th>Estado</th><th>Nota</th><th class="action-cell">Acción</th></tr>
+            </thead>
+            <tbody>
+              @for (turno of turnos(); track turno.id) {
+                <tr>
+                  <td class="time-cell">{{ turno.hora }}</td>
+                  <td>{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }}</td>
+                  <td>{{ calcularEdad(turno.paciente_fecha_nacimiento) }}</td>
+                  <td>{{ turno.medico_nombre }} {{ turno.medico_apellido }}</td>
+                  <td>{{ turno.especialidad_descripcion }}</td>
+                  <td><span class="status-badge" [class]="'status-badge status-' + turno.estado">{{ etiquetaEstado(turno.estado) }}</span></td>
+                  <td>
+                    @if (turno.nota) {
+                      <details class="notes"><summary>Ver nota</summary><p>{{ turno.nota }}</p></details>
+                    } @else { <span class="muted">Sin nota</span> }
+                  </td>
+                  <td class="action-cell">
+                    @if (turno.estado === 'confirmado') {
+                      <button class="cancel-appointment-button" mat-stroked-button type="button" (click)="cancelarTurno(turno)" [disabled]="guardandoId() !== null">
+                        @if (cancelandoId() === turno.id) {
+                          <mat-spinner diameter="18"></mat-spinner>
+                        } @else {
+                          Cancelar
+                        }
+                      </button>
+                    } @else { <span class="muted">—</span> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

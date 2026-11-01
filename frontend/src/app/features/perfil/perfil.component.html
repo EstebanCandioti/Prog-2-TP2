@@ -24,14 +24,106 @@
           <p>{{ usuario.rol }}</p>
         </div>
       </div>
-      <dl class="profile-details">
-        <div><dt>DNI</dt><dd>{{ usuario.dni }}</dd></div>
-        <div><dt>Correo electrónico</dt><dd>{{ usuario.email }}</dd></div>
-        <div><dt>Fecha de nacimiento</dt><dd>{{ usuario.fecha_nacimiento | date:'dd/MM/yyyy' }}</dd></div>
-        <div><dt>Teléfono</dt><dd>{{ usuario.telefono || 'No informado' }}</dd></div>
-        <div><dt>Cobertura</dt><dd>{{ usuario.id_cobertura ?? 'No informada' }}</dd></div>
-        <div><dt>Sede</dt><dd>{{ usuario.id_sede ?? 'No asignada' }}</dd></div>
-      </dl>
+      @if (esPaciente && !editando()) {
+        <div class="profile-actions">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="comenzarEdicion()"
+            [disabled]="cargandoCoberturas() || errorCoberturas().length > 0"
+          >
+            <mat-icon>edit</mat-icon>
+            Editar mis datos
+          </button>
+        </div>
+      }
+
+      @if (editando()) {
+        <form [formGroup]="formulario" (ngSubmit)="guardarCambios()" class="profile-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input matInput [value]="usuario.nombre" readonly />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Apellido</mat-label>
+            <input matInput [value]="usuario.apellido" readonly />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>DNI</mat-label>
+            <input matInput [value]="usuario.dni" readonly />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de nacimiento</mat-label>
+            <input matInput [value]="usuario.fecha_nacimiento | date: 'dd/MM/yyyy'" readonly />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput type="email" formControlName="email" maxlength="30" autocomplete="email" />
+            @if (formulario.controls.email.invalid && formulario.controls.email.touched) {
+              <mat-error>Ingresá un correo válido de hasta 30 caracteres.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput type="tel" formControlName="telefono" maxlength="10" inputmode="numeric" />
+            @if (formulario.controls.telefono.invalid && formulario.controls.telefono.touched) {
+              <mat-error>El teléfono debe tener entre 7 y 10 dígitos.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Cobertura</mat-label>
+            <mat-select formControlName="idCobertura">
+              @for (cobertura of coberturas(); track cobertura.id) {
+                <mat-option [value]="cobertura.id">{{ cobertura.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (formulario.controls.idCobertura.invalid && formulario.controls.idCobertura.touched) {
+              <mat-error>Seleccioná una cobertura.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nueva contraseña (opcional)</mat-label>
+            <input matInput type="password" formControlName="password" autocomplete="new-password" />
+            @if (formulario.controls.password.hasError('minlength') && formulario.controls.password.touched) {
+              <mat-error>Debe tener al menos 8 caracteres.</mat-error>
+            } @else if (formulario.controls.password.hasError('maxBytes')) {
+              <mat-error>No puede superar los 72 bytes.</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Repetir nueva contraseña</mat-label>
+            <input matInput type="password" formControlName="confirmarPassword" autocomplete="new-password" />
+          </mat-form-field>
+          @if (errorFormulario()) {
+            <p class="form-error" role="alert">{{ errorFormulario() }}</p>
+          }
+          <div class="form-actions">
+            <button mat-button type="button" (click)="cancelarEdicion()" [disabled]="guardando()">
+              Cancelar
+            </button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="guardando()">
+              @if (guardando()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                Guardar cambios
+              }
+            </button>
+          </div>
+        </form>
+      } @else {
+        @if (esPaciente && errorCoberturas()) {
+          <p class="form-error" role="alert">{{ errorCoberturas() }}</p>
+        }
+        <dl class="profile-details">
+          <div><dt>DNI</dt><dd>{{ usuario.dni }}</dd></div>
+          <div><dt>Correo electrónico</dt><dd>{{ usuario.email }}</dd></div>
+          <div><dt>Fecha de nacimiento</dt><dd>{{ usuario.fecha_nacimiento | date:'dd/MM/yyyy' }}</dd></div>
+          <div><dt>Teléfono</dt><dd>{{ usuario.telefono || 'No informado' }}</dd></div>
+          <div><dt>Cobertura</dt><dd>{{ nombreCobertura(usuario.id_cobertura) }}</dd></div>
+          <div><dt>Sede</dt><dd>{{ usuario.id_sede ?? 'No asignada' }}</dd></div>
+        </dl>
+      }
     </mat-card>
   }
 </section>

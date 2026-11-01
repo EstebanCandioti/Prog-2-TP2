@@ -18,6 +18,14 @@ export class AgendaService {
     return this.http.get<ApiResponse<AgendaListado[]>>(this.url, { params });
   }
 
+  listarPropia(fecha?: string): Observable<ApiResponse<AgendaListado[]>> {
+    return fecha ? this.listar(fecha) : this.http.get<ApiResponse<AgendaListado[]>>(this.url);
+  }
+
+  listarOperador(): Observable<ApiResponse<AgendaListado[]>> {
+    return this.http.get<ApiResponse<AgendaListado[]>>(this.url);
+  }
+
   crear(agenda: AgendaPayload): Observable<ApiResponse<Agenda>> {
     return this.http.post<ApiResponse<Agenda>>(this.url, agenda);
   }

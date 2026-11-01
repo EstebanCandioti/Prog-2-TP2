@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ApiResponse } from '../models/api-response.model';
-import { DatosAtencionTurno, SolicitudTurno, SolicitudTurnoOperador, Turno, TurnoMedico } from '../models/turno.model';
+import { DatosAtencionTurno, HistorialClinico, ListadoTurnosPaciente, SolicitudTurno, SolicitudTurnoOperador, TipoListadoTurnos, Turno, TurnoMedico } from '../models/turno.model';
 
 @Injectable({ providedIn: 'root' })
 export class TurnoService {
@@ -18,6 +18,26 @@ export class TurnoService {
     let params = new HttpParams().set('fecha', fecha);
     if (idSede !== undefined) params = params.set('id_sede', idSede);
     return this.http.get<ApiResponse<TurnoMedico[]>>(`${environment.apiUrl}/turnos/medico`, { params });
+  }
+
+  listarMisTurnos(tipo: TipoListadoTurnos = 'todos', pagina = 1): Observable<ApiResponse<ListadoTurnosPaciente>> {
+    const params = new HttpParams().set('tipo', tipo).set('pagina', pagina);
+    return this.http.get<ApiResponse<ListadoTurnosPaciente>>(`${environment.apiUrl}/turnos/mis-turnos`, { params });
+  }
+
+  obtenerHistorial(id: number): Observable<ApiResponse<HistorialClinico>> {
+    return this.http.get<ApiResponse<HistorialClinico>>(`${environment.apiUrl}/turnos/${id}/historial`);
+  }
+
+  listarTurnosMedico(fecha: string, idSede?: number): Observable<ApiResponse<TurnoMedico[]>> {
+    return this.listarMedico(fecha, idSede);
+  }
+
+  listarTurnosOperador(fecha: string, idMedico?: number, estado?: string): Observable<ApiResponse<TurnoMedico[]>> {
+    let params = new HttpParams().set('fecha', fecha);
+    if (idMedico !== undefined) params = params.set('id_medico', idMedico);
+    if (estado) params = params.set('estado', estado);
+    return this.http.get<ApiResponse<TurnoMedico[]>>(`${environment.apiUrl}/turnos/sede`, { params });
   }
 
   listarConfirmadosSede(fecha: string, idMedico: number): Observable<ApiResponse<TurnoMedico[]>> {

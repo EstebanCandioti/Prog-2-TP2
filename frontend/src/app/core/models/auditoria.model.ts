@@ -10,6 +10,7 @@ export interface RegistroAuditoria {
 
 export interface FiltroAuditoria {
   idUsuario?: number;
+  idEntidad?: number;
   entidad?: string;
   fechaDesde?: string;
   fechaHasta?: string;

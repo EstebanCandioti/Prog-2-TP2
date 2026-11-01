@@ -1,0 +1,165 @@
+<main class="my-appointments-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Área de paciente</p>
+      <h1>Mis turnos</h1>
+      <p class="subtitle">Consultá tus próximos turnos y el detalle de las atenciones.</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="cargarTurnos()" [disabled]="cargando()">
+      <mat-icon>refresh</mat-icon>
+      Actualizar
+    </button>
+  </header>
+
+  @if (cargando()) {
+    <section class="state-message" role="status">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Cargando tus turnos…</span>
+    </section>
+  } @else if (error()) {
+    <section class="state-message error-message" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+      <button mat-button type="button" (click)="cargarTurnos()">Reintentar</button>
+    </section>
+  } @else {
+    <mat-tab-group
+      class="appointment-tabs"
+      [selectedIndex]="pestanaActiva()"
+      (selectedIndexChange)="cambiarPestana($event)"
+    >
+      <mat-tab label="Próximos"></mat-tab>
+      <mat-tab label="Todos los turnos"></mat-tab>
+    </mat-tab-group>
+
+    @if (turnos().length === 0) {
+      <mat-card class="empty-card">
+        <mat-card-content class="state-message">
+          <mat-icon>event_busy</mat-icon>
+          <span>
+            {{ pestanaActiva() === 0 ? 'No tenés próximos turnos.' : 'Todavía no tenés turnos registrados.' }}
+          </span>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+    <section class="appointment-list" aria-label="Listado de mis turnos">
+      @for (turno of turnos(); track turno.id) {
+        <mat-card class="appointment-card">
+          <mat-card-content>
+            <header class="appointment-header">
+              <div>
+                <p class="appointment-date">{{ formatearFecha(turno.fecha) }} · {{ turno.hora }}</p>
+                <h2>{{ turno.especialidad_descripcion }}</h2>
+                <p class="doctor-name">Dr./Dra. {{ turno.medico_nombre }} {{ turno.medico_apellido }}</p>
+              </div>
+              <span class="status-badge" [class]="'status-badge status-' + turno.estado">
+                {{ etiquetaEstado(turno.estado) }}
+              </span>
+            </header>
+
+            <details #detalle class="appointment-details" (toggle)="detalle.open && cargarHistorial(turno)">
+              <summary>Ver detalle del turno</summary>
+              <dl>
+                <div>
+                  <dt>Fecha</dt>
+                  <dd>{{ formatearFecha(turno.fecha) }}</dd>
+                </div>
+                <div>
+                  <dt>Hora</dt>
+                  <dd>{{ turno.hora }}</dd>
+                </div>
+                <div>
+                  <dt>Profesional</dt>
+                  <dd>{{ turno.medico_nombre }} {{ turno.medico_apellido }}</dd>
+                </div>
+                <div>
+                  <dt>Especialidad</dt>
+                  <dd>{{ turno.especialidad_descripcion }}</dd>
+                </div>
+                <div>
+                  <dt>Sede</dt>
+                  <dd>{{ turno.sede_nombre }}</dd>
+                </div>
+                @if (turno.nota) {
+                  <div class="full-width">
+                    <dt>Nota del turno</dt>
+                    <dd>{{ turno.nota }}</dd>
+                  </div>
+                }
+              </dl>
+
+              @if (turno.estado === 'atendido') {
+                <section class="clinical-summary" aria-label="Resumen del historial clínico">
+                  <h3>Resumen de la atención</h3>
+                  @if (cargandoHistorial().has(turno.id)) {
+                    <div class="inline-state" role="status">
+                      <mat-spinner diameter="22"></mat-spinner>
+                      <span>Cargando historial clínico…</span>
+                    </div>
+                  } @else if (errorHistorial().get(turno.id); as errorClinico) {
+                    <p class="inline-error" role="alert">{{ errorClinico }}</p>
+                    <button mat-button type="button" (click)="cargarHistorial(turno, true)">Reintentar</button>
+                  } @else if (historialDelTurno(turno.id); as historial) {
+                    <dl>
+                      <div class="full-width">
+                        <dt>Diagnóstico</dt>
+                        <dd>{{ historial.diagnostico }}</dd>
+                      </div>
+                      @if (historial.tratamiento) {
+                        <div class="full-width">
+                          <dt>Tratamiento</dt>
+                          <dd>{{ historial.tratamiento }}</dd>
+                        </div>
+                      }
+                      @if (historial.observaciones) {
+                        <div class="full-width">
+                          <dt>Observaciones</dt>
+                          <dd>{{ historial.observaciones }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  } @else {
+                    <p>El profesional todavía no cargó el resumen clínico de este turno.</p>
+                  }
+                </section>
+              }
+            </details>
+
+            @if (turno.estado === 'confirmado') {
+              <footer class="appointment-actions">
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  (click)="cancelarTurno(turno)"
+                  [disabled]="cancelandoId() !== null"
+                >
+                  @if (cancelandoId() === turno.id) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                  } @else {
+                    <mat-icon>event_busy</mat-icon>
+                  }
+                  Cancelar turno
+                </button>
+              </footer>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+    </section>
+      <nav class="pagination" aria-label="Paginación de turnos">
+        <span>Página {{ pagina() }} de {{ totalPaginas() }} · {{ total() }} turnos</span>
+        <div>
+          <button mat-button type="button" (click)="paginaAnterior()" [disabled]="pagina() <= 1">
+            <mat-icon>chevron_left</mat-icon>
+            Anterior
+          </button>
+          <button mat-button type="button" (click)="paginaSiguiente()" [disabled]="pagina() >= totalPaginas()">
+            Siguiente
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </nav>
+    }
+  }
+</main>

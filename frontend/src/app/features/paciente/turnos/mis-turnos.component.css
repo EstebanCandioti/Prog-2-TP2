@@ -1,0 +1,209 @@
+:host {
+  display: block;
+}
+
+.my-appointments-page {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-primary, #315c78);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+}
+
+.subtitle {
+  margin: 0.45rem 0 0;
+  color: #64748b;
+}
+
+.appointment-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.appointment-tabs {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.appointment-card,
+.empty-card {
+  border-radius: 14px;
+}
+
+.appointment-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.appointment-date {
+  margin: 0 0 0.35rem;
+  color: var(--green-700, #176b51);
+  font-weight: 700;
+}
+
+.appointment-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.doctor-name {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+}
+
+.status-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-cancelado {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-atendido {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.appointment-details {
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.8rem;
+}
+
+.appointment-details summary {
+  color: var(--green-700, #176b51);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem 1.5rem;
+  margin: 1rem 0;
+}
+
+dt {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+dd {
+  margin: 0.2rem 0 0;
+  color: #1f2937;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.clinical-summary {
+  margin-top: 1rem;
+  border-radius: 10px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--green-100, #d9eee5) 40%, transparent);
+}
+
+.clinical-summary h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.clinical-summary p {
+  margin-bottom: 0;
+}
+
+.inline-state {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-top: 0.8rem;
+  color: #64748b;
+}
+
+.inline-error {
+  color: #b42318;
+}
+
+.appointment-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.state-message {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.pagination > div {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.error-message {
+  color: #b42318;
+}
+
+@media (max-width: 640px) {
+  .my-appointments-page {
+    padding: 1rem;
+  }
+
+  .appointment-header {
+    flex-direction: column-reverse;
+  }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  dl {
+    grid-template-columns: 1fr;
+  }
+}

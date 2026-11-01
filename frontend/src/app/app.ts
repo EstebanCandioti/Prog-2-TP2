@@ -11,6 +11,7 @@ import { SessionService } from './core/services/session.service';
 import { NotificacionService } from './core/services/notificacion.service';
 import { RolUsuario } from './core/models/usuario.model';
 import { NotificacionCampanaComponent } from './features/notificaciones/notificacion-campana.component';
+import { mensajeErrorApi } from './core/utils/mensaje-error-api';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ export class App {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   readonly profile = signal<{ nombre: string; apellido: string } | null>(null);
+  readonly profileError = signal('');
   readonly navItems = computed(() => {
     const role = this.session.sesionActual()?.usuario.rol;
     return role ? navigationByRole[role] : [];
@@ -40,12 +42,19 @@ export class App {
     effect((onCleanup) => {
       if (!this.session.sesionActual()) {
         this.profile.set(null);
+        this.profileError.set('');
         return;
       }
 
       const subscription = this.auth.obtenerPerfil().subscribe({
-        next: (response) => this.profile.set(response.datos),
-        error: () => this.profile.set(null)
+        next: (response) => {
+          this.profile.set(response.datos);
+          this.profileError.set('');
+        },
+        error: (error: unknown) => {
+          this.profile.set(null);
+          this.profileError.set(mensajeErrorApi(error, 'No se pudo cargar la información de tu cuenta.'));
+        }
       });
       onCleanup(() => subscription.unsubscribe());
     });

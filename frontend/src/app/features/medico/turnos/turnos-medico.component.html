@@ -1,0 +1,179 @@
+<main class="doctor-appointments-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Área médica</p>
+      <h1>Turnos del día</h1>
+      <p class="subtitle">Consultá los pacientes de tus turnos y registrá cada atención.</p>
+    </div>
+    <div class="filters">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input
+          matInput
+          type="date"
+          [value]="fechaSeleccionada()"
+          (change)="cambiarFecha($event)"
+          [disabled]="cargando()"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Sede</mat-label>
+        <mat-select
+          [value]="idSedeSeleccionada()"
+          (selectionChange)="cambiarSede($event.value)"
+          [disabled]="cargandoSedes() || cargando()"
+        >
+          <mat-option [value]="null">Todas las sedes</mat-option>
+          @for (sede of sedes(); track sede.id) {
+            <mat-option [value]="sede.id">{{ sede.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </header>
+
+  @if (errorSedes()) {
+    <p class="inline-error" role="alert">{{ errorSedes() }}</p>
+  }
+
+  <mat-card class="appointments-card">
+    <mat-card-content>
+      @if (cargando()) {
+        <div class="state-message" role="status">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Cargando turnos…</span>
+        </div>
+      } @else if (error()) {
+        <div class="state-message error-message" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ error() }}</span>
+          <button mat-button type="button" (click)="cargarTurnos()">Reintentar</button>
+        </div>
+      } @else if (turnos().length === 0) {
+        <div class="state-message">
+          <mat-icon>event_busy</mat-icon>
+          <span>No hay turnos para el {{ formatearFecha(fechaSeleccionada()) }} en esta selección.</span>
+        </div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Paciente</th>
+                <th>Edad</th>
+                <th>Sede</th>
+                <th>Estado</th>
+                <th>Notas</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (turno of turnos(); track turno.id) {
+                <tr>
+                  <td data-label="Hora" class="time-cell">{{ turno.hora }}</td>
+                  <td data-label="Paciente">{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }}</td>
+                  <td data-label="Edad">
+                    {{ calcularEdad(turno.paciente_fecha_nacimiento) }}
+                  </td>
+                  <td data-label="Sede">{{ turno.sede_nombre }}</td>
+                  <td data-label="Estado">
+                    <span class="status-badge" [class]="'status-badge status-' + turno.estado">
+                      {{ etiquetaEstado(turno.estado) }}
+                    </span>
+                  </td>
+                  <td data-label="Notas">
+                    @if (turno.nota) {
+                      <details class="notes">
+                        <summary>Ver nota</summary>
+                        <p>{{ turno.nota }}</p>
+                      </details>
+                    } @else {
+                      <span class="muted">Sin notas</span>
+                    }
+                  </td>
+                  <td data-label="Acciones" class="actions-cell">
+                    @if (turno.estado === 'confirmado') {
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        (click)="abrirAtencion(turno)"
+                        [disabled]="guardandoId() !== null"
+                      >
+                        <mat-icon>medical_services</mat-icon>
+                        Atender
+                      </button>
+                      <button
+                        mat-stroked-button
+                        color="warn"
+                        type="button"
+                        (click)="cancelarTurno(turno)"
+                        [disabled]="guardandoId() !== null"
+                      >
+                        <mat-icon>event_busy</mat-icon>
+                        Cancelar
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
+                  </td>
+                </tr>
+                @if (atendiendoId() === turno.id) {
+                  <tr class="form-row">
+                    <td colspan="7">
+                      <form
+                        [formGroup]="formularioAtencion"
+                        (ngSubmit)="guardarAtencion(turno)"
+                        class="clinical-form"
+                      >
+                        <h2>Registrar atención · {{ turno.paciente_nombre }} {{ turno.paciente_apellido }}</h2>
+                        <div class="clinical-fields">
+                          <mat-form-field appearance="outline" class="diagnosis-field">
+                            <mat-label>Diagnóstico</mat-label>
+                            <textarea matInput rows="2" maxlength="255" formControlName="diagnostico"></textarea>
+                            @if (formularioAtencion.controls.diagnostico.invalid && formularioAtencion.controls.diagnostico.touched) {
+                              <mat-error>El diagnóstico es obligatorio (máximo 255 caracteres).</mat-error>
+                            }
+                          </mat-form-field>
+                          <mat-form-field appearance="outline">
+                            <mat-label>Tratamiento (opcional)</mat-label>
+                            <textarea matInput rows="2" maxlength="255" formControlName="tratamiento"></textarea>
+                          </mat-form-field>
+                          <mat-form-field appearance="outline">
+                            <mat-label>Observaciones (opcional)</mat-label>
+                            <textarea matInput rows="2" maxlength="255" formControlName="observaciones"></textarea>
+                          </mat-form-field>
+                        </div>
+                        @if (errorAtencion()) {
+                          <p class="inline-error" role="alert">{{ errorAtencion() }}</p>
+                        }
+                        <div class="form-actions">
+                          <button
+                            mat-button
+                            type="button"
+                            (click)="cancelarAtencion()"
+                            [disabled]="guardandoId() !== null"
+                          >
+                            Volver
+                          </button>
+                          <button mat-flat-button color="primary" type="submit" [disabled]="guardandoId() !== null">
+                            @if (guardandoId() === turno.id) {
+                              <mat-spinner diameter="18"></mat-spinner>
+                            } @else {
+                              Guardar atención
+                            }
+                          </button>
+                        </div>
+                      </form>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</main>

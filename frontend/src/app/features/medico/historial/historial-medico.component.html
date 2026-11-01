@@ -1,0 +1,168 @@
+<main class="history-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Área médica</p>
+      <h1>Historial clínico</h1>
+      <p class="subtitle">Buscá un paciente por DNI o apellido para consultar las atenciones realizadas por vos.</p>
+    </div>
+  </header>
+
+  <mat-card class="search-card">
+    <mat-card-content>
+      <form [formGroup]="formulario" (ngSubmit)="buscar()" class="search-form">
+        <mat-form-field appearance="outline">
+          <mat-label>DNI o apellido</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput formControlName="termino" autocomplete="off" />
+          @if (formulario.controls.termino.invalid && formulario.controls.termino.touched) {
+            <mat-error>Ingresá un DNI o apellido.</mat-error>
+          }
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit" [disabled]="buscando()">
+          @if (buscando()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>search</mat-icon>
+          }
+          Buscar paciente
+        </button>
+      </form>
+      @if (errorBusqueda()) {
+        <p class="inline-error" role="alert">{{ errorBusqueda() }}</p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  @if (buscando()) {
+    <section class="state-message" role="status">
+      <mat-spinner diameter="34"></mat-spinner>
+      <span>Buscando pacientes…</span>
+    </section>
+  } @else if (pacientes().length > 0) {
+    <mat-card class="patients-card">
+      <mat-card-header>
+        <mat-card-title>Resultados ({{ totalPacientes() }})</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>DNI</th>
+                <th>Fecha de nacimiento</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (paciente of pacientes(); track paciente.id) {
+                <tr [class.selected-row]="pacienteSeleccionado()?.id === paciente.id">
+                  <td data-label="Paciente">{{ paciente.apellido }}, {{ paciente.nombre }}</td>
+                  <td data-label="DNI">{{ paciente.dni }}</td>
+                  <td data-label="Fecha de nacimiento">{{ paciente.fecha_nacimiento | date: 'dd/MM/yyyy' }}</td>
+                  <td data-label="Acción">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="verHistorial(paciente)"
+                      [disabled]="cargandoHistorial()"
+                    >
+                      <mat-icon>description</mat-icon>
+                      Ver historial
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <nav class="pagination" aria-label="Paginación de pacientes">
+          <span>Página {{ pagina() }} de {{ totalPaginas() }} · {{ totalPacientes() }} pacientes</span>
+          <div>
+            <button mat-button type="button" (click)="paginaAnterior()" [disabled]="pagina() <= 1">
+              <mat-icon>chevron_left</mat-icon>
+              Anterior
+            </button>
+            <button mat-button type="button" (click)="paginaSiguiente()" [disabled]="pagina() >= totalPaginas()">
+              Siguiente
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </nav>
+      </mat-card-content>
+    </mat-card>
+  } @else if (totalPacientes() === 0 && formulario.controls.termino.value.trim() && !errorBusqueda()) {
+    <mat-card class="empty-card">
+      <mat-card-content class="state-message">
+        <mat-icon>person_search</mat-icon>
+        <span>No se encontraron pacientes con ese criterio.</span>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (pacienteSeleccionado(); as paciente) {
+    <section class="clinical-history">
+      <header class="history-heading">
+        <div>
+          <p class="eyebrow">Paciente</p>
+          <h2>{{ paciente.nombre }} {{ paciente.apellido }}</h2>
+          <p>DNI {{ paciente.dni }}</p>
+        </div>
+      </header>
+
+      @if (cargandoHistorial()) {
+        <section class="state-message" role="status">
+          <mat-spinner diameter="34"></mat-spinner>
+          <span>Cargando historial clínico…</span>
+        </section>
+      } @else if (errorHistorial()) {
+        <mat-card class="empty-card error-card" role="alert">
+          <mat-icon>error_outline</mat-icon>
+          <span>{{ errorHistorial() }}</span>
+          <button mat-button type="button" (click)="verHistorial(paciente)">Reintentar</button>
+        </mat-card>
+      } @else if (historiales().length === 0) {
+        <mat-card class="empty-card">
+          <mat-card-content class="state-message">
+            <mat-icon>medical_information</mat-icon>
+            <span>No hay atenciones tuyas registradas para este paciente.</span>
+          </mat-card-content>
+        </mat-card>
+      } @else {
+        <section class="record-list" aria-label="Registros del historial clínico">
+          @for (registro of historiales(); track registro.id) {
+            <mat-card class="record-card">
+              <mat-card-content>
+                <header class="record-header">
+                  <div>
+                    <p class="record-date">{{ registro.fecha_registro | date: 'dd/MM/yyyy HH:mm' }}</p>
+                    <h3>Atención del turno {{ registro.id_turno }}</h3>
+                  </div>
+                  <mat-icon aria-hidden="true">medical_information</mat-icon>
+                </header>
+                <dl>
+                  <div>
+                    <dt>Diagnóstico</dt>
+                    <dd>{{ registro.diagnostico }}</dd>
+                  </div>
+                  @if (registro.tratamiento) {
+                    <div>
+                      <dt>Tratamiento</dt>
+                      <dd>{{ registro.tratamiento }}</dd>
+                    </div>
+                  }
+                  @if (registro.observaciones) {
+                    <div class="full-width">
+                      <dt>Observaciones</dt>
+                      <dd>{{ registro.observaciones }}</dd>
+                    </div>
+                  }
+                </dl>
+              </mat-card-content>
+            </mat-card>
+          }
+        </section>
+      }
+    </section>
+  }
+</main>

@@ -29,5 +29,12 @@ export interface RegistroRequest {
   id_cobertura: number;
 }
 
+export interface ActualizarPerfilPacienteRequest {
+  email: string;
+  telefono: string;
+  id_cobertura: number;
+  password?: string;
+}
+
 export type RegistroResponse = Usuario;
 export type PerfilResponse = Usuario;

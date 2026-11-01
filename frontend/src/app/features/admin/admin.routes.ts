@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 
 export const adminRoutes: Routes = [
 	{ path: '', loadComponent: () => import('../home/inicio.component').then((module) => module.InicioComponent), title: 'Administración | Clínica Virtual' },
-	{ path: 'usuarios', loadComponent: () => import('../shared/estado-page.component').then((module) => module.EstadoPageComponent), data: { title: 'Usuarios', description: 'La administración de usuarios estará disponible próximamente.', icon: 'group' } },
+	{ path: 'usuarios', loadComponent: () => import('./usuarios/usuarios.component').then((module) => module.UsuariosComponent), title: 'Usuarios | Clínica Virtual' },
 	{ path: 'sedes', loadComponent: () => import('./sedes/sedes.component').then((module) => module.SedesComponent), title: 'Sedes | Clínica Virtual' },
 	{ path: 'especialidades', loadComponent: () => import('./especialidades/especialidades.component').then((module) => module.EspecialidadesComponent), title: 'Especialidades | Clínica Virtual' },
 	{ path: 'coberturas', loadComponent: () => import('./coberturas/coberturas.component').then((module) => module.CoberturasComponent), title: 'Coberturas | Clínica Virtual' },

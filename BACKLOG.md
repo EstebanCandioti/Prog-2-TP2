@@ -19,7 +19,7 @@ Estado actualizado al 01/11/2026 según los acuerdos del chat y la revisión de 
 | F02 | Administrador / Sedes | Tabla con búsqueda, alta, edición, confirmación de baja y actualización de la lista. | Santiago | Sin verificar |
 | F03 | Administrador / Especialidades | CRUD con mensajes del backend cuando se rechaza una baja. | Santiago | Sin verificar |
 | F04 | Administrador / Coberturas | CRUD y manejo de dependencias. | Santiago | Sin verificar |
-| F05 | Administrador / Auditoría | Filtros por usuario, entidad y fechas; paginación en el frontend sobre el listado actual. | Santiago | Sin verificar |
+| F05 | Administrador / Auditoría | Filtros por usuario, entidad y fechas; paginación en el frontend sobre el listado actual. | Santiago | Actualización integrada; pendiente de revisión final |
 | F06 | Administrador / Reportes | Cuatro indicadores, período común y gráficos; servicio para consultar los reportes. | Esteban | **Hecha** |
 | F08 | Operador / Alta de pacientes | Reutilizar el registro público bajo la ruta protegida del operador y mostrar los datos del alta sin cerrar su sesión. | Esteban | **Hecha** |
 | F09 | Campana y listado de notificaciones | Panel con hasta 10 pendientes, listado completo, contador, marcado individual y masivo con sincronización coordinada y estados vacío/error. Consultar al iniciar sesión, abrir la campana y volver a la pestaña; refrescar cada dos minutos solo con sesión y pestaña visibles. | Esteban | **Hecha; funcionamiento y cierre confirmados por Esteban** |
@@ -61,21 +61,21 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 
 | ID | Tarea | Responsable | Depende de | Estado actual |
 | --- | --- | --- | --- | --- |
-| D01 | Administrador / Usuarios: listado filtrado y paginado, alta y edición con sede y especialidades. | Santiago | B01 (lecturas de catálogos ya disponibles), B02, B03 | **Disponible** |
+| D01 | Administrador / Usuarios: listado filtrado y paginado, alta y edición con sede y especialidades. | Santiago | B01 (lecturas de catálogos ya disponibles), B02, B03 | **Parcial: integrada; edición de médicos pendiente** |
 | D02 | Médico / Mi agenda: consulta por día y CRUD de rangos. | Esteban | B01, B05 | **Hecha; cierre confirmado por Esteban** |
 | D03 | Médico / Turnos programados: paciente, edad, filtro de sede, atención con historial y cancelación. | Esteban | B07, B08 | **Hecha; cierre confirmado por Esteban** |
-| D04 | Médico / Historial clínico: búsqueda del paciente y visualización de sus registros. | Santiago | B03, B08 | **Disponible** |
+| D04 | Médico / Historial clínico: búsqueda del paciente y visualización de sus registros. | Santiago | B03, B08 | **Integrada; verificación funcional inicial en Windows** |
 | D05 | Operador / Agenda y turnos de su sede: filtros, alta y edición de agenda, consulta y cancelación de turnos. | Esteban | B01, B05, B07 | **Hecha; cierre confirmado por Esteban** |
 | D06 | Paciente / Nuevo turno: flujo reutilizable por pasos, opciones filtradas, resumen y recuperación si se ocupa el horario. | Esteban | B01, B06, B08 | **Hecha; prueba funcional y cierre confirmados por Esteban** |
 | D07 | Operador / Asignar turno desde un rango de agenda: diálogo propio con búsqueda paginada de pacientes, horario libre y nota; sede tomada de la sesión. | Esteban | B03, B06, D05 | **Implementada y verificada en Windows; limitaciones documentadas** |
-| D08 | Paciente / Mis datos editables: campos permitidos y confirmación de cambio de contraseña. | Santiago | B04 | **Disponible** |
+| D08 | Paciente / Mis datos editables: campos permitidos y confirmación de cambio de contraseña. | Santiago | B04 | **Integrada; verificación funcional inicial en Windows** |
 | D09 | README y recorrido de defensa: arranque desde cero, versiones, datos de prueba, librería de gráficos y recorrido de los cuatro roles. | Esteban, con aportes de Santiago | B10 y pantallas terminadas | Dependiente: cierre de las pantallas y recorrido final |
-| D10 | Paciente / Mis turnos: pestañas Próximos y Todos los turnos, consultas paginadas, estados visibles, detalle, resumen clínico de atendidos y cancelación confirmada. | Santiago | B11 | **Disponible** |
+| D10 | Paciente / Mis turnos: pestañas Próximos y Todos los turnos, consultas paginadas, estados visibles, detalle, resumen clínico de atendidos y cancelación confirmada. | Santiago | B11 | **Integrada y adaptada a B11; verificada en Windows** |
 
 ### Orden y coordinación de la tanda D
 
-- **Santiago:** comenzar por D01, continuar con D04 y D08, y abordar D10; B11 ya está verificada.
-- **Esteban:** D02, D03, D05 y D06 cerradas por Esteban. D07 implementada como asignación contextual desde la agenda y verificada en Windows; quedan la advertencia menor de tipado y la limitación conocida de agendas superpuestas, documentadas abajo. F09 base verificada; su ampliación requiere corregir la apertura del panel. Restan el cierre documental D09 y la revisión conjunta de las entregas de Santiago.
+- **Santiago:** D01, D04, D08 y D10 integradas desde su entrega. Completar edición de médicos en D01 y realizar el recorrido conjunto de sus pantallas.
+- **Esteban:** D02, D03, D05, D06 y F09 cerradas por Esteban. D07 implementada y verificada en Windows; quedan la advertencia menor de tipado y la limitación conocida de agendas superpuestas. Restan D09 y el recorrido conjunto de las pantallas integradas.
 - **Reutilización:** evaluar formularios de agenda compartidos entre D02 y D05; D07 usa un diálogo propio y reutiliza servicios HTTP y utilidades, sin modificar el stepper de D06.
 - **Archivos compartidos:** antes de trabajar en paralelo, acordar quién crea cada servicio y modelo compartido. Coordinar los cambios en rutas y navegación para evitar editar el mismo archivo simultáneamente.
 - **Notificaciones:** F09 y su ampliación cerradas por Esteban después de corregir las queries de los botones; conserva su responsable Esteban.
@@ -126,7 +126,7 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 - Detalle previo del backend observado: algunos mensajes de atención ya guardados contienen una fecha de JavaScript en formato largo en inglés. El frontend muestra el mensaje recibido; normalizar la fecha al construir esos mensajes queda como ajuste de presentación pendiente, sin modificar registros existentes.
 - Desde Windows solo se actualizó este backlog; no se modificó código de la aplicación ni la base habitual, ni se hizo commit o push. No se encontraron conflictos.
 
-### Ampliación de F09 — verificación en Windows y corrección pendiente
+### Ampliación de F09 — verificación en Windows y cierre
 
 - Se conserva la implementación base y su verificación anterior. Se agregó `PATCH /notificaciones/leidas`, para cualquier rol autenticado, con usuario tomado del token y respuesta `{ cantidad_actualizada }`; se documentaron pendientes propias, ninguna pendiente, autenticación y aislamiento en README y Postman.
 - La campana abre un panel CDK anclado, con hasta 10 pendientes recientes, scroll, total real, marcado individual, marcado de todas las pendientes y acceso al listado completo. El panel y la pantalla comparten lista, contador, bloqueos, progreso y errores del servicio central.
@@ -139,6 +139,19 @@ Cada tarea incluye rutas, permisos, validaciones, respuestas uniformes, casos de
 - Primer ajuste recibido desde Ubuntu: ambas queries agregaron `read: ElementRef`, pero conservaron un solo parámetro genérico. La build posterior en Windows falla con TS2353 porque esa sobrecarga exige dos parámetros genéricos o inferencia completa. Se comprobó sin editar archivos que omitir los genéricos y conservar `{ read: ElementRef }` elimina los errores de tipos de este componente; queda aplicar ese ajuste en Ubuntu y repetir la build y revisión visual.
 - Cierre posterior: se aplicó la inferencia de tipos con `{ read: ElementRef }` en ambas queries. La build del frontend del 01/11/2026 pasó en Windows con las advertencias conocidas; Esteban probó el funcionamiento y confirmó que quedó bien. Los errores anteriores se conservan aquí como registro de la revisión y ya no bloquean F09.
 - Desde Windows solo se actualizó este backlog; no se modificó código de la aplicación ni la base habitual. El servidor temporal se detuvo al terminar. No se hicieron commits ni pushes ni se encontraron conflictos.
+
+### Integración de la entrega de Santiago en Windows — 01/11/2026
+
+- Antes del merge se resguardaron los 68 archivos del trabajo local en el commit `65f3854`. Se integró `origin/entrega-frontend-1`, commit `b2f8a71`, en `frontend-1`.
+- Se resolvieron 17 archivos en conflicto, conservando las versiones probadas de D02, D03, D05, D06, D07 y F09 y combinando rutas, App/layout, modelos y servicios compartidos. El backend y la base habitual no se modificaron durante esta integración.
+- Se conectaron Usuarios, Historial del médico, Perfil editable del paciente, Mis turnos y la pantalla independiente de Turnos del operador aportada por Santiago. Las versiones alternativas `agenda-medico` y `turnos-medico` se conservan como código recibido, pero las rutas médicas siguen usando `mi-agenda` y `turnos-programados`.
+- Fue necesario adaptar Mis turnos al contrato B11: `tipo=proximos|todos`, paginación real de 20, totales del backend, vista Todos que también incluye próximos y consulta clínica por turno únicamente al abrir el detalle. Se conservaron presentación y confirmación de cancelación de la entrega recibida.
+- Se combinaron los contratos de los servicios de turnos/agenda, se actualizaron llamadas al refresco de notificaciones y se admitió fecha de nacimiento nula en los componentes recibidos. El filtro nuevo por ID de entidad de Auditoría se aplica en el frontend porque el endpoint actual no lo admite.
+- Build del frontend correcta con las advertencias conocidas. Pasaron 43 comprobaciones de integración con 34 peticiones a la API real y MySQL en una base temporal, eliminada al terminar: paginación y cancelación del paciente, historial por turno y reintentos, búsqueda e historial del médico, usuarios paginados, alta/edición de operador y edición del perfil con rechazo de email duplicado. No se cambió la contraseña en estas pruebas.
+- Revisión visual sin escrituras en la base habitual: Mis turnos en ambas pestañas, resumen clínico al desplegar un atendido, campana que abre y cierra con Escape y lista administrativa de 28 usuarios en dos páginas. No se detectaron errores de consola en esas pantallas.
+- Limitación recibida de D01: Usuarios bloquea explícitamente la edición de médicos. El detalle administrativo del backend no devuelve sus especialidades; queda completar la precarga, por ejemplo aprovechando el catálogo `GET /medicos`, antes de dar D01 por cerrada. No se amplió el backend para resolverlo durante este merge.
+- Los cambios de compatibilidad indicados arriba se realizaron en Windows para integrar la entrega. Antes de la próxima tarea en Ubuntu, releer esos archivos y conservar esta resolución; no reemplazarlos por las versiones previas del commit remoto.
+- La integración se realiza localmente; no incluye push ni instalación de dependencias. Se conserva pendiente el mantenimiento de Postman fase 03 indicado en el backlog del backend.
 
 ### Criterios ya acordados para D10
 
