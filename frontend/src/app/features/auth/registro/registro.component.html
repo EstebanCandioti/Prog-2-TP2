@@ -21,9 +21,11 @@
         <div class="form-grid">
           <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Nombre</mat-label>
-            <input matInput formControlName="nombre" autocomplete="given-name" maxlength="30">
+            <input matInput formControlName="nombre" autocomplete="given-name" maxlength="30" (input)="filtrarNombre($event, 'nombre')">
             @if (form.controls.nombre.hasError('required') && form.controls.nombre.touched) {
               <mat-error>Ingresá tu nombre.</mat-error>
+            } @else if (form.controls.nombre.hasError('pattern') && form.controls.nombre.touched) {
+              <mat-error>El nombre solo puede contener letras.</mat-error>
             } @else if (form.controls.nombre.hasError('maxlength')) {
               <mat-error>El nombre no puede superar 30 caracteres.</mat-error>
             }
@@ -31,9 +33,11 @@
 
           <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>Apellido</mat-label>
-            <input matInput formControlName="apellido" autocomplete="family-name" maxlength="30">
+            <input matInput formControlName="apellido" autocomplete="family-name" maxlength="30" (input)="filtrarNombre($event, 'apellido')">
             @if (form.controls.apellido.hasError('required') && form.controls.apellido.touched) {
               <mat-error>Ingresá tu apellido.</mat-error>
+            } @else if (form.controls.apellido.hasError('pattern') && form.controls.apellido.touched) {
+              <mat-error>El apellido solo puede contener letras.</mat-error>
             } @else if (form.controls.apellido.hasError('maxlength')) {
               <mat-error>El apellido no puede superar 30 caracteres.</mat-error>
             }
@@ -41,7 +45,7 @@
 
           <mat-form-field appearance="outline" subscriptSizing="fixed">
             <mat-label>DNI</mat-label>
-            <input matInput formControlName="dni" inputmode="numeric" autocomplete="off" maxlength="8">
+            <input matInput formControlName="dni" inputmode="numeric" autocomplete="off" maxlength="8" (input)="filtrarDni($event)">
             @if (form.controls.dni.hasError('required') && form.controls.dni.touched) {
               <mat-error>Ingresá tu DNI.</mat-error>
             } @else if (form.controls.dni.hasError('pattern') && form.controls.dni.touched) {

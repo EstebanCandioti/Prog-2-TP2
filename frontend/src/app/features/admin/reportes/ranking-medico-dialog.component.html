@@ -8,19 +8,21 @@
     </div>
   </div>
   <div class="ranking-table-wrap">
-    <table class="ranking-table">
-      <thead>
-        <tr><th scope="col">Posición</th><th scope="col">Médico</th><th scope="col">Atendidos</th></tr>
-      </thead>
-      <tbody>
-        @for (medico of ranking; track medico.id; let posicion = $index) {
-          <tr>
-            <td>{{ posicion + 1 }}</td>
-            <td>{{ medico.nombreCompleto }}</td>
-            <td>{{ medico.turnosAtendidos | number:'1.0-0' }}</td>
-          </tr>
-        }
-      </tbody>
+    <table mat-table [dataSource]="ranking" class="ranking-table" aria-label="Ranking médico completo">
+      <ng-container matColumnDef="posicion">
+        <th mat-header-cell *matHeaderCellDef>Posición</th>
+        <td mat-cell *matCellDef="let medico; let posicion = index">{{ posicion + 1 }}</td>
+      </ng-container>
+      <ng-container matColumnDef="medico">
+        <th mat-header-cell *matHeaderCellDef>Médico</th>
+        <td mat-cell *matCellDef="let medico">{{ medico.nombreCompleto }}</td>
+      </ng-container>
+      <ng-container matColumnDef="atendidos">
+        <th mat-header-cell *matHeaderCellDef>Atendidos</th>
+        <td mat-cell *matCellDef="let medico">{{ medico.turnosAtendidos | number:'1.0-0' }}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnas"></tr>
     </table>
   </div>
 </mat-dialog-content>

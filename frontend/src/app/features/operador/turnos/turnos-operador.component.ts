@@ -2,12 +2,15 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 import { finalize } from 'rxjs';
 
 import { Agenda } from '../../../core/models/agenda.model';
@@ -26,6 +29,7 @@ import { SedeService } from '../../../core/services/sede.service';
 import { TurnoService } from '../../../core/services/turno.service';
 import { UsuarioAdminService } from '../../../core/services/usuario-admin.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 interface MedicoDisponible {
   id: number;
@@ -39,12 +43,15 @@ interface MedicoDisponible {
   imports: [
     MatButtonModule,
     MatCardModule,
+    MatDialogModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
     MatSnackBarModule,
+    MatTableModule,
     ReactiveFormsModule
   ],
   templateUrl: './turnos-operador.component.html',
@@ -60,6 +67,7 @@ export class TurnosOperadorComponent implements OnInit {
   private readonly session = inject(SessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly fechaSeleccionada = signal(this.fechaLocalActual());
   readonly idMedicoSeleccionado = signal<number | null>(null);
@@ -126,6 +134,7 @@ export class TurnosOperadorComponent implements OnInit {
   readonly errorPacientes = signal('');
   readonly errorDisponibilidad = signal('');
   readonly errorFormulario = signal('');
+  readonly columnas = ['hora', 'paciente', 'edad', 'medico', 'especialidad', 'estado', 'nota', 'accion'];
 
   readonly formularioPaciente = this.formBuilder.nonNullable.group({
     busqueda: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(80)]]
@@ -369,34 +378,41 @@ export class TurnosOperadorComponent implements OnInit {
 
   cancelarTurno(turno: TurnoMedico): void {
     if (turno.estado !== 'confirmado' || this.guardandoId() !== null) return;
-    if (
-      !window.confirm(
-        `¿Querés cancelar el turno de ${turno.paciente_nombre} ${turno.paciente_apellido} del ${this.formatearFecha(turno.fecha)} a las ${turno.hora}?`
-      )
-    ) {
-      return;
-    }
-    this.guardandoId.set(turno.id);
-    this.cancelandoId.set(turno.id);
-    this.turnosApi
-      .cancelar(turno.id)
-      .pipe(finalize(() => {
-        this.guardandoId.set(null);
-        this.cancelandoId.set(null);
-      }))
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Turno cancelado correctamente.', 'Cerrar', { duration: 4000 });
-          this.cargarTurnos();
-          this.notificaciones.actualizar();
-        },
-        error: (error: unknown) =>
-          this.snackBar.open(
-            mensajeErrorApi(error, 'No se pudo cancelar el turno.'),
-            'Cerrar',
-            { duration: 6000 }
-          )
-      });
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string; textoConfirmar: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: {
+          titulo: 'Cancelar turno',
+          mensaje: `¿Querés cancelar el turno de ${turno.paciente_nombre} ${turno.paciente_apellido} del ${this.formatearFecha(turno.fecha)} a las ${turno.hora}?`,
+          textoConfirmar: 'Cancelar turno'
+        }
+      }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.guardandoId.set(turno.id);
+      this.cancelandoId.set(turno.id);
+      this.turnosApi
+        .cancelar(turno.id)
+        .pipe(finalize(() => {
+          this.guardandoId.set(null);
+          this.cancelandoId.set(null);
+        }))
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Turno cancelado correctamente.', 'Cerrar', { duration: 4000 });
+            this.cargarTurnos();
+            this.notificaciones.actualizar();
+          },
+          error: (error: unknown) =>
+            this.snackBar.open(
+              mensajeErrorApi(error, 'No se pudo cancelar el turno.'),
+              'Cerrar',
+              { duration: 6000 }
+            )
+        });
+    });
   }
 
   calcularEdad(fechaNacimiento: string | null): string {

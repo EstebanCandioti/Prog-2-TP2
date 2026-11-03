@@ -3722,7 +3722,7 @@
         {
           "name": "Listar logs",
           "request": {
-            "description": "Rol: admin. Query opcional: id_usuario, entidad, accion, fecha_desde, fecha_hasta. Acciones validas: ALTA, BAJA, MODIFICACION. Exito: 200. Errores: 400 accion invalida, 403 otro rol.",
+            "description": "Rol: admin. Query opcional: id_usuario, entidad, id_entidad, accion, fecha_desde, fecha_hasta. entidad: sede, usuario, cobertura o especialidad. id_entidad debe ser positivo y puede combinarse con entidad. Acciones validas: ALTA, BAJA, MODIFICACION. Exito: 200. Errores: 400 por filtros invalidos, 403 otro rol.",
             "method": "GET",
             "header": [
               {
@@ -3730,7 +3730,7 @@
                 "value": "Bearer {{admin_token}}"
               }
             ],
-            "url": "{{base_url}}/auditoria?entidad=usuario&accion=ALTA&fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
+            "url": "{{base_url}}/auditoria?entidad=usuario&id_entidad=2&accion=ALTA&fecha_desde=2025-01-01&fecha_hasta=2026-12-31"
           }
         }
       ]

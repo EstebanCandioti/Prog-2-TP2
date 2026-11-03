@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 
 import { RegistroAuditoria } from '../../../core/models/auditoria.model';
 import { AuditoriaService } from '../../../core/services/auditoria.service';
@@ -34,6 +35,7 @@ const ENTIDADES_AUDITORIA = [
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
+    MatTableModule,
     ReactiveFormsModule
   ],
   templateUrl: './auditoria.component.html',
@@ -54,6 +56,7 @@ export class AuditoriaComponent implements OnInit {
     const inicio = this.pagina() * TAMANO_PAGINA;
     return this.registros().slice(inicio, inicio + TAMANO_PAGINA);
   });
+  readonly columnas = ['fecha', 'usuario', 'accion', 'entidad', 'idEntidad', 'detalle'];
   readonly formulario = this.formBuilder.nonNullable.group({
     idUsuario: ['', [Validators.pattern(/^[1-9]\d*$/)]],
     idEntidad: ['', [Validators.pattern(/^[1-9]\d*$/)]],

@@ -104,25 +104,31 @@ h1 {
   overflow-x: auto;
 }
 
-table {
+.data-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 690px;
+  background: var(--surface, #fff);
 }
 
-th,
-td {
+.data-table .mat-mdc-header-cell,
+.data-table .mat-mdc-cell {
   padding: 0.9rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
   text-align: left;
 }
 
-th {
+.data-table .mat-mdc-header-cell {
+  border-bottom-color: #e2e8f0;
+  background: #e8f2eb;
   color: #475569;
   font-size: 0.82rem;
   font-weight: 700;
 }
 
-tbody tr:last-child td {
+.data-table .mat-mdc-cell {
+  border-bottom-color: #e2e8f0;
+}
+
+.data-table .mat-mdc-row:last-child .mat-mdc-cell {
   border-bottom: 0;
 }
 

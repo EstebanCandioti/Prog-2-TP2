@@ -5,6 +5,7 @@
 -- Si ocurre un error antes del COMMIT, ejecutar ROLLBACK y cerrar la conexion.
 SET NAMES utf8mb4;
 
+
 -- Se puede reemplazar CURDATE() por una fecha fija: '2026-10-31'.
 -- Usar la misma fecha base al repetir la carga para reproducir los mismos escenarios.
 SET @b10_fecha_base = CURDATE();

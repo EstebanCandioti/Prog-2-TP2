@@ -42,9 +42,12 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Teléfono</mat-label>
-            <input matInput formControlName="telefono" maxlength="15" type="tel" autocomplete="tel" />
-            @if ((formulario.controls.telefono.hasError('required') || formulario.controls.telefono.hasError('pattern')) && formulario.controls.telefono.touched) {
+            <input matInput formControlName="telefono" maxlength="15" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="tel" (input)="filtrarTelefono($event)" />
+            @if (formulario.controls.telefono.hasError('required') && formulario.controls.telefono.touched) {
               <mat-error>El teléfono es obligatorio.</mat-error>
+            }
+            @if (formulario.controls.telefono.hasError('pattern') && formulario.controls.telefono.touched) {
+              <mat-error>El teléfono solo puede contener números.</mat-error>
             }
             @if (formulario.controls.telefono.hasError('maxlength')) {
               <mat-error>El teléfono no puede superar los 15 caracteres.</mat-error>
@@ -88,22 +91,22 @@
         </div>
       } @else {
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Teléfono</th>
-                <th class="actions-heading">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (sede of sedesFiltradas(); track sede.id) {
-                <tr>
-                  <td data-label="Nombre">{{ sede.nombre }}</td>
-                  <td data-label="Dirección">{{ sede.direccion }}</td>
-                  <td data-label="Teléfono">{{ sede.telefono }}</td>
-                  <td class="row-actions" data-label="Acciones">
+          <table mat-table [dataSource]="sedesFiltradas()" class="data-table">
+            <ng-container matColumnDef="nombre">
+              <th mat-header-cell *matHeaderCellDef>Nombre</th>
+              <td mat-cell *matCellDef="let sede">{{ sede.nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="direccion">
+              <th mat-header-cell *matHeaderCellDef>Dirección</th>
+              <td mat-cell *matCellDef="let sede">{{ sede.direccion }}</td>
+            </ng-container>
+            <ng-container matColumnDef="telefono">
+              <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+              <td mat-cell *matCellDef="let sede">{{ sede.telefono }}</td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="actions-heading">Acciones</th>
+              <td mat-cell *matCellDef="let sede" class="row-actions">
                     <button mat-icon-button type="button" aria-label="Editar sede" (click)="editarSede(sede)" [disabled]="formularioVisible() || eliminandoId() !== null">
                       <mat-icon>edit</mat-icon>
                     </button>
@@ -114,10 +117,10 @@
                         <mat-icon>delete</mat-icon>
                       }
                     </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
           </table>
         </div>
       }

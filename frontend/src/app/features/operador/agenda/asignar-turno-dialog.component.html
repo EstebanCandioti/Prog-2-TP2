@@ -1,32 +1,36 @@
 <h2 mat-dialog-title>Asignar turno</h2>
-<mat-dialog-content [attr.aria-busy]="enviando()">
+<mat-dialog-content>
   <dl class="context-summary">
     <div><dt>Médico</dt><dd>{{ agenda.id_medico }}. {{ agenda.medico_apellido }}, {{ agenda.medico_nombre }}</dd></div>
     <div><dt>Especialidad</dt><dd>{{ agenda.id_especialidad }}. {{ agenda.especialidad_descripcion }}</dd></div>
     <div><dt>Fecha</dt><dd>{{ fecha | date:'dd/MM/yyyy' }}</dd></div>
     <div><dt>Rango de atención</dt><dd>{{ entrada }}–{{ salida }}</dd></div>
   </dl>
-  @if (errorContexto()) { <p class="error-message" role="alert">{{ errorContexto() }}</p> }
-  @if (errorReserva()) { <p class="error-message" role="alert">{{ errorReserva() }}</p> }
-  @if (enviando()) {
-    <div class="status" role="status" aria-live="polite"><mat-spinner diameter="24"></mat-spinner><span>Confirmando turno…</span></div>
-  }
 
-  <section aria-label="Selección del paciente">
-    <h3>Paciente</h3>
-    @if (pacienteSeleccionado(); as paciente) {
-      <div class="selected-patient">
-        <strong>{{ paciente.apellido }}, {{ paciente.nombre }}</strong>
-        <p>DNI: {{ paciente.dni }}</p>
-        @if (coberturaValida()) {
-          <p>Cobertura: {{ paciente.id_cobertura }}. {{ paciente.cobertura_nombre }}</p>
-          <p class="coverage-hint">Se usará la cobertura registrada; no se puede modificar en esta reserva.</p>
-        } @else {
-          <p class="field-error" role="alert">Este paciente no tiene una cobertura válida registrada. Debe actualizar sus datos antes de asignarle un turno.</p>
-        }
-        <button mat-stroked-button type="button" (click)="cambiarPaciente()" [disabled]="enviando()">Cambiar paciente</button>
-      </div>
+  @if (errorContexto()) {
+    <p class="error-message" role="alert">{{ errorContexto() }}</p>
+  } @else if (pacienteSeleccionado(); as paciente) {
+    @if (pacienteReserva(); as datosPaciente) {
+      <app-reserva-turno
+        [paciente]="datosPaciente"
+        [reservar]="reservarTurno"
+        [idSedeFija]="agenda.id_sede"
+        [contextoFijo]="contextoFijo"
+        [esOperador]="true"
+        (reservaExitosa)="reservaCreada()"
+        (cerrar)="cerrar()">
+      </app-reserva-turno>
     } @else {
+      <section class="selected-patient">
+        <h3>Paciente</h3>
+        <p><strong>{{ paciente.apellido }}, {{ paciente.nombre }}</strong> · DNI: {{ paciente.dni }}</p>
+        <p class="field-error" role="alert">Este paciente no tiene una cobertura válida registrada. Debe actualizar sus datos antes de asignarle un turno.</p>
+        <button mat-stroked-button type="button" (click)="cambiarPaciente()">Elegir otro paciente</button>
+      </section>
+    }
+  } @else {
+    <section aria-label="Selección del paciente">
+      <h3>Buscá el paciente</h3>
       <form class="search-form" [formGroup]="formularioBusqueda" (ngSubmit)="buscar()">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>DNI, nombre o apellido</mat-label>
@@ -37,68 +41,48 @@
             <mat-error>El DNI debe tener 7 u 8 dígitos.</mat-error>
           }
         </mat-form-field>
-        <button mat-stroked-button type="submit" [disabled]="enviando() || cargandoPacientes() || !!errorContexto()">Buscar</button>
+        <button mat-stroked-button type="submit" [disabled]="cargandoPacientes()">Buscar</button>
       </form>
+
       @if (cargandoPacientes()) {
         <div class="status" role="status" aria-live="polite"><mat-spinner diameter="24"></mat-spinner><span>Buscando pacientes…</span></div>
       } @else if (errorPacientes()) {
-        <div class="error-message" role="alert"><p>{{ errorPacientes() }}</p><button mat-button type="button" (click)="buscar(pagina())" [disabled]="enviando() || !!errorContexto()">Reintentar búsqueda</button></div>
+        <div class="error-message" role="alert">
+          <p>{{ errorPacientes() }}</p>
+          <button mat-button type="button" (click)="buscar(pagina())">Reintentar búsqueda</button>
+        </div>
       } @else if (!consultaRealizada()) {
         <p class="empty-message">Buscá al paciente para seleccionar sus datos registrados.</p>
       } @else if (pacientes().length === 0) {
-        <p class="empty-message" role="status">No se encontraron pacientes en esta página para la búsqueda indicada.</p>
+        <p class="empty-message" role="status">No se encontraron pacientes para la búsqueda indicada.</p>
       } @else {
         <ul class="patient-results" aria-label="Pacientes encontrados">
-          @for (paciente of pacientes(); track paciente.id) {
+          @for (resultado of pacientes(); track resultado.id) {
             <li>
-              <div><strong>{{ paciente.apellido }}, {{ paciente.nombre }}</strong><span>DNI: {{ paciente.dni }}</span></div>
-              <button mat-button type="button" (click)="seleccionarPaciente(paciente)" [attr.aria-label]="'Seleccionar a ' + paciente.apellido + ', ' + paciente.nombre + ', DNI ' + paciente.dni" [disabled]="enviando() || !!errorContexto()">Seleccionar</button>
+              <div>
+                <strong>{{ resultado.apellido }}, {{ resultado.nombre }}</strong>
+                <span>DNI: {{ resultado.dni }}</span>
+                <span>Cobertura: {{ resultado.cobertura_nombre ?? 'No registrada' }}</span>
+              </div>
+              <button mat-button type="button" (click)="seleccionarPaciente(resultado)">Seleccionar</button>
             </li>
           }
         </ul>
       }
+
       @if (consultaRealizada() && !cargandoPacientes() && !errorPacientes() && total() > 0) {
         <nav class="pagination" aria-label="Páginas de pacientes">
-          <button mat-button type="button" (click)="buscar(pagina() - 1)" [disabled]="enviando() || pagina() <= 1 || !!errorContexto()">Anterior</button>
-          <span>Página {{ pagina() }} de {{ totalPaginas() }} · {{ total() }} pacientes</span>
-          <button mat-button type="button" (click)="buscar(pagina() + 1)" [disabled]="enviando() || pagina() >= totalPaginas() || !!errorContexto()">Siguiente</button>
+          <button mat-button type="button" (click)="buscar(pagina() - 1)" [disabled]="pagina() <= 1">Anterior</button>
+          <span>Página {{ pagina() }} de {{ totalPaginas }} · {{ total() }} pacientes</span>
+          <button mat-button type="button" (click)="buscar(pagina() + 1)" [disabled]="pagina() >= totalPaginas">Siguiente</button>
         </nav>
       }
-      @if (formulario.controls.id_paciente.touched && formulario.controls.id_paciente.invalid) { <p class="field-error">Seleccioná un paciente de los resultados.</p> }
-    }
-  </section>
-
-  <form id="asignar-turno-formulario" class="booking-form" [formGroup]="formulario" (ngSubmit)="confirmar()">
-    <h3>Horario y nota</h3>
-    @if (cargandoHorarios()) {
-      <div class="status" role="status" aria-live="polite"><mat-spinner diameter="24"></mat-spinner><span>Consultando horarios libres del rango…</span></div>
-    } @else if (errorHorarios()) {
-      <div class="error-message" role="alert"><p>{{ errorHorarios() }}</p><button mat-button type="button" (click)="actualizarHorarios()" [disabled]="enviando() || !!errorContexto()">Reintentar horarios</button></div>
-    } @else if (horarios().length === 0 && !errorContexto()) {
-      <p class="empty-message" role="status">No quedan horarios libres en este rango. Podés actualizar la disponibilidad.</p>
-    }
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>Horario libre</mat-label>
-      <mat-select formControlName="hora">
-        @for (hora of horarios(); track hora) { <mat-option [value]="hora">{{ hora }}</mat-option> }
-      </mat-select>
-      @if (formulario.controls.hora.hasError('required')) { <mat-error>Seleccioná un horario libre.</mat-error> }
-      @else if (formulario.controls.hora.invalid) { <mat-error>Elegí un horario de la disponibilidad vigente.</mat-error> }
-    </mat-form-field>
-    <button mat-button class="refresh-button" type="button" (click)="actualizarHorarios()" [disabled]="enviando() || cargandoHorarios() || !!errorContexto()">Actualizar disponibilidad</button>
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>Nota de la consulta</mat-label>
-      <textarea matInput formControlName="nota" rows="2" maxlength="40"></textarea>
-      <mat-hint align="end">{{ formulario.controls.nota.value.length }}/40</mat-hint>
-      @if (formulario.controls.nota.hasError('required') || formulario.controls.nota.hasError('pattern')) {
-        <mat-error>La nota es obligatoria y no puede contener solo espacios.</mat-error>
-      } @else if (formulario.controls.nota.hasError('maxlength')) {
-        <mat-error>La nota admite hasta 40 caracteres.</mat-error>
-      }
-    </mat-form-field>
-  </form>
+    </section>
+  }
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button type="button" mat-dialog-close [disabled]="enviando()">Cancelar</button>
-  <button mat-flat-button class="primary-action" type="submit" form="asignar-turno-formulario" [disabled]="enviando() || !!errorContexto() || !coberturaValida() || cargandoHorarios() || !!errorHorarios() || horarios().length === 0 || cargandoPacientes()">{{ enviando() ? 'Confirmando…' : 'Confirmar turno' }}</button>
-</mat-dialog-actions>
+
+@if (!reservaConfirmada()) {
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="cancelar()" [disabled]="reservando()">Cancelar</button>
+  </mat-dialog-actions>
+}

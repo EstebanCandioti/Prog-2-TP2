@@ -3,10 +3,11 @@
     <mat-card-content>
       <div class="success-heading" role="status" aria-live="polite">
         <mat-icon>check_circle</mat-icon>
-        <div><h2>Tu turno está confirmado</h2><p>La reserva se registró correctamente.</p></div>
+        <div><h2>{{ esOperador ? 'El turno está confirmado' : 'Tu turno está confirmado' }}</h2><p>La reserva se registró correctamente.</p></div>
       </div>
       @if (reserva.turno) { <p class="appointment-id">Turno n.º {{ reserva.turno.id }}</p> }
       <dl class="summary">
+        @if (esOperador) { <div><dt>Paciente</dt><dd>{{ paciente.apellido }}, {{ paciente.nombre }}</dd></div> }
         <div><dt>Especialidad</dt><dd>{{ reserva.resumen.especialidad }}</dd></div>
         <div><dt>Sede</dt><dd>{{ reserva.resumen.sede }}</dd></div>
         <div><dt>Médico</dt><dd>{{ reserva.resumen.medico }}</dd></div>
@@ -16,16 +17,20 @@
         <div class="full-width"><dt>Nota</dt><dd>{{ reserva.resumen.nota }}</dd></div>
       </dl>
       <div class="actions success-actions">
-        <button mat-stroked-button type="button" (click)="reservarOtro()">Reservar otro turno</button>
-        <button mat-flat-button class="primary-action" type="button" (click)="verTurnos.emit()">Ver mis turnos</button>
+        @if (!esOperador) {
+          <button mat-stroked-button type="button" (click)="reservarOtro()">Reservar otro turno</button>
+          <button mat-flat-button class="primary-action" type="button" (click)="verTurnos.emit()">Ver mis turnos</button>
+        } @else {
+          <button mat-flat-button class="primary-action" type="button" (click)="cerrar.emit()">Cerrar</button>
+        }
       </div>
     </mat-card-content>
   </mat-card>
 } @else {
   <div class="patient-information">
-    <div><mat-icon aria-hidden="true">person</mat-icon><span>{{ paciente.apellido }}, {{ paciente.nombre }}</span></div>
+    <div><mat-icon aria-hidden="true">person</mat-icon><span>{{ esOperador ? 'Paciente: ' : '' }}{{ paciente.apellido }}, {{ paciente.nombre }}</span></div>
     <div><mat-icon aria-hidden="true">health_and_safety</mat-icon><span>Cobertura: <strong>{{ paciente.cobertura.id }}. {{ paciente.cobertura.nombre }}</strong></span></div>
-    <p>Usaremos la cobertura registrada en tu perfil.</p>
+    <p>{{ esOperador ? 'Se usará la cobertura registrada del paciente.' : 'Usaremos la cobertura registrada en tu perfil.' }}</p>
   </div>
 
   @if (errorReserva()) { <p class="request-error" role="alert">{{ errorReserva() }}</p> }
@@ -157,7 +162,7 @@
         <section class="step-body">
           <h2>Revisá y confirmá tu turno</h2>
           <p class="step-intro">Completá una nota para la consulta y verificá los datos de la reserva.</p>
-          <mat-form-field appearance="outline" class="note-field">
+          <mat-form-field appearance="outline" class="note-field" floatLabel="always">
             <mat-label>Nota para la consulta</mat-label>
             <textarea matInput formControlName="nota" maxlength="40" rows="2" placeholder="Por ejemplo, control anual"></textarea>
             <mat-hint align="end">{{ valores().nota.length }}/40</mat-hint>

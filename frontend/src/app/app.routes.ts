@@ -23,7 +23,8 @@ export const routes: Routes = [
 	{
 		path: 'perfil',
 		loadComponent: () => import('./features/perfil/perfil.component').then((module) => module.PerfilComponent),
-		canActivate: [authGuard],
+		canActivate: [authGuard, roleGuard],
+		data: { roles: ['paciente'] },
 		title: 'Mi perfil | Clínica Virtual'
 	},
 	{

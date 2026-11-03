@@ -105,33 +105,37 @@
         </div>
       } @else {
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Usuario (ID)</th>
-                <th>Acción</th>
-                <th>Entidad</th>
-                <th>ID entidad</th>
-                <th>Detalle</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (registro of registrosPagina(); track registro.id) {
-                <tr>
-                  <td data-label="Fecha">{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
-                  <td data-label="Usuario (ID)">{{ registro.id_usuario }}</td>
-                  <td data-label="Acción">
+          <table mat-table [dataSource]="registrosPagina()" class="data-table">
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let registro">{{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="usuario">
+              <th mat-header-cell *matHeaderCellDef>Usuario (ID)</th>
+              <td mat-cell *matCellDef="let registro">{{ registro.id_usuario }}</td>
+            </ng-container>
+            <ng-container matColumnDef="accion">
+              <th mat-header-cell *matHeaderCellDef>Acción</th>
+              <td mat-cell *matCellDef="let registro">
                     <span class="action-badge" [class]=" 'action-badge action-' + registro.accion.toLowerCase() ">
                       {{ registro.accion }}
                     </span>
-                  </td>
-                  <td data-label="Entidad">{{ registro.entidad }}</td>
-                  <td data-label="ID entidad">{{ registro.id_entidad ?? '—' }}</td>
-                  <td class="detail-cell" data-label="Detalle">{{ registro.detalle || '—' }}</td>
-                </tr>
-              }
-            </tbody>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="entidad">
+              <th mat-header-cell *matHeaderCellDef>Entidad</th>
+              <td mat-cell *matCellDef="let registro">{{ registro.entidad }}</td>
+            </ng-container>
+            <ng-container matColumnDef="idEntidad">
+              <th mat-header-cell *matHeaderCellDef>ID entidad</th>
+              <td mat-cell *matCellDef="let registro">{{ registro.id_entidad ?? '—' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="detalle">
+              <th mat-header-cell *matHeaderCellDef>Detalle</th>
+              <td mat-cell *matCellDef="let registro" class="detail-cell">{{ registro.detalle || '—' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
           </table>
         </div>
 

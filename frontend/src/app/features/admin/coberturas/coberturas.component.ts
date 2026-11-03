@@ -6,11 +6,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 
 import { Cobertura } from '../../../core/models/cobertura.model';
 import { CoberturaService } from '../../../core/services/cobertura.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 @Component({
   selector: 'app-coberturas',
@@ -22,6 +25,8 @@ import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
+    MatTableModule,
     MatSnackBarModule,
     ReactiveFormsModule
   ],
@@ -32,6 +37,7 @@ export class CoberturasComponent implements OnInit {
   private readonly coberturasApi = inject(CoberturaService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly coberturas = signal<Cobertura[]>([]);
   readonly cargando = signal(true);
@@ -41,6 +47,7 @@ export class CoberturasComponent implements OnInit {
   readonly termino = signal('');
   readonly coberturaEnEdicion = signal<Cobertura | null>(null);
   readonly formularioVisible = signal(false);
+  readonly columnas = ['nombre', 'acciones'];
   readonly coberturasFiltradas = computed(() => {
     const termino = this.termino().trim().toLocaleLowerCase();
     if (!termino) return this.coberturas();
@@ -137,22 +144,29 @@ export class CoberturasComponent implements OnInit {
   eliminarCobertura(cobertura: Cobertura): void {
     if (this.eliminandoId() !== null) return;
 
-    const confirmar = window.confirm(`¿Está seguro de eliminar la cobertura "${cobertura.nombre}"?`);
-    if (!confirmar) return;
-
-    this.eliminandoId.set(cobertura.id);
-    this.coberturasApi.eliminar(cobertura.id).subscribe({
-      next: () => {
-        this.eliminandoId.set(null);
-        this.snackBar.open('Cobertura eliminada correctamente.', 'Cerrar', { duration: 3500 });
-        this.cargarCoberturas();
-      },
-      error: (error: unknown) => {
-        this.eliminandoId.set(null);
-        this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar la cobertura.'), 'Cerrar', {
-          duration: 5000
-        });
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: { titulo: 'Eliminar cobertura', mensaje: `¿Está seguro de eliminar la cobertura "${cobertura.nombre}"?` }
       }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.eliminandoId.set(cobertura.id);
+      this.coberturasApi.eliminar(cobertura.id).subscribe({
+        next: () => {
+          this.eliminandoId.set(null);
+          this.snackBar.open('Cobertura eliminada correctamente.', 'Cerrar', { duration: 3500 });
+          this.cargarCoberturas();
+        },
+        error: (error: unknown) => {
+          this.eliminandoId.set(null);
+          this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar la cobertura.'), 'Cerrar', {
+            duration: 5000
+          });
+        }
+      });
     });
   }
 }

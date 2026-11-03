@@ -66,7 +66,14 @@
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Teléfono</mat-label>
-            <input matInput type="tel" formControlName="telefono" maxlength="10" inputmode="numeric" />
+            <input
+              matInput
+              type="tel"
+              formControlName="telefono"
+              maxlength="10"
+              inputmode="numeric"
+              (input)="filtrarTelefono($event)"
+            />
             @if (formulario.controls.telefono.invalid && formulario.controls.telefono.touched) {
               <mat-error>El teléfono debe tener entre 7 y 10 dígitos.</mat-error>
             }

@@ -7,7 +7,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { ApiResponse } from '../../../core/models/api-response.model';
@@ -26,6 +28,7 @@ import { SedeService } from '../../../core/services/sede.service';
 import { UsuarioAdminService } from '../../../core/services/usuario-admin.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
 import { Sede } from '../../../core/models/sede.model';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 const TAMANO_PAGINA = 20;
 const ROLES: Array<{ valor: RolUsuario; nombre: string }> = [
@@ -73,7 +76,9 @@ const validarEspecialidades = (control: { value: unknown }) =>
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     MatSelectModule,
+    MatTableModule,
     MatSnackBarModule,
     ReactiveFormsModule
   ],
@@ -87,6 +92,7 @@ export class UsuariosComponent implements OnInit {
   private readonly coberturasApi = inject(CoberturaService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly usuarios = signal<UsuarioAdmin[]>([]);
   readonly sedes = signal<Sede[]>([]);
@@ -107,6 +113,7 @@ export class UsuariosComponent implements OnInit {
   readonly totalUsuarios = signal(0);
   readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.totalUsuarios() / TAMANO_PAGINA)));
   readonly fechaMaxima = new Date().toISOString().slice(0, 10);
+  readonly columnas = ['usuario', 'dni', 'email', 'rol', 'asignacion', 'acciones'];
 
   readonly filtros = this.formBuilder.nonNullable.group({
     busqueda: [''],
@@ -149,6 +156,15 @@ export class UsuariosComponent implements OnInit {
   ngOnInit(): void {
     this.cargarCatalogos();
     this.cargarUsuarios();
+  }
+
+  filtrarBusqueda(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const busqueda = input.value.replace(/[^\p{L}\p{M} '\u2019-]/gu, '');
+    if (input.value !== busqueda) {
+      input.value = busqueda;
+      this.filtros.controls.busqueda.setValue(busqueda);
+    }
   }
 
   cargarCatalogos(): void {
@@ -292,27 +308,35 @@ export class UsuariosComponent implements OnInit {
   eliminarUsuario(usuario: UsuarioAdmin): void {
     if (this.eliminandoId() !== null || this.formularioVisible()) return;
 
-    const confirmar = window.confirm(
-      `¿Está seguro de eliminar al usuario "${usuario.nombre} ${usuario.apellido}"?`
-    );
-    if (!confirmar) return;
-
-    this.eliminandoId.set(usuario.id);
-    this.usuariosApi.eliminar(usuario.id).subscribe({
-      next: () => {
-        this.eliminandoId.set(null);
-        this.snackBar.open('Usuario eliminado correctamente.', 'Cerrar', { duration: 3500 });
-        if (this.usuarios().length === 1 && this.pagina() > 1) {
-          this.pagina.update((pagina) => pagina - 1);
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: {
+          titulo: 'Eliminar usuario',
+          mensaje: `¿Está seguro de eliminar al usuario "${usuario.nombre} ${usuario.apellido}"?`
         }
-        this.cargarUsuarios();
-      },
-      error: (error: unknown) => {
-        this.eliminandoId.set(null);
-        this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar el usuario.'), 'Cerrar', {
-          duration: 6000
-        });
       }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.eliminandoId.set(usuario.id);
+      this.usuariosApi.eliminar(usuario.id).subscribe({
+        next: () => {
+          this.eliminandoId.set(null);
+          this.snackBar.open('Usuario eliminado correctamente.', 'Cerrar', { duration: 3500 });
+          if (this.usuarios().length === 1 && this.pagina() > 1) {
+            this.pagina.update((pagina) => pagina - 1);
+          }
+          this.cargarUsuarios();
+        },
+        error: (error: unknown) => {
+          this.eliminandoId.set(null);
+          this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar el usuario.'), 'Cerrar', {
+            duration: 6000
+          });
+        }
+      });
     });
   }
 

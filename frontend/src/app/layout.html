@@ -39,9 +39,11 @@
           </button>
         </mat-menu>
         <app-notificacion-campana />
-        <a mat-icon-button routerLink="/perfil" matTooltip="Mi perfil" aria-label="Mi perfil">
-          <mat-icon>account_circle</mat-icon>
-        </a>
+        @if (esPaciente()) {
+          <a mat-icon-button routerLink="/perfil" matTooltip="Mi perfil" aria-label="Mi perfil">
+            <mat-icon>account_circle</mat-icon>
+          </a>
+        }
         <button mat-button class="logout-button" (click)="cerrarSesion()" aria-label="Cerrar sesión">
           <mat-icon>logout</mat-icon>
           <span>Cerrar sesión</span>

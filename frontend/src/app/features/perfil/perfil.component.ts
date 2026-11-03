@@ -136,6 +136,15 @@ export class PerfilComponent implements OnInit {
     });
   }
 
+  filtrarTelefono(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const telefono = input.value.replace(/[^0-9]/g, '');
+    if (input.value !== telefono) {
+      input.value = telefono;
+      this.formulario.controls.telefono.setValue(telefono);
+    }
+  }
+
   guardarCambios(): void {
     this.errorFormulario.set('');
     if (this.formulario.invalid || this.guardando()) {

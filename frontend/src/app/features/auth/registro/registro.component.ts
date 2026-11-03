@@ -61,8 +61,8 @@ export class RegistroComponent implements OnInit {
   readonly verPassword = signal(false);
   readonly fechaMaxima = new Date().toISOString().slice(0, 10);
   readonly form = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.maxLength(30)]],
-    apellido: ['', [Validators.required, Validators.maxLength(30)]],
+    nombre: ['', [Validators.required, Validators.pattern(/^(?=.*\p{L})[\p{L}\p{M} '\u2019-]+$/u), Validators.maxLength(30)]],
+    apellido: ['', [Validators.required, Validators.pattern(/^(?=.*\p{L})[\p{L}\p{M} '\u2019-]+$/u), Validators.maxLength(30)]],
     dni: ['', [Validators.required, Validators.pattern(/^\d{7,8}$/)]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(30)]],
     password: ['', [Validators.required, Validators.minLength(8)]],
@@ -72,6 +72,24 @@ export class RegistroComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarCoberturas();
+  }
+
+  filtrarNombre(event: Event, campo: 'nombre' | 'apellido'): void {
+    const input = event.target as HTMLInputElement;
+    const nombre = input.value.replace(/[^\p{L}\p{M} '\u2019-]/gu, '');
+    if (input.value !== nombre) {
+      input.value = nombre;
+      this.form.controls[campo].setValue(nombre);
+    }
+  }
+
+  filtrarDni(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const dni = input.value.replace(/[^0-9]/g, '');
+    if (input.value !== dni) {
+      input.value = dni;
+      this.form.controls.dni.setValue(dni);
+    }
   }
 
   cargarCoberturas(): void {

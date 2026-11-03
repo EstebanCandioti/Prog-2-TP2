@@ -32,6 +32,14 @@ import { fechaAgendaValida, fechaCalendario, FORMATOS_FECHA_AGENDA, leerFechaCal
 
 type PasoOpciones = 'especialidades' | 'sedes' | 'medicos' | 'fechas' | 'horarios';
 
+export interface ContextoAgendaReserva {
+  idAgenda: number;
+  idMedico: number;
+  idEspecialidad: number;
+  idSede: number;
+  fecha: string;
+}
+
 interface SeleccionReserva {
   id_especialidad: number | null;
   id_sede: number | null;
@@ -61,7 +69,11 @@ export class ReservaTurnoComponent implements OnInit {
   @Input({ required: true }) paciente!: PacienteReserva;
   @Input({ required: true }) reservar!: (solicitud: SolicitudTurno) => Observable<ApiResponse<Turno>>;
   @Input() idSedeFija: number | null = null;
+  @Input() contextoFijo: ContextoAgendaReserva | null = null;
+  @Input() esOperador = false;
   readonly verTurnos = output<void>();
+  readonly reservaExitosa = output<void>();
+  readonly cerrar = output<void>();
 
   private readonly especialidadesApi = inject(EspecialidadService);
   private readonly sedesApi = inject(SedeService);
@@ -185,8 +197,18 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('especialidades', false, 'La respuesta no contiene el listado de especialidades.');
               return;
             }
-            this.especialidades.set(respuesta.datos);
-            if (respuesta.datos.length) this.controles.id_especialidad.enable({ emitEvent: false });
+            const opciones = this.contextoFijo
+              ? respuesta.datos.filter((item) => item.id === this.contextoFijo?.idEspecialidad)
+              : respuesta.datos;
+            this.especialidades.set(opciones);
+            if (this.contextoFijo) {
+              if (!opciones.length) {
+                this.estado('especialidades', false, 'La especialidad de esta agenda ya no está disponible.');
+                return;
+              }
+              this.controles.id_especialidad.setValue(this.contextoFijo.idEspecialidad);
+              this.controles.id_especialidad.disable({ emitEvent: false });
+            } else if (opciones.length) this.controles.id_especialidad.enable({ emitEvent: false });
           }),
           catchError((error: unknown) => {
             this.estado('especialidades', false, mensajeErrorApi(error, 'No se pudieron cargar las especialidades.'));
@@ -215,14 +237,18 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('sedes', false, 'La respuesta no contiene el listado de sedes.');
               return;
             }
-            this.sedes.set(respuesta.datos);
+            const sedes = this.idSedeFija === null
+              ? respuesta.datos
+              : respuesta.datos.filter((sede) => sede.id === this.idSedeFija);
+            this.sedes.set(sedes);
             if (this.idSedeFija !== null) {
-              if (!respuesta.datos.some((sede) => sede.id === this.idSedeFija)) {
+              if (!sedes.length) {
                 this.estado('sedes', false, 'La sede fijada para esta reserva no está disponible.');
                 return;
               }
               this.controles.id_sede.setValue(this.idSedeFija);
-            } else if (respuesta.datos.length) this.controles.id_sede.enable({ emitEvent: false });
+              this.controles.id_sede.disable({ emitEvent: false });
+            } else if (sedes.length) this.controles.id_sede.enable({ emitEvent: false });
           }),
           catchError((error: unknown) => {
             this.estado('sedes', false, mensajeErrorApi(error, 'No se pudieron cargar las sedes.'));
@@ -252,8 +278,18 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('medicos', false, 'La respuesta no contiene el listado de médicos.');
               return;
             }
-            this.medicos.set(respuesta.datos);
-            if (respuesta.datos.length) this.controles.id_medico.enable({ emitEvent: false });
+            const medicos = this.contextoFijo
+              ? respuesta.datos.filter((item) => item.id === this.contextoFijo?.idMedico)
+              : respuesta.datos;
+            this.medicos.set(medicos);
+            if (this.contextoFijo) {
+              if (!medicos.length) {
+                this.estado('medicos', false, 'El médico de esta agenda ya no está disponible para la selección.');
+                return;
+              }
+              this.controles.id_medico.setValue(this.contextoFijo.idMedico);
+              this.controles.id_medico.disable({ emitEvent: false });
+            } else if (medicos.length) this.controles.id_medico.enable({ emitEvent: false });
           }),
           catchError((error: unknown) => {
             this.estado('medicos', false, mensajeErrorApi(error, 'No se pudieron cargar los médicos.'));
@@ -283,8 +319,19 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('fechas', false, 'La respuesta no contiene el listado de fechas.');
               return;
             }
-            this.fechas.set([...new Set(respuesta.datos)].sort());
-            if (this.fechas().length) this.controles.fecha.enable({ emitEvent: false });
+            const fechas = [...new Set(respuesta.datos)].sort();
+            if (this.contextoFijo) {
+              if (!fechas.includes(this.contextoFijo.fecha)) {
+                this.estado('fechas', false, 'La fecha de esta agenda ya no está disponible para la selección.');
+                return;
+              }
+              this.fechas.set([this.contextoFijo.fecha]);
+              this.controles.fecha.setValue(leerFechaCalendario(this.contextoFijo.fecha));
+              this.controles.fecha.disable({ emitEvent: false });
+            } else {
+              this.fechas.set(fechas);
+              if (fechas.length) this.controles.fecha.enable({ emitEvent: false });
+            }
           }),
           catchError((error: unknown) => {
             this.estado('fechas', false, mensajeErrorApi(error, 'No se pudieron cargar las fechas.'));
@@ -314,7 +361,10 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('horarios', false, 'La respuesta no contiene el listado de horarios.');
               return;
             }
-            this.horarios.set([...new Set(respuesta.datos.map((item) => item.hora))].sort());
+            const disponibles = this.contextoFijo
+              ? respuesta.datos.filter((item) => item.id_agenda === this.contextoFijo?.idAgenda)
+              : respuesta.datos;
+            this.horarios.set([...new Set(disponibles.map((item) => item.hora))].sort());
             if (this.horarios().length) this.controles.hora.enable({ emitEvent: false });
           }),
           catchError((error: unknown) => {
@@ -333,7 +383,10 @@ export class ReservaTurnoComponent implements OnInit {
         this.errorReserva.set('');
         this.formulario.disable({ emitEvent: false });
         return defer(() => this.reservar(solicitud)).pipe(
-          tap((respuesta) => this.confirmada.set({ resumen, turno: respuesta.datos })),
+          tap((respuesta) => {
+            this.confirmada.set({ resumen, turno: respuesta.datos });
+            if (this.esOperador) this.reservaExitosa.emit();
+          }),
           catchError((error: unknown) => {
             this.reservando.set(false);
             this.formulario.enable({ emitEvent: false });

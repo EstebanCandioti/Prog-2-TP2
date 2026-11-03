@@ -77,27 +77,33 @@ h1 {
   overflow-x: auto;
 }
 
-table {
+.data-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 1120px;
+  background: var(--surface, #fff);
 }
 
-th,
-td {
+.data-table .mat-mdc-header-cell,
+.data-table .mat-mdc-cell {
   padding: 0.85rem 0.65rem;
-  border-bottom: 1px solid #e2e8f0;
   text-align: left;
   vertical-align: middle;
 }
 
-th {
+.data-table .mat-mdc-header-cell {
+  border-bottom-color: #e2e8f0;
+  background: #e8f2eb;
   color: #475569;
   font-size: 0.82rem;
   font-weight: 700;
   white-space: nowrap;
 }
 
-tbody tr:last-child td {
+.data-table .mat-mdc-cell {
+  border-bottom-color: #e2e8f0;
+}
+
+.data-table .mat-mdc-row:last-child .mat-mdc-cell {
   border-bottom: 0;
 }
 
@@ -148,22 +154,21 @@ tbody tr:last-child td {
   color: #64748b;
 }
 
-.notes summary {
-  color: var(--color-primary, #315c78);
-  cursor: pointer;
-  font-weight: 600;
+.notes-panel {
+  width: 150px;
 }
 
-.notes p {
+.appointment-note {
   min-width: 180px;
   max-width: 280px;
   margin: 0.5rem 0 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
-.form-row td {
-  padding: 0;
-  background: #f8fafc;
+.clinical-card {
+  margin-top: 1rem;
+  border-radius: 14px;
 }
 
 .clinical-form {

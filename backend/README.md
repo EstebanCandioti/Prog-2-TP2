@@ -158,6 +158,10 @@ Para comprobar el caso de un médico sin agenda, consultar `/medicos` con una ba
 
 Los filtros opcionales deben ser valores simples de dígitos que representen enteros positivos seguros. Por ejemplo, `id_sede=0`, `id_especialidad=abc`, `id_sede=1.5`, `id_sede=9007199254740992`, `id_sede=1&id_sede=2` e `id_especialidad[id]=1` responden `400`; también se rechazan valores vacíos, negativos y arreglos. Sin token o con token inválido, `401`. Un filtro válido sin coincidencias devuelve `200` con `[]`. Los errores usan el formato uniforme del proyecto.
 
+### Auditoría
+
+`GET /auditoria` requiere token de administrador. Acepta los filtros opcionales `id_usuario`, `entidad`, `id_entidad`, `fecha_desde` y `fecha_hasta`. `entidad` admite `sede`, `usuario`, `cobertura` o `especialidad`; `id_entidad` debe ser un entero positivo y puede combinarse con `entidad` para limitar la búsqueda al ID de esa entidad. Por ejemplo: `/auditoria?entidad=sede&id_entidad=2`. Si se omite `entidad`, el filtro `id_entidad` busca ese ID entre todas las entidades. Los filtros se combinan entre sí. Las entidades inválidas y los IDs no positivos responden `400`; el listado se ordena de la fecha más reciente a la más antigua.
+
 ### Alta administrativa de usuarios (B02)
 
 `POST /usuarios` requiere `Authorization: Bearer <token>` de administrador y JSON. Crea solo `admin`, `operador` o `medico`; los pacientes se registran por `POST /auth/registro`. Campos comunes obligatorios: `nombre` y `apellido` (hasta 30 caracteres), `dni` (7 u 8 dígitos), `email` (hasta 30 caracteres y formato válido), `telefono` (7 a 10 dígitos), `fecha_nacimiento` (`AAAA-MM-DD`, no futura), `password` (8 a 72 bytes) y `rol`. No se admite una cobertura no nula.
@@ -201,15 +205,16 @@ Ambos listados se ordenan por apellido, nombre e ID ascendentes y tienen un lím
 
 ### Edición del perfil propio del paciente (B04)
 
-`PATCH /usuarios/mi-perfil` requiere token de paciente. El ID se obtiene exclusivamente del usuario autenticado; el cuerpo no admite `id` ni campos ajenos a `email`, `telefono`, `password` e `id_cobertura`. Debe enviarse al menos un campo. Los omitidos conservan su valor, y enviar el valor actual también es válido. Ejemplos:
+`PATCH /usuarios/mi-perfil` requiere token de paciente. El ID se obtiene exclusivamente del usuario autenticado; el cuerpo no admite `id` ni campos ajenos a `nombre`, `apellido`, `email`, `telefono`, `fecha_nacimiento`, `password` e `id_cobertura`. Debe enviarse al menos un campo. Los omitidos conservan su valor, y enviar el valor actual también es válido. Ejemplos:
 
 ```jsonl
 {"telefono":"3424111222"}
+{"nombre":"Paciente","apellido":"Actualizado","fecha_nacimiento":"2000-01-15"}
 {"email":"paciente.nuevo@ejemplo.com","telefono":"3424111222","id_cobertura":1}
 {"password":"NuevaClave2026!"}
 ```
 
-El email se recorta de espacios exteriores, debe tener formato válido y no superar 30 caracteres; si lo usa otra persona, responde `409`. El teléfono debe tener 7 a 10 dígitos. La contraseña debe tener 8 a 72 bytes y no estar vacía ni compuesta solo por espacios: se hashea sin recortarla. La cobertura debe ser un ID entero positivo existente y no puede ser `null`. Todos los campos enviados se validan antes de un único `UPDATE`; no se modifican `rol`, `id_sede`, DNI, nombre, apellido, fecha de nacimiento ni especialidades. Cuerpos vacíos, no-objeto, campos prohibidos o valores inválidos —incluida una cobertura inexistente— responden `400`. Sin token válido o si el usuario del token ya no existe, `401`; admin, operador y médico reciben `403`. La respuesta `200` contiene los datos públicos actualizados del paciente, nunca contraseña, hash ni token. Después de guardar se registra auditoría `MODIFICACION` con el propio paciente como autor; si falla la auditoría, la edición permanece guardada aunque la petición devuelva error. `GET /auth/perfil` no cambia.
+Nombre y apellido son obligatorios cuando se envían y admiten hasta 30 caracteres. La fecha de nacimiento debe ser válida, tener formato `AAAA-MM-DD` y no ser futura. El email se recorta de espacios exteriores, debe tener formato válido y no superar 30 caracteres; si lo usa otra persona, responde `409`. El teléfono debe tener 7 a 10 dígitos. La contraseña debe tener 8 a 72 bytes y no estar vacía ni compuesta solo por espacios: se hashea sin recortarla. La cobertura debe ser un ID entero positivo existente y no puede ser `null`. Todos los campos enviados se validan antes de un único `UPDATE`; no se modifican `rol`, `id_sede`, DNI ni especialidades. Cuerpos vacíos, no-objeto, campos prohibidos o valores inválidos —incluida una cobertura inexistente— responden `400`. Sin token válido o si el usuario del token ya no existe, `401`; admin, operador y médico reciben `403`. La respuesta `200` contiene los datos públicos actualizados del paciente, nunca contraseña, hash ni token. Después de guardar se registra auditoría `MODIFICACION` con el propio paciente como autor; si falla la auditoría, la edición permanece guardada aunque la petición devuelva error. `GET /auth/perfil` no cambia.
 
 ### Control de sede del operador en agendas y turnos
 

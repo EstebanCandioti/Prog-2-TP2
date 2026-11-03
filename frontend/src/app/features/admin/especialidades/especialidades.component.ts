@@ -6,11 +6,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 
 import { Especialidad } from '../../../core/models/especialidad.model';
 import { EspecialidadService } from '../../../core/services/especialidad.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 @Component({
   selector: 'app-especialidades',
@@ -22,6 +25,8 @@ import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
+    MatTableModule,
     MatSnackBarModule,
     ReactiveFormsModule
   ],
@@ -32,6 +37,7 @@ export class EspecialidadesComponent implements OnInit {
   private readonly especialidadesApi = inject(EspecialidadService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly especialidades = signal<Especialidad[]>([]);
   readonly cargando = signal(true);
@@ -41,6 +47,7 @@ export class EspecialidadesComponent implements OnInit {
   readonly termino = signal('');
   readonly especialidadEnEdicion = signal<Especialidad | null>(null);
   readonly formularioVisible = signal(false);
+  readonly columnas = ['descripcion', 'acciones'];
   readonly especialidadesFiltradas = computed(() => {
     const termino = this.termino().trim().toLocaleLowerCase();
     if (!termino) return this.especialidades();
@@ -141,28 +148,36 @@ export class EspecialidadesComponent implements OnInit {
   eliminarEspecialidad(especialidad: Especialidad): void {
     if (this.eliminandoId() !== null) return;
 
-    const confirmar = window.confirm(
-      `¿Está seguro de eliminar la especialidad "${especialidad.descripcion}"?`
-    );
-    if (!confirmar) return;
-
-    this.eliminandoId.set(especialidad.id);
-    this.especialidadesApi.eliminar(especialidad.id).subscribe({
-      next: () => {
-        this.eliminandoId.set(null);
-        this.snackBar.open('Especialidad eliminada correctamente.', 'Cerrar', {
-          duration: 3500
-        });
-        this.cargarEspecialidades();
-      },
-      error: (error: unknown) => {
-        this.eliminandoId.set(null);
-        this.snackBar.open(
-          mensajeErrorApi(error, 'No se pudo eliminar la especialidad.'),
-          'Cerrar',
-          { duration: 5000 }
-        );
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: {
+          titulo: 'Eliminar especialidad',
+          mensaje: `¿Está seguro de eliminar la especialidad "${especialidad.descripcion}"?`
+        }
       }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.eliminandoId.set(especialidad.id);
+      this.especialidadesApi.eliminar(especialidad.id).subscribe({
+        next: () => {
+          this.eliminandoId.set(null);
+          this.snackBar.open('Especialidad eliminada correctamente.', 'Cerrar', {
+            duration: 3500
+          });
+          this.cargarEspecialidades();
+        },
+        error: (error: unknown) => {
+          this.eliminandoId.set(null);
+          this.snackBar.open(
+            mensajeErrorApi(error, 'No se pudo eliminar la especialidad.'),
+            'Cerrar',
+            { duration: 5000 }
+          );
+        }
+      });
     });
   }
 }

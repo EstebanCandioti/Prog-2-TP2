@@ -136,53 +136,53 @@
         </div>
       } @else {
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Horario</th>
-                <th>Especialidad</th>
-                <th>Sede</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (agenda of agendas(); track agenda.id) {
-                <tr>
-                  <td data-label="Horario">{{ agenda.hora_entrada }} – {{ agenda.hora_salida }}</td>
-                  <td data-label="Especialidad">
-                    {{ agenda.especialidad_descripcion ?? ('Especialidad #' + agenda.id_especialidad) }}
-                  </td>
-                  <td data-label="Sede">{{ agenda.sede_nombre ?? nombreSede(agenda.id_sede) }}</td>
-                  <td data-label="Acciones" class="row-actions">
-                    <button
-                      mat-icon-button
-                      type="button"
-                      aria-label="Editar rango horario"
-                      title="Editar"
-                      (click)="editarAgenda(agenda)"
-                      [disabled]="guardando() || eliminandoId() !== null"
-                    >
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                    <button
-                      mat-icon-button
-                      color="warn"
-                      type="button"
-                      aria-label="Eliminar rango horario"
-                      title="Eliminar"
-                      (click)="eliminarAgenda(agenda)"
-                      [disabled]="guardando() || eliminandoId() !== null"
-                    >
-                      @if (eliminandoId() === agenda.id) {
-                        <mat-spinner diameter="18"></mat-spinner>
-                      } @else {
-                        <mat-icon>delete</mat-icon>
-                      }
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
+          <table mat-table [dataSource]="agendas()" class="data-table" aria-label="Mi agenda">
+            <ng-container matColumnDef="horario">
+              <th mat-header-cell *matHeaderCellDef>Horario</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.hora_entrada }} – {{ agenda.hora_salida }}</td>
+            </ng-container>
+            <ng-container matColumnDef="especialidad">
+              <th mat-header-cell *matHeaderCellDef>Especialidad</th>
+              <td mat-cell *matCellDef="let agenda">
+                {{ agenda.especialidad_descripcion ?? ('Especialidad #' + agenda.id_especialidad) }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="sede">
+              <th mat-header-cell *matHeaderCellDef>Sede</th>
+              <td mat-cell *matCellDef="let agenda">{{ agenda.sede_nombre ?? nombreSede(agenda.id_sede) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="acciones">
+              <th mat-header-cell *matHeaderCellDef class="actions">Acciones</th>
+              <td mat-cell *matCellDef="let agenda" class="row-actions">
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Editar rango horario"
+                  title="Editar"
+                  (click)="editarAgenda(agenda)"
+                  [disabled]="guardando() || eliminandoId() !== null"
+                >
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  color="warn"
+                  type="button"
+                  aria-label="Eliminar rango horario"
+                  title="Eliminar"
+                  (click)="eliminarAgenda(agenda)"
+                  [disabled]="guardando() || eliminandoId() !== null"
+                >
+                  @if (eliminandoId() === agenda.id) {
+                    <mat-spinner diameter="18"></mat-spinner>
+                  } @else {
+                    <mat-icon>delete</mat-icon>
+                  }
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"></tr>
           </table>
         </div>
       }

@@ -3,14 +3,38 @@ import { RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
 import { responder } from '../utils/respuesta';
 
+const ENTIDADES_AUDITORIA = ['sede', 'usuario', 'cobertura', 'especialidad'];
+
 const armarFiltrosAuditoria = (req: Request, res: Response): { where: string; valores: unknown[] } | null => {
   const accionFiltro = req.query.accion || req.query.estado;
   const condiciones: string[] = [];
   const valores: unknown[] = [];
 
+  if (req.query.entidad !== undefined && req.query.entidad !== '') {
+    if (typeof req.query.entidad !== 'string' || !ENTIDADES_AUDITORIA.includes(req.query.entidad)) {
+      responder(res, 400, 'La entidad debe ser sede, usuario, cobertura o especialidad');
+      return null;
+    }
+    condiciones.push('entidad = ?');
+    valores.push(req.query.entidad);
+  }
+
+  if (req.query.id_entidad !== undefined) {
+    const idEntidad = req.query.id_entidad;
+    if (
+      typeof idEntidad !== 'string' ||
+      !/^[1-9]\d*$/.test(idEntidad) ||
+      !Number.isSafeInteger(Number(idEntidad))
+    ) {
+      responder(res, 400, 'El id_entidad debe ser un entero positivo');
+      return null;
+    }
+    condiciones.push('id_entidad = ?');
+    valores.push(Number(idEntidad));
+  }
+
   const filtros = [
     { valor: req.query.id_usuario, condicion: 'id_usuario = ?' },
-    { valor: req.query.entidad, condicion: 'entidad = ?' },
     { valor: req.query.fecha_desde, condicion: 'fecha >= ?' },
     { valor: req.query.fecha_hasta, condicion: 'fecha <= ?' }
   ];

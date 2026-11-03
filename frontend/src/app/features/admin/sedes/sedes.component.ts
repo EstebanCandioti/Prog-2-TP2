@@ -6,11 +6,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 
 import { Sede } from '../../../core/models/sede.model';
 import { SedeService } from '../../../core/services/sede.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 @Component({
   selector: 'app-sedes',
@@ -22,6 +25,8 @@ import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
+    MatTableModule,
     MatSnackBarModule,
     ReactiveFormsModule
   ],
@@ -32,6 +37,7 @@ export class SedesComponent implements OnInit {
   private readonly sedesApi = inject(SedeService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly sedes = signal<Sede[]>([]);
   readonly cargando = signal(true);
@@ -41,6 +47,7 @@ export class SedesComponent implements OnInit {
   readonly termino = signal('');
   readonly sedeEnEdicion = signal<Sede | null>(null);
   readonly formularioVisible = signal(false);
+  readonly columnas = ['nombre', 'direccion', 'telefono', 'acciones'];
   readonly sedesFiltradas = computed(() => {
     const termino = this.termino().trim().toLocaleLowerCase();
     if (!termino) return this.sedes();
@@ -54,7 +61,7 @@ export class SedesComponent implements OnInit {
   readonly formulario = this.formBuilder.nonNullable.group({
     nombre: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(50)]],
     direccion: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(100)]],
-    telefono: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(15)]]
+    telefono: ['', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.maxLength(15)]]
   });
 
   ngOnInit(): void {
@@ -85,6 +92,15 @@ export class SedesComponent implements OnInit {
 
   buscar(event: Event): void {
     this.termino.set((event.target as HTMLInputElement).value);
+  }
+
+  filtrarTelefono(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const telefono = input.value.replace(/[^0-9]/g, '');
+    if (input.value !== telefono) {
+      input.value = telefono;
+      this.formulario.controls.telefono.setValue(telefono);
+    }
   }
 
   nuevaSede(): void {
@@ -151,22 +167,29 @@ export class SedesComponent implements OnInit {
   eliminarSede(sede: Sede): void {
     if (this.eliminandoId() !== null) return;
 
-    const confirmar = window.confirm(`¿Está seguro de eliminar la sede "${sede.nombre}"?`);
-    if (!confirmar) return;
-
-    this.eliminandoId.set(sede.id);
-    this.sedesApi.eliminar(sede.id).subscribe({
-      next: () => {
-        this.eliminandoId.set(null);
-        this.snackBar.open('Sede eliminada correctamente.', 'Cerrar', { duration: 3500 });
-        this.cargarSedes();
-      },
-      error: (error: unknown) => {
-        this.eliminandoId.set(null);
-        this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar la sede.'), 'Cerrar', {
-          duration: 5000
-        });
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: { titulo: 'Eliminar sede', mensaje: `¿Está seguro de eliminar la sede "${sede.nombre}"?` }
       }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.eliminandoId.set(sede.id);
+      this.sedesApi.eliminar(sede.id).subscribe({
+        next: () => {
+          this.eliminandoId.set(null);
+          this.snackBar.open('Sede eliminada correctamente.', 'Cerrar', { duration: 3500 });
+          this.cargarSedes();
+        },
+        error: (error: unknown) => {
+          this.eliminandoId.set(null);
+          this.snackBar.open(mensajeErrorApi(error, 'No se pudo eliminar la sede.'), 'Cerrar', {
+            duration: 5000
+          });
+        }
+      });
     });
   }
 }

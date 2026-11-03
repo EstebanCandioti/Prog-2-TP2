@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTableModule } from '@angular/material/table';
 
 import { HistorialClinico } from '../../../core/models/turno.model';
 import { PacienteBusqueda } from '../../../core/models/usuario-admin.model';
@@ -28,6 +29,7 @@ const TAMANO_PAGINA = 20;
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatTableModule,
     ReactiveFormsModule
   ],
   templateUrl: './historial-medico.component.html',
@@ -50,6 +52,7 @@ export class HistorialMedicoComponent {
   readonly totalPaginas = computed(() =>
     Math.max(1, Math.ceil(this.totalPacientes() / TAMANO_PAGINA))
   );
+  readonly columnas = ['paciente', 'dni', 'fechaNacimiento', 'accion'];
 
   readonly formulario = this.formBuilder.nonNullable.group({
     termino: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(80)]]

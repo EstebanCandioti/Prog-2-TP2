@@ -2,12 +2,14 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTableModule } from '@angular/material/table';
 import { finalize } from 'rxjs';
 
 import { Agenda, AgendaRequest } from '../../../core/models/agenda.model';
@@ -16,6 +18,7 @@ import { AgendaService } from '../../../core/services/agenda.service';
 import { SedeService } from '../../../core/services/sede.service';
 import { SessionService } from '../../../core/services/session.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 @Component({
   selector: 'app-agenda-medico',
@@ -23,12 +26,14 @@ import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
   imports: [
     MatButtonModule,
     MatCardModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
     MatSelectModule,
     MatSnackBarModule,
+    MatTableModule,
     ReactiveFormsModule
   ],
   templateUrl: './agenda-medico.component.html',
@@ -40,6 +45,7 @@ export class AgendaMedicoComponent implements OnInit {
   private readonly session = inject(SessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   readonly fechaSeleccionada = signal(this.fechaLocalActual());
   readonly agendas = signal<Agenda[]>([]);
@@ -54,6 +60,7 @@ export class AgendaMedicoComponent implements OnInit {
   readonly errorSedes = signal('');
   readonly errorFormulario = signal('');
   readonly agendaEnEdicion = signal<Agenda | null>(null);
+  readonly columnas = ['horario', 'especialidad', 'sede', 'acciones'];
 
   readonly formulario = this.formBuilder.nonNullable.group({
     fecha: ['', Validators.required],
@@ -207,27 +214,35 @@ export class AgendaMedicoComponent implements OnInit {
 
   eliminarAgenda(agenda: Agenda): void {
     if (this.eliminandoId() !== null) return;
-    const confirmar = window.confirm(
-      `¿Está seguro de eliminar el rango ${agenda.hora_entrada.slice(0, 5)}–${agenda.hora_salida.slice(0, 5)} del ${this.formatearFecha(agenda.fecha)}?`
-    );
-    if (!confirmar) return;
-
-    this.eliminandoId.set(agenda.id);
-    this.agendaApi
-      .eliminar(agenda.id)
-      .pipe(finalize(() => this.eliminandoId.set(null)))
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Rango horario eliminado.', 'Cerrar', { duration: 3500 });
-          this.cargarAgenda();
-        },
-        error: (error: unknown) =>
-          this.snackBar.open(
-            mensajeErrorApi(error, 'No se pudo eliminar el rango horario.'),
-            'Cerrar',
-            { duration: 6000 }
-          )
-      });
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: {
+          titulo: 'Eliminar rango horario',
+          mensaje: `¿Está seguro de eliminar el rango ${agenda.hora_entrada.slice(0, 5)}–${agenda.hora_salida.slice(0, 5)} del ${this.formatearFecha(agenda.fecha)}?`
+        }
+      }
+    ).afterClosed().subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.eliminandoId.set(agenda.id);
+      this.agendaApi
+        .eliminar(agenda.id)
+        .pipe(finalize(() => this.eliminandoId.set(null)))
+        .subscribe({
+          next: () => {
+            this.snackBar.open('Rango horario eliminado.', 'Cerrar', { duration: 3500 });
+            this.cargarAgenda();
+          },
+          error: (error: unknown) =>
+            this.snackBar.open(
+              mensajeErrorApi(error, 'No se pudo eliminar el rango horario.'),
+              'Cerrar',
+              { duration: 6000 }
+            )
+        });
+    });
   }
 
   nombreSede(idSede: number): string {

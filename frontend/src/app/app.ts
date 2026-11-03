@@ -31,6 +31,7 @@ export class App {
     const role = this.session.sesionActual()?.usuario.rol;
     return role ? navigationByRole[role] : [];
   });
+  readonly esPaciente = computed(() => this.session.sesionActual()?.usuario.rol === 'paciente');
   readonly displayName = computed(() => {
     const profile = this.profile();
     return profile ? `${profile.nombre} ${profile.apellido}` : 'Mi cuenta';

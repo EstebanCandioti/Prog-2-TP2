@@ -96,13 +96,13 @@ h1 {
 
 .appointment-details {
   margin-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: none;
 }
 
-.appointment-details summary {
+.appointment-details mat-expansion-panel-header {
   color: var(--green-700, #176b51);
-  cursor: pointer;
   font-weight: 600;
 }
 

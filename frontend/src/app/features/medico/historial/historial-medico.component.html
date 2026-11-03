@@ -45,22 +45,22 @@
       </mat-card-header>
       <mat-card-content>
         <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Paciente</th>
-                <th>DNI</th>
-                <th>Fecha de nacimiento</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (paciente of pacientes(); track paciente.id) {
-                <tr [class.selected-row]="pacienteSeleccionado()?.id === paciente.id">
-                  <td data-label="Paciente">{{ paciente.apellido }}, {{ paciente.nombre }}</td>
-                  <td data-label="DNI">{{ paciente.dni }}</td>
-                  <td data-label="Fecha de nacimiento">{{ paciente.fecha_nacimiento | date: 'dd/MM/yyyy' }}</td>
-                  <td data-label="Acción">
+          <table mat-table [dataSource]="pacientes()" class="data-table">
+            <ng-container matColumnDef="paciente">
+              <th mat-header-cell *matHeaderCellDef>Paciente</th>
+              <td mat-cell *matCellDef="let paciente">{{ paciente.apellido }}, {{ paciente.nombre }}</td>
+            </ng-container>
+            <ng-container matColumnDef="dni">
+              <th mat-header-cell *matHeaderCellDef>DNI</th>
+              <td mat-cell *matCellDef="let paciente">{{ paciente.dni }}</td>
+            </ng-container>
+            <ng-container matColumnDef="fechaNacimiento">
+              <th mat-header-cell *matHeaderCellDef>Fecha de nacimiento</th>
+              <td mat-cell *matCellDef="let paciente">{{ paciente.fecha_nacimiento | date: 'dd/MM/yyyy' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="accion">
+              <th mat-header-cell *matHeaderCellDef>Acción</th>
+              <td mat-cell *matCellDef="let paciente">
                     <button
                       mat-stroked-button
                       type="button"
@@ -70,10 +70,11 @@
                       <mat-icon>description</mat-icon>
                       Ver historial
                     </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+            <tr mat-row *matRowDef="let row; columns: columnas"
+              [class.selected-row]="pacienteSeleccionado()?.id === row.id"></tr>
           </table>
         </div>
         <nav class="pagination" aria-label="Paginación de pacientes">

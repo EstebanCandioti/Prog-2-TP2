@@ -2,6 +2,8 @@ import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } fr
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -12,11 +14,15 @@ import { HistorialClinico, TipoListadoTurnos, TurnoPaciente } from '../../../cor
 import { NotificacionService } from '../../../core/services/notificacion.service';
 import { TurnoService } from '../../../core/services/turno.service';
 import { mensajeErrorApi } from '../../../core/utils/mensaje-error-api';
+import { ConfirmacionDialogComponent } from '../../shared/confirmacion-dialog.component';
 
 @Component({
   selector: 'app-mis-turnos',
   standalone: true,
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule, MatTabsModule, MatSnackBarModule],
+  imports: [
+    MatButtonModule, MatCardModule, MatDialogModule, MatExpansionModule, MatIconModule,
+    MatProgressSpinnerModule, MatTabsModule, MatSnackBarModule
+  ],
   templateUrl: './mis-turnos.component.html',
   styleUrl: './mis-turnos.component.css'
 })
@@ -25,6 +31,7 @@ export class MisTurnosComponent implements OnInit, OnDestroy {
   private readonly turnosApi = inject(TurnoService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private consultaActual?: Subscription;
   private readonly consultasHistorial = new Map<number, Subscription>();
@@ -143,20 +150,33 @@ export class MisTurnosComponent implements OnInit, OnDestroy {
 
   cancelarTurno(turno: TurnoPaciente): void {
     if (this.cancelandoId() !== null || turno.estado !== 'confirmado') return;
-    if (!window.confirm('¿Querés cancelar el turno del ' + this.formatearFecha(turno.fecha) + ' a las ' + turno.hora + '?')) return;
-    this.cancelandoId.set(turno.id);
-    this.turnosApi.cancelar(turno.id).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => this.cancelandoId.set(null))
-    ).subscribe({
-      next: () => {
-        this.snackBar.open('Turno cancelado correctamente.', 'Cerrar', { duration: 4000 });
-        this.cargarTurnos();
-        this.notificaciones.actualizar();
-      },
-      error: (error: unknown) => this.snackBar.open(
-        mensajeErrorApi(error, 'No se pudo cancelar el turno.'), 'Cerrar', { duration: 5000 }
-      )
+    this.dialog.open<ConfirmacionDialogComponent, { titulo: string; mensaje: string; textoConfirmar: string }, boolean>(
+      ConfirmacionDialogComponent,
+      {
+        width: '440px',
+        maxWidth: 'calc(100vw - 32px)',
+        data: {
+          titulo: 'Cancelar turno',
+          mensaje: `¿Querés cancelar el turno del ${this.formatearFecha(turno.fecha)} a las ${turno.hora}?`,
+          textoConfirmar: 'Cancelar turno'
+        }
+      }
+    ).afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((confirmada) => {
+      if (!confirmada) return;
+      this.cancelandoId.set(turno.id);
+      this.turnosApi.cancelar(turno.id).pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.cancelandoId.set(null))
+      ).subscribe({
+        next: () => {
+          this.snackBar.open('Turno cancelado correctamente.', 'Cerrar', { duration: 4000 });
+          this.cargarTurnos();
+          this.notificaciones.actualizar();
+        },
+        error: (error: unknown) => this.snackBar.open(
+          mensajeErrorApi(error, 'No se pudo cancelar el turno.'), 'Cerrar', { duration: 5000 }
+        )
+      });
     });
   }
 

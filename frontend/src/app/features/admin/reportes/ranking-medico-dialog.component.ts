@@ -3,6 +3,7 @@ import { AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } fr
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
 import Chart from 'chart.js/auto';
 
 import { RankingMedico } from '../../../core/models/reporte.model';
@@ -10,7 +11,7 @@ import { RankingMedico } from '../../../core/models/reporte.model';
 @Component({
   selector: 'app-ranking-medico-dialog',
   standalone: true,
-  imports: [DecimalPipe, MatButtonModule, MatDialogModule, MatIconModule],
+  imports: [DecimalPipe, MatButtonModule, MatDialogModule, MatIconModule, MatTableModule],
   templateUrl: './ranking-medico-dialog.component.html',
   styleUrl: './ranking-medico-dialog.component.css'
 })
@@ -18,6 +19,7 @@ export class RankingMedicoDialogComponent implements AfterViewInit, OnDestroy {
   @ViewChild('rankingCanvas') private rankingCanvas?: ElementRef<HTMLCanvasElement>;
 
   readonly ranking = inject<RankingMedico[]>(MAT_DIALOG_DATA);
+  readonly columnas = ['posicion', 'medico', 'atendidos'];
   readonly alturaGrafico = Math.max(280, this.ranking.length * 44 + 60);
   private graficoRanking?: Chart;
 

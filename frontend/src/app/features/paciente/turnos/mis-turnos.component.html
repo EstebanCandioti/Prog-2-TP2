@@ -57,8 +57,10 @@
               </span>
             </header>
 
-            <details #detalle class="appointment-details" (toggle)="detalle.open && cargarHistorial(turno)">
-              <summary>Ver detalle del turno</summary>
+            <mat-expansion-panel class="appointment-details" (opened)="turno.estado === 'atendido' && cargarHistorial(turno)">
+              <mat-expansion-panel-header>
+                <mat-panel-title>Ver detalle del turno</mat-panel-title>
+              </mat-expansion-panel-header>
               <dl>
                 <div>
                   <dt>Fecha</dt>
@@ -123,7 +125,7 @@
                   }
                 </section>
               }
-            </details>
+            </mat-expansion-panel>
 
             @if (turno.estado === 'confirmado') {
               <footer class="appointment-actions">
