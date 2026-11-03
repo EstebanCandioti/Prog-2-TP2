@@ -11,15 +11,25 @@
     <p class="error-message" role="alert">{{ errorContexto() }}</p>
   } @else if (pacienteSeleccionado(); as paciente) {
     @if (pacienteReserva(); as datosPaciente) {
-      <app-reserva-turno
-        [paciente]="datosPaciente"
-        [reservar]="reservarTurno"
-        [idSedeFija]="agenda.id_sede"
-        [contextoFijo]="contextoFijo"
-        [esOperador]="true"
-        (reservaExitosa)="reservaCreada()"
-        (cerrar)="cerrar()">
-      </app-reserva-turno>
+      @if (!reservaConfirmada()) {
+        <section class="selected-patient">
+          <p><strong>{{ paciente.apellido }}, {{ paciente.nombre }}</strong> · DNI: {{ paciente.dni }}</p>
+          <button mat-stroked-button type="button" (click)="cambiarPaciente()" [disabled]="reservando()">Cambiar paciente</button>
+        </section>
+      }
+      <!-- La instancia por ID evita conservar una reserva o nota de otro paciente. -->
+      @for (datos of [datosPaciente]; track datos.id) {
+        <app-reserva-turno
+          presentacion="formulario"
+          [paciente]="datos"
+          [reservar]="reservarTurno"
+          [idSedeFija]="agenda.id_sede"
+          [contextoFijo]="contextoFijo"
+          [esOperador]="true"
+          (reservaExitosa)="reservaCreada()"
+          (cerrar)="cerrar()">
+        </app-reserva-turno>
+      }
     } @else {
       <section class="selected-patient">
         <h3>Paciente</h3>

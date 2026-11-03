@@ -103,7 +103,8 @@ export class AsignarTurnoDialogComponent implements OnInit {
   readonly reservarTurno = (solicitud: SolicitudTurno) => {
     const paciente = this.pacienteReserva();
     const usuario = this.session.obtenerUsuario();
-    if (!paciente || usuario?.rol !== 'operador' || usuario.id_sede !== this.agenda.id_sede) {
+    if (this.reservando() || !paciente || usuario?.rol !== 'operador' || usuario.id_sede !== this.agenda.id_sede ||
+        solicitud.id_sede !== this.agenda.id_sede) {
       return throwError(() => new Error('No se pudo validar el paciente o la sede del operador.'));
     }
     this.reservando.set(true);
@@ -157,6 +158,7 @@ export class AsignarTurnoDialogComponent implements OnInit {
     });
 
     this.busqueda.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      if (this.reservando()) return;
       this.criterioActual.set(null);
       this.consultaRealizada.set(false);
       this.pagina.set(1);
@@ -169,7 +171,7 @@ export class AsignarTurnoDialogComponent implements OnInit {
   }
 
   buscar(pagina = 1): void {
-    if (this.cargandoPacientes() || this.errorContexto()) return;
+    if (this.reservando() || this.cargandoPacientes() || this.errorContexto()) return;
     this.busqueda.markAsTouched();
     const criterio = this.busqueda.value.trim();
     if (this.busqueda.invalid || !criterio || !Number.isSafeInteger(pagina) || pagina <= 0 ||
@@ -182,12 +184,13 @@ export class AsignarTurnoDialogComponent implements OnInit {
   }
 
   seleccionarPaciente(paciente: PacienteListado): void {
-    if (this.cargandoPacientes() || !idPositivo(paciente.id) ||
+    if (this.reservando() || this.cargandoPacientes() || !idPositivo(paciente.id) ||
         !this.pacientes().some((item) => item.id === paciente.id)) return;
     this.pacienteSeleccionado.set(paciente);
   }
 
   cambiarPaciente(): void {
+    if (this.reservando()) return;
     this.pacienteSeleccionado.set(null);
   }
 
@@ -196,10 +199,12 @@ export class AsignarTurnoDialogComponent implements OnInit {
   }
 
   cerrar(): void {
+    if (this.reservando()) return;
     this.dialogRef.close(true);
   }
 
   cancelar(): void {
+    if (this.reservando()) return;
     this.dialogRef.close(false);
   }
 }

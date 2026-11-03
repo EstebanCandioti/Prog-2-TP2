@@ -26,6 +26,6 @@
       </div>
     </mat-card>
   } @else if (paciente(); as datosPaciente) {
-    <app-reserva-turno [paciente]="datosPaciente" [reservar]="reservarTurno" (verTurnos)="verMisTurnos()"></app-reserva-turno>
+    <app-reserva-turno presentacion="formulario" [paciente]="datosPaciente" [reservar]="reservarTurno" (verTurnos)="verMisTurnos()"></app-reserva-turno>
   }
 </main>

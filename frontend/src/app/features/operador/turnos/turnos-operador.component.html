@@ -10,7 +10,7 @@
       color="primary"
       type="button"
       (click)="abrirAsignacion()"
-      [disabled]="!tieneSedeAsignada() || cargandoAgendas() || medicos().length === 0"
+      [disabled]="!tieneSedeAsignada() || cargandoAgendas() || medicos().length === 0 || guardandoTurno()"
     >
       <mat-icon>add</mat-icon>
       Asignar turno
@@ -55,8 +55,8 @@
         <mat-card-title>Asignar turno</mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <section class="patient-search">
-          <h2>1. Buscar paciente</h2>
+        <section class="patient-search" [attr.inert]="guardandoTurno() ? '' : null">
+          <h2>Buscar paciente</h2>
           <form [formGroup]="formularioPaciente" (ngSubmit)="buscarPacientes()" class="patient-search-form">
             <mat-form-field appearance="outline">
               <mat-label>DNI o apellido</mat-label>
@@ -65,7 +65,7 @@
                 <mat-error>Ingresá un DNI o apellido.</mat-error>
               }
             </mat-form-field>
-            <button mat-stroked-button type="submit" [disabled]="cargandoPacientes()">
+            <button mat-stroked-button type="submit" [disabled]="cargandoPacientes() || guardandoTurno()">
               @if (cargandoPacientes()) { <mat-spinner diameter="18"></mat-spinner> } @else { Buscar }
             </button>
           </form>
@@ -75,7 +75,7 @@
           @if (pacientesEncontrados().length > 0) {
             <mat-form-field appearance="outline" class="patient-select">
               <mat-label>Paciente</mat-label>
-              <mat-select [value]="pacienteSeleccionado()?.id ?? null" (selectionChange)="seleccionarPacientePorId($event.value)">
+              <mat-select [value]="pacienteSeleccionado()?.id ?? null" (selectionChange)="seleccionarPacientePorId($event.value)" [disabled]="guardandoTurno()">
                 @for (paciente of pacientesEncontrados(); track paciente.id) {
                   <mat-option [value]="paciente.id">
                     {{ paciente.apellido }}, {{ paciente.nombre }} · DNI {{ paciente.dni }}
@@ -92,7 +92,7 @@
                     mat-button
                     type="button"
                     (click)="cambiarPaginaPacientes(paginaPacientes() - 1)"
-                    [disabled]="paginaPacientes() === 1 || cargandoPacientes()"
+                    [disabled]="paginaPacientes() === 1 || cargandoPacientes() || guardandoTurno()"
                   >
                     Anterior
                   </button>
@@ -101,7 +101,7 @@
                     mat-button
                     type="button"
                     (click)="cambiarPaginaPacientes(paginaPacientes() + 1)"
-                    [disabled]="paginaPacientes() >= totalPaginasPacientes() || cargandoPacientes()"
+                    [disabled]="paginaPacientes() >= totalPaginasPacientes() || cargandoPacientes() || guardandoTurno()"
                   >
                     Siguiente
                   </button>
@@ -112,91 +112,36 @@
           @if (pacienteSeleccionado(); as paciente) {
             <p class="selected-patient">
               Seleccionado: <strong>{{ paciente.nombre }} {{ paciente.apellido }}</strong>
+              · DNI: {{ paciente.dni }}
               · Cobertura: {{ paciente.cobertura_nombre ?? 'Sin cobertura' }}
             </p>
           }
         </section>
 
-        <form [formGroup]="formularioTurno" (ngSubmit)="guardarTurno()" class="booking-form">
-          <h2>2. Elegir turno · Sede fija: {{ nombreSedePropia() }}</h2>
-          <div class="booking-fields">
-            <mat-form-field appearance="outline">
-              <mat-label>Médico</mat-label>
-              <mat-select formControlName="idMedico" (selectionChange)="cambiarMedico($event.value)">
-                @for (medico of medicos(); track medico.id) {
-                  <mat-option [value]="medico.id">{{ medico.apellido }}, {{ medico.nombre }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Especialidad</mat-label>
-              <mat-select formControlName="idEspecialidad" (selectionChange)="cambiarEspecialidad($event.value)">
-                @for (especialidad of especialidadesDisponibles(); track especialidad.id) {
-                  <mat-option [value]="especialidad.id">{{ especialidad.descripcion }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Fecha disponible</mat-label>
-              <mat-select formControlName="fecha" (selectionChange)="cambiarFechaTurno($event.value)" [disabled]="cargandoFechas()">
-                @for (fecha of fechasDisponibles(); track fecha) {
-                  <mat-option [value]="fecha">{{ formatearFecha(fecha) }}</mat-option>
-                }
-              </mat-select>
-              @if (cargandoFechas()) { <mat-hint>Cargando fechas…</mat-hint> }
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Horario disponible</mat-label>
-              <mat-select formControlName="hora" [disabled]="cargandoHorarios()">
-                @for (horario of horariosDisponibles(); track horario.id_agenda + '-' + horario.hora) {
-                  <mat-option [value]="horario.hora">{{ horario.hora }}</mat-option>
-                }
-              </mat-select>
-              @if (cargandoHorarios()) { <mat-hint>Cargando horarios…</mat-hint> }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="note-field">
-              <mat-label>Nota para la consulta</mat-label>
-              <textarea matInput rows="2" maxlength="255" formControlName="nota"></textarea>
-              @if (formularioTurno.controls.nota.invalid && formularioTurno.controls.nota.touched) {
-                <mat-error>La nota es obligatoria y admite hasta 255 caracteres.</mat-error>
-              }
-            </mat-form-field>
-          </div>
-          @if (errorDisponibilidad()) {
-            <p class="inline-error" role="alert">{{ errorDisponibilidad() }}</p>
-          } @else if (formularioTurno.controls.idEspecialidad.value !== null && !cargandoFechas() && fechasDisponibles().length === 0) {
-            <p class="muted">El médico no tiene fechas disponibles para esta especialidad en tu sede.</p>
-          } @else if (formularioTurno.controls.fecha.value && !cargandoHorarios() && horariosDisponibles().length === 0) {
-            <p class="muted">No hay horarios libres para esa fecha.</p>
-          }
-          @if (errorFormulario()) {
-            <p class="inline-error" role="alert">{{ errorFormulario() }}</p>
-          }
-          @if (pacienteSeleccionado() && formularioTurno.controls.fecha.value && formularioTurno.controls.hora.value) {
-            <section class="booking-summary">
-              <h3>Resumen</h3>
-              <p>
-                {{ pacienteSeleccionado()?.nombre }} {{ pacienteSeleccionado()?.apellido }}
-                · {{ medicoSeleccionadoNombre() }}
-                · {{ especialidadSeleccionadaNombre() }}
-                · {{ formatearFecha(formularioTurno.controls.fecha.value!) }}
-                · {{ formularioTurno.controls.hora.value }}
-                · Cobertura: {{ pacienteSeleccionado()?.cobertura_nombre ?? 'Sin cobertura' }}
-              </p>
-            </section>
+        <section class="booking-form" aria-label="Reserva del turno">
+          @if (pacienteReserva(); as datosPaciente) {
+            <!-- La clave por paciente reinicia controles, nota y consultas al cambiarlo. -->
+            @for (datos of [datosPaciente]; track datos.id) {
+              <app-reserva-turno
+                presentacion="formulario"
+                [paciente]="datos"
+                [reservar]="reservarTurno"
+                [idSedeFija]="idSedeReserva()"
+                [seleccionesIniciales]="seleccionesIniciales()"
+                [esOperador]="true"
+                (reservaExitosa)="reservaCreada()"
+                (cerrar)="cerrarAsignacion()">
+              </app-reserva-turno>
+            }
+          } @else if (pacienteSeleccionado()) {
+            <p class="inline-error" role="alert">El paciente no tiene una cobertura válida registrada. Debe actualizarla antes de reservar.</p>
+          } @else {
+            <p class="muted">Buscá y seleccioná un paciente para completar su turno.</p>
           }
           <div class="form-actions">
             <button mat-button type="button" (click)="cerrarAsignacion()" [disabled]="guardandoTurno()">Cancelar</button>
-            <button
-              mat-flat-button
-              color="primary"
-              type="submit"
-              [disabled]="guardandoTurno() || !pacienteSeleccionado() || formularioTurno.invalid"
-            >
-              @if (guardandoTurno()) { <mat-spinner diameter="18"></mat-spinner> } @else { Confirmar turno }
-            </button>
           </div>
-        </form>
+        </section>
       </mat-card-content>
     </mat-card>
   }
@@ -247,12 +192,7 @@
               <th mat-header-cell *matHeaderCellDef>Nota</th>
               <td mat-cell *matCellDef="let turno">
                 @if (turno.nota) {
-                  <mat-expansion-panel class="notes-panel">
-                    <mat-expansion-panel-header>
-                      <mat-panel-title>Ver nota</mat-panel-title>
-                    </mat-expansion-panel-header>
-                    <p class="appointment-note">{{ turno.nota }}</p>
-                  </mat-expansion-panel>
+                  <button mat-stroked-button type="button" (click)="verNota(turno, notaDialog)" [attr.aria-label]="'Ver nota de ' + turno.paciente_apellido + ', ' + turno.paciente_nombre">Ver nota</button>
                 } @else {
                   <span class="muted">Sin nota</span>
                 }
@@ -282,3 +222,14 @@
     </mat-card-content>
   </mat-card>
 </main>
+
+<ng-template #notaDialog let-turno>
+  <h2 mat-dialog-title>Nota del paciente</h2>
+  <mat-dialog-content>
+    <p class="note-context">{{ turno.paciente_apellido }}, {{ turno.paciente_nombre }} · {{ formatearFecha(turno.fecha) }} · {{ turno.hora }}</p>
+    <p class="appointment-note">{{ turno.nota }}</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cerrar</button>
+  </mat-dialog-actions>
+</ng-template>

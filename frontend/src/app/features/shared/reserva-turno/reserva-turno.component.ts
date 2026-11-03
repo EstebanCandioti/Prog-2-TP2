@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, computed, DestroyRef, inject, Input, OnInit, output, signal } from '@angular/core';
@@ -40,6 +40,14 @@ export interface ContextoAgendaReserva {
   fecha: string;
 }
 
+export interface SeleccionesInicialesReserva {
+  id_especialidad?: number;
+  id_sede?: number;
+  id_medico?: number;
+  fecha?: string;
+  hora?: string;
+}
+
 interface SeleccionReserva {
   id_especialidad: number | null;
   id_sede: number | null;
@@ -53,7 +61,7 @@ interface SeleccionReserva {
   selector: 'app-reserva-turno',
   standalone: true,
   imports: [
-    DatePipe, ReactiveFormsModule, MatButtonModule, MatCardModule, MatDatepickerModule,
+    DatePipe, NgTemplateOutlet, ReactiveFormsModule, MatButtonModule, MatCardModule, MatDatepickerModule,
     MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule, MatSelectModule, MatStepperModule
   ],
   providers: [
@@ -71,8 +79,10 @@ export class ReservaTurnoComponent implements OnInit {
   @Input() idSedeFija: number | null = null;
   @Input() contextoFijo: ContextoAgendaReserva | null = null;
   @Input() esOperador = false;
+  @Input() presentacion: 'pasos' | 'formulario' = 'pasos';
+  @Input() seleccionesIniciales: SeleccionesInicialesReserva = {};
   readonly verTurnos = output<void>();
-  readonly reservaExitosa = output<void>();
+  readonly reservaExitosa = output<Turno>();
   readonly cerrar = output<void>();
 
   private readonly especialidadesApi = inject(EspecialidadService);
@@ -86,6 +96,8 @@ export class ReservaTurnoComponent implements OnInit {
   private readonly recargarFechas$ = new Subject<void>();
   private readonly recargarHorarios$ = new Subject<void>();
   private readonly solicitudes$ = new Subject<{ solicitud: SolicitudTurno; resumen: ResumenReserva }>();
+  private precargas: SeleccionesInicialesReserva = {};
+  private aplicandoPrecarga = false;
 
   readonly especialidades = signal<Especialidad[]>([]);
   readonly sedes = signal<Sede[]>([]);
@@ -102,6 +114,7 @@ export class ReservaTurnoComponent implements OnInit {
   readonly pasoActual = signal(0);
   readonly reservando = signal(false);
   readonly errorReserva = signal('');
+  readonly errorConfiguracion = signal('');
   readonly confirmada = signal<{ resumen: ResumenReserva; turno: Turno | null } | null>(null);
 
   readonly formulario = new FormGroup({
@@ -149,7 +162,14 @@ export class ReservaTurnoComponent implements OnInit {
     };
   });
 
+  get sedeFija(): number | null {
+    return this.contextoFijo?.idSede ?? this.idSedeFija;
+  }
+
   ngOnInit(): void {
+    this.errorConfiguracion.set(this.validarConfiguracion());
+    if (this.errorConfiguracion()) return;
+    this.precargas = { ...this.seleccionesIniciales };
     this.breakpoints.observe('(max-width: 850px)').pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((estado) => this.orientacion.set(estado.matches ? 'vertical' : 'horizontal'));
 
@@ -158,6 +178,14 @@ export class ReservaTurnoComponent implements OnInit {
       map(() => {
         const actual = this.formulario.getRawValue();
         const anterior = this.seleccionAnterior;
+        // Las precargas se consumen una sola vez. Una modificación del usuario
+        // descarta las pendientes aguas abajo de una selección ya establecida.
+        if (!this.aplicandoPrecarga) {
+          if (actual.id_especialidad !== anterior.id_especialidad && anterior.id_especialidad !== null) this.descartarPrecargasDesde(1);
+          else if (actual.id_sede !== anterior.id_sede && anterior.id_sede !== null) this.descartarPrecargasDesde(2);
+          else if (actual.id_medico !== anterior.id_medico && anterior.id_medico !== null) this.descartarPrecargasDesde(3);
+          else if (fechaCalendario(actual.fecha) !== fechaCalendario(anterior.fecha) && anterior.fecha !== null) this.descartarPrecargasDesde(4);
+        }
         if (actual.id_especialidad !== anterior.id_especialidad) this.limpiarDesde(1);
         else if (actual.id_sede !== anterior.id_sede) this.limpiarDesde(2);
         else if (actual.id_medico !== anterior.id_medico) this.limpiarDesde(3);
@@ -206,9 +234,13 @@ export class ReservaTurnoComponent implements OnInit {
                 this.estado('especialidades', false, 'La especialidad de esta agenda ya no está disponible.');
                 return;
               }
-              this.controles.id_especialidad.setValue(this.contextoFijo.idEspecialidad);
+              const idEspecialidad = this.contextoFijo.idEspecialidad;
+              this.asignarPrecarga(() => this.controles.id_especialidad.setValue(idEspecialidad));
               this.controles.id_especialidad.disable({ emitEvent: false });
-            } else if (opciones.length) this.controles.id_especialidad.enable({ emitEvent: false });
+            } else if (opciones.length) {
+              this.controles.id_especialidad.enable({ emitEvent: false });
+              this.aplicarPrecarga('id_especialidad');
+            }
           }),
           catchError((error: unknown) => {
             this.estado('especialidades', false, mensajeErrorApi(error, 'No se pudieron cargar las especialidades.'));
@@ -237,18 +269,21 @@ export class ReservaTurnoComponent implements OnInit {
               this.estado('sedes', false, 'La respuesta no contiene el listado de sedes.');
               return;
             }
-            const sedes = this.idSedeFija === null
+            const sedes = this.sedeFija === null
               ? respuesta.datos
-              : respuesta.datos.filter((sede) => sede.id === this.idSedeFija);
+              : respuesta.datos.filter((sede) => sede.id === this.sedeFija);
             this.sedes.set(sedes);
-            if (this.idSedeFija !== null) {
+            if (this.sedeFija !== null) {
               if (!sedes.length) {
                 this.estado('sedes', false, 'La sede fijada para esta reserva no está disponible.');
                 return;
               }
-              this.controles.id_sede.setValue(this.idSedeFija);
+              this.asignarPrecarga(() => this.controles.id_sede.setValue(this.sedeFija));
               this.controles.id_sede.disable({ emitEvent: false });
-            } else if (sedes.length) this.controles.id_sede.enable({ emitEvent: false });
+            } else if (sedes.length) {
+              this.controles.id_sede.enable({ emitEvent: false });
+              this.aplicarPrecarga('id_sede');
+            }
           }),
           catchError((error: unknown) => {
             this.estado('sedes', false, mensajeErrorApi(error, 'No se pudieron cargar las sedes.'));
@@ -287,9 +322,13 @@ export class ReservaTurnoComponent implements OnInit {
                 this.estado('medicos', false, 'El médico de esta agenda ya no está disponible para la selección.');
                 return;
               }
-              this.controles.id_medico.setValue(this.contextoFijo.idMedico);
+              const idMedico = this.contextoFijo.idMedico;
+              this.asignarPrecarga(() => this.controles.id_medico.setValue(idMedico));
               this.controles.id_medico.disable({ emitEvent: false });
-            } else if (medicos.length) this.controles.id_medico.enable({ emitEvent: false });
+            } else if (medicos.length) {
+              this.controles.id_medico.enable({ emitEvent: false });
+              this.aplicarPrecarga('id_medico');
+            }
           }),
           catchError((error: unknown) => {
             this.estado('medicos', false, mensajeErrorApi(error, 'No se pudieron cargar los médicos.'));
@@ -326,11 +365,15 @@ export class ReservaTurnoComponent implements OnInit {
                 return;
               }
               this.fechas.set([this.contextoFijo.fecha]);
-              this.controles.fecha.setValue(leerFechaCalendario(this.contextoFijo.fecha));
+              const fecha = leerFechaCalendario(this.contextoFijo.fecha);
+              this.asignarPrecarga(() => this.controles.fecha.setValue(fecha));
               this.controles.fecha.disable({ emitEvent: false });
             } else {
               this.fechas.set(fechas);
-              if (fechas.length) this.controles.fecha.enable({ emitEvent: false });
+              if (fechas.length) {
+                this.controles.fecha.enable({ emitEvent: false });
+                this.aplicarPrecarga('fecha');
+              }
             }
           }),
           catchError((error: unknown) => {
@@ -365,7 +408,10 @@ export class ReservaTurnoComponent implements OnInit {
               ? respuesta.datos.filter((item) => item.id_agenda === this.contextoFijo?.idAgenda)
               : respuesta.datos;
             this.horarios.set([...new Set(disponibles.map((item) => item.hora))].sort());
-            if (this.horarios().length) this.controles.hora.enable({ emitEvent: false });
+            if (this.horarios().length) {
+              this.controles.hora.enable({ emitEvent: false });
+              this.aplicarPrecarga('hora');
+            }
           }),
           catchError((error: unknown) => {
             this.estado('horarios', false, mensajeErrorApi(error, 'No se pudieron cargar los horarios.'));
@@ -384,13 +430,19 @@ export class ReservaTurnoComponent implements OnInit {
         this.formulario.disable({ emitEvent: false });
         return defer(() => this.reservar(solicitud)).pipe(
           tap((respuesta) => {
+            if (!respuesta.datos) throw new Error('La respuesta no contiene el turno creado.');
             this.confirmada.set({ resumen, turno: respuesta.datos });
-            if (this.esOperador) this.reservaExitosa.emit();
+            this.reservaExitosa.emit(respuesta.datos);
           }),
           catchError((error: unknown) => {
             this.reservando.set(false);
             this.formulario.enable({ emitEvent: false });
-            if (this.idSedeFija !== null) this.controles.id_sede.disable({ emitEvent: false });
+            if (this.sedeFija !== null) this.controles.id_sede.disable({ emitEvent: false });
+            if (this.contextoFijo) {
+              this.controles.id_especialidad.disable({ emitEvent: false });
+              this.controles.id_medico.disable({ emitEvent: false });
+              this.controles.fecha.disable({ emitEvent: false });
+            }
             if (error instanceof HttpErrorResponse && error.status === 409) {
               this.controles.hora.reset({ value: null, disabled: true });
               this.pasoActual.set(4);
@@ -406,6 +458,7 @@ export class ReservaTurnoComponent implements OnInit {
   }
 
   pasoListo(paso: number): boolean {
+    if (this.errorConfiguracion()) return false;
     const valor = this.valores();
     const carga = this.cargando();
     const error = this.errores();
@@ -429,7 +482,7 @@ export class ReservaTurnoComponent implements OnInit {
   }
 
   reintentar(paso: PasoOpciones): void {
-    if (this.reservando() || this.confirmada()) return;
+    if (this.reservando() || this.confirmada() || this.errorConfiguracion()) return;
     // Estos resets sí emiten; la selección compartida cancela los flujos inferiores.
     switch (paso) {
       case 'especialidades': this.controles.id_especialidad.reset({ value: null, disabled: true }); this.recargarEspecialidades$.next(); break;
@@ -441,7 +494,7 @@ export class ReservaTurnoComponent implements OnInit {
   }
 
   confirmar(): void {
-    if (this.pasoActual() !== 5) return;
+    if (this.presentacion === 'pasos' && this.pasoActual() !== 5) return;
     this.formulario.markAllAsTouched();
     if (this.reservando() || this.confirmada() || !this.pasoListo(4) || this.controles.nota.invalid ||
         !this.paciente?.cobertura || !Number.isSafeInteger(this.paciente.cobertura.id) || this.paciente.cobertura.id <= 0) return;
@@ -461,16 +514,65 @@ export class ReservaTurnoComponent implements OnInit {
     this.confirmada.set(null);
     this.errorReserva.set('');
     this.pasoActual.set(0);
+    this.precargas = {};
     this.formulario.reset({
       id_especialidad: { value: null, disabled: true }, id_sede: { value: null, disabled: true },
       id_medico: { value: null, disabled: true }, fecha: { value: null, disabled: true },
       hora: { value: null, disabled: true }, nota: { value: '', disabled: false }
     });
-    if (this.especialidades().length) this.controles.id_especialidad.enable({ emitEvent: false });
+    this.recargarEspecialidades$.next();
   }
 
   fechaLegible(fecha: string): Date | null {
     return leerFechaCalendario(fecha);
+  }
+
+  private validarConfiguracion(): string {
+    if (this.idSedeFija !== null && !this.idValido(this.idSedeFija)) return 'La sede fija de esta reserva no es válida.';
+    const contexto = this.contextoFijo;
+    if (!contexto) return '';
+    if (![contexto.idAgenda, contexto.idMedico, contexto.idEspecialidad, contexto.idSede].every((id) => this.idValido(id)) ||
+        typeof contexto.fecha !== 'string' || fechaCalendario(leerFechaCalendario(contexto.fecha)) !== contexto.fecha) {
+      return 'El contexto de agenda debe incluir agenda, médico, especialidad, sede y una fecha válida. Cerrá y actualizá la agenda.';
+    }
+    if (this.idSedeFija !== null && this.idSedeFija !== contexto.idSede) return 'La agenda no pertenece a la sede fija de esta reserva.';
+    return '';
+  }
+
+  private idValido(id: unknown): id is number {
+    return typeof id === 'number' && Number.isSafeInteger(id) && id > 0;
+  }
+
+  private asignarPrecarga(asignar: () => void): void {
+    const anterior = this.aplicandoPrecarga;
+    this.aplicandoPrecarga = true;
+    try { asignar(); } finally { this.aplicandoPrecarga = anterior; }
+  }
+
+  private aplicarPrecarga(campo: keyof SeleccionesInicialesReserva): void {
+    const valor = this.precargas[campo];
+    delete this.precargas[campo];
+    if (this.controles[campo].value !== null) return;
+    if (campo === 'fecha') {
+      if (typeof valor === 'string' && this.fechas().includes(valor) && fechaCalendario(leerFechaCalendario(valor)) === valor) {
+        this.asignarPrecarga(() => this.controles.fecha.setValue(leerFechaCalendario(valor)));
+      }
+    } else if (campo === 'hora') {
+      if (typeof valor === 'string' && this.horarios().includes(valor)) this.asignarPrecarga(() => this.controles.hora.setValue(valor));
+    } else {
+      const opciones = { id_especialidad: this.especialidades(), id_sede: this.sedes(), id_medico: this.medicos() };
+      if (this.idValido(valor) && opciones[campo].some((item) => item.id === valor)) {
+        const control = this.controles[campo];
+        this.asignarPrecarga(() => control.setValue(valor));
+      }
+    }
+  }
+
+  private descartarPrecargasDesde(paso: number): void {
+    if (paso <= 1) delete this.precargas.id_sede;
+    if (paso <= 2) delete this.precargas.id_medico;
+    if (paso <= 3) delete this.precargas.fecha;
+    if (paso <= 4) delete this.precargas.hora;
   }
 
   private estado(paso: PasoOpciones, cargando: boolean, error = ''): void {

@@ -263,14 +263,14 @@ tbody tr:last-child td {
   color: #15803d;
 }
 
-.notes-panel {
-  width: 120px;
+.note-context {
+  margin: 0 0 1rem;
+  color: var(--ink-soft, #64748b);
+  overflow-wrap: anywhere;
 }
 
 .appointment-note {
-  min-width: 160px;
-  max-width: 260px;
-  margin: 0.5rem 0 0;
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
